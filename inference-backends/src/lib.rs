@@ -1,5 +1,5 @@
-mod llamacpp;
 mod comfyui;
+mod llamacpp;
 
 pub use comfyui::{
     AttnSetting, ComfyUiBackend, ComfyUiBackendController, ComfyUiConfig, ComfyUiConfigArgs,
@@ -8,3 +8,5 @@ pub use comfyui::{
 pub use llamacpp::{
     LlamaCppBackend, LlamaCppBackendController, LlamaCppConfig, LlamaCppConfigArgs,
 };
+
+pub type LlamaCppProcessState = managed_process::ProcessState<LlamaCppConfig>;
