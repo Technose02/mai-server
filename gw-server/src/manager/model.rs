@@ -34,6 +34,7 @@ fn default_to_false() -> bool {
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "kebab-case")]
 pub struct LlamaCppConfig {
     #[serde(skip_serializing_if = "HashMap::is_empty")]
     pub env: HashMap<String, String>,
@@ -48,8 +49,6 @@ pub struct LlamaCppConfig {
     #[serde(skip_serializing_if = "Option::is_none", default = "Option::default")]
     pub prio: Option<u8>,
     #[serde(skip_serializing_if = "Option::is_none", default = "Option::default")]
-    pub min_p: Option<f32>,
-    #[serde(skip_serializing_if = "Option::is_none", default = "Option::default")]
     pub threads: Option<i8>,
     #[serde(skip_serializing_if = "Option::is_none", default = "Option::default")]
     pub n_gpu_layers: Option<u8>,
@@ -57,7 +56,6 @@ pub struct LlamaCppConfig {
     pub ctx_size: Option<u64>,
     #[serde(skip_serializing_if = "Option::is_none", default = "Option::default")]
     pub flash_attn: Option<String>,
-
     #[serde(skip_serializing_if = "Option::is_none", default = "Option::default")]
     pub batch_size: Option<u16>,
     #[serde(skip_serializing_if = "Option::is_none", default = "Option::default")]
@@ -68,6 +66,18 @@ pub struct LlamaCppConfig {
     pub cache_type_k: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none", default = "Option::default")]
     pub parallel: Option<u8>,
+    #[serde(skip_serializing_if = "Option::is_none", default = "Option::default")]
+    pub temp: Option<f32>,
+    #[serde(skip_serializing_if = "Option::is_none", default = "Option::default")]
+    pub repeat_penalty: Option<f32>,
+    #[serde(skip_serializing_if = "Option::is_none", default = "Option::default")]
+    pub seed: Option<u64>,
+    #[serde(skip_serializing_if = "Option::is_none", default = "Option::default")]
+    pub min_p: Option<f32>,
+    #[serde(skip_serializing_if = "Option::is_none", default = "Option::default")]
+    pub top_k: Option<u16>,
+    #[serde(skip_serializing_if = "Option::is_none", default = "Option::default")]
+    pub top_p: Option<f32>,
 
     #[serde(
         skip_serializing_if = "std::ops::Not::not",
@@ -114,6 +124,11 @@ impl From<inference_backends::LlamaCppConfig> for LlamaCppConfig {
             no_context_shift: value.args_handle.no_context_shift,
             no_cont_batching: value.args_handle.no_cont_batching,
             parallel: value.args_handle.parallel,
+            temp: value.args_handle.temp,
+            repeat_penalty: value.args_handle.repeat_penalty,
+            seed: value.args_handle.seed,
+            top_k: value.args_handle.top_k,
+            top_p: value.args_handle.top_p,
         }
     }
 }
@@ -141,6 +156,11 @@ impl LlamaCppConfig {
             parallel: self.parallel,
             no_cont_batching: self.no_cont_batching,
             no_context_shift: self.no_context_shift,
+            temp: self.temp,
+            repeat_penalty: self.repeat_penalty,
+            seed: self.seed,
+            top_k: self.top_k,
+            top_p: self.top_p,
         });
 
         inference_backends::LlamaCppConfig {
