@@ -60,15 +60,10 @@ where
     }
 
     pub fn on_process_started(&mut self) {
-        let state = self.state.take();
-
-        match state {
-            Some(ProcessState::<ProcessConfig>::Starting(config)) => {
-                self.state = Some(ProcessState::<ProcessConfig>::Running(config));
-            }
-            _ => {
-                eprintln!("err: received 'ProcessStarted' but state is not 'Starting'");
-            }
+        if let Some(ProcessState::<ProcessConfig>::Starting(config)) = self.state.take() {
+            self.state = Some(ProcessState::<ProcessConfig>::Running(config));
+        } else {
+            panic!("received 'ProcessStarted' but state is not 'Starting'")
         }
     }
 
@@ -139,7 +134,12 @@ where
     }
 
     pub fn on_stop_process(&mut self) {
+        match &self.state {
+            Some(ProcessState::Stopped) | Some(ProcessState::Stopping(_, None)) => return,
+            _ => {}
+        }
         let state = self.state.take();
+
         match state {
             Some(ProcessState::<ProcessConfig>::Running(cfg)) => {
                 self.state = Some(ProcessState::<ProcessConfig>::Stopping(cfg, None));
@@ -156,7 +156,7 @@ where
             Some(ProcessState::<ProcessConfig>::Stopping(cfg, Some(_))) => {
                 self.state = Some(ProcessState::<ProcessConfig>::Stopping(cfg, None));
             }
-            _ => {}
+            _ => unreachable!(),
         }
     }
 
