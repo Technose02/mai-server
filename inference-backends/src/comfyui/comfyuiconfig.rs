@@ -26,6 +26,7 @@ pub struct ComfyUiConfigArgs {
     pub use_flash_attention: bool,
     pub vram_setting: Option<VRamSetting>,
     pub attn_setting: Option<AttnSetting>,
+    pub allow_origin: Option<String>,
 }
 
 impl ComfyUiConfigArgs {
@@ -35,6 +36,11 @@ impl ComfyUiConfigArgs {
         }
         if self.use_flash_attention {
             cmd.arg("--use-flash-attention");
+        }
+
+        if let Some(allow_host) = &self.allow_origin {
+            cmd.arg("--enable-cors-header");
+            cmd.arg(allow_host);
         }
 
         match self.vram_setting {

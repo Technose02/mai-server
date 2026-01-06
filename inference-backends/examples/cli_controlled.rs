@@ -86,6 +86,8 @@ async fn main() {
     let comfyui_config = ComfyUiConfig {
         env_handle: shared_env,
         args_handle: ComfyUiConfigArgs {
+            //allow_cors: Some(String::from("https://w0zteduifhh6rjyc.myfritz.net:5050")),w0zteduifhh6rjyc.myfritz.net:5050
+            allow_origin: Some(String::from("w0zteduifhh6rjyc.myfritz.net:5050")),
             fp32_vae: true,
             use_flash_attention: true,
             vram_setting: Some(VRamSetting::HighVram),
