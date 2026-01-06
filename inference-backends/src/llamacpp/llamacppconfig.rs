@@ -31,7 +31,6 @@ pub struct LlamaCppConfigArgs {
     pub mmproj_path: Option<String>,
 
     pub prio: Option<u8>,
-    pub min_p: Option<f32>,
     pub threads: Option<i8>,
     pub n_gpu_layers: Option<u8>,
     pub jinja: bool,
@@ -46,6 +45,12 @@ pub struct LlamaCppConfigArgs {
     pub parallel: Option<u8>,
     pub no_context_shift: bool,
     pub no_cont_batching: bool,
+    pub min_p: Option<f32>,
+    pub temp: Option<f32>,
+    pub repeat_penalty: Option<f32>,
+    pub seed: Option<u64>,
+    pub top_k: Option<u16>,
+    pub top_p: Option<f32>,
 }
 
 impl LlamaCppConfigArgs {
@@ -69,11 +74,6 @@ impl LlamaCppConfigArgs {
         if let Some(prio) = self.prio {
             cmd.arg("--prio");
             cmd.arg(prio.to_string());
-        }
-
-        if let Some(min_p) = self.min_p {
-            cmd.arg("--min_p");
-            cmd.arg(format!("{min_p:.2}"));
         }
 
         if let Some(threads) = self.threads {
@@ -135,6 +135,36 @@ impl LlamaCppConfigArgs {
 
         if self.no_cont_batching {
             cmd.arg("--no-cont-batching");
+        }
+
+        if let Some(min_p) = self.min_p {
+            cmd.arg("--min-p");
+            cmd.arg(format!("{min_p:.2}"));
+        }
+
+        if let Some(temp) = self.temp {
+            cmd.arg("--temp");
+            cmd.arg(format!("{temp:.2}"));
+        }
+
+        if let Some(repeat_penalty) = self.repeat_penalty {
+            cmd.arg("--repeat-penalty");
+            cmd.arg(format!("{repeat_penalty:.2}"));
+        }
+
+        if let Some(seed) = self.seed {
+            cmd.arg("--seed");
+            cmd.arg(seed.to_string());
+        }
+
+        if let Some(top_k) = self.top_k {
+            cmd.arg("--top-k");
+            cmd.arg(top_k.to_string());
+        }
+
+        if let Some(top_p) = self.top_p {
+            cmd.arg("--top-p");
+            cmd.arg(format!("{top_p:.2}"));
         }
     }
 }
