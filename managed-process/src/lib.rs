@@ -4,7 +4,7 @@ mod statemanager;
 
 pub use backendcontroller::BackendController;
 pub use model::ProcessProtocol;
-pub(crate) use model::ProcessState;
+pub use model::ProcessState;
 pub(crate) use statemanager::ProcessStateManager;
 
 pub trait RunBackendProcess {
