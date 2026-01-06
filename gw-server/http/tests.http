@@ -18,16 +18,16 @@ Content-Type: application/json
         "GGML_CUDA_ENABLE_UNIFIED_MEMORY" : "1"
     },
     "alias" : "devstral-small-2-24B-instruct-2512",
-    "model_path" : "/model_data/huggingface/unsloth/Devstral-Small-2-24B-Instruct-2512-GGUF/Devstral-Small-2-24B-Instruct-2512-UD-Q8_K_XL.gguf",
-    "mmproj_path" : "/model_data/huggingface/unsloth/Devstral-Small-2-24B-Instruct-2512-GGUF/mmproj-F16.gguf",
+    "model-path" : "/model_data/huggingface/unsloth/Devstral-Small-2-24B-Instruct-2512-GGUF/Devstral-Small-2-24B-Instruct-2512-UD-Q8_K_XL.gguf",
+    "mmproj-path" : "/model_data/huggingface/unsloth/Devstral-Small-2-24B-Instruct-2512-GGUF/mmproj-F16.gguf",
     "prio" : 3,
-    "min_p" : 0.01,
+    "min-p" : 0.01,
     "threads" : -1,
-    "n_gpu_layers" : 99,
+    "n-gpu-layers" : 99,
     "jinja" : true,
-    "ctx_size" : 262144,
-    "no_mmap" : true,
-    "flash_attn" : "on"
+    "ctx-size" : 262144,
+    "no-mmap" : true,
+    "flash-attn" : "on"
 }
 
 ###
@@ -42,17 +42,146 @@ Content-Type: application/json
         "GGML_CUDA_ENABLE_UNIFIED_MEMORY" : "1"
     },
     "alias" : "gpt-oss-120b-Q8_0",
-    "model_path" : "/model_data/legacy/huggingface/Q8_0/gpt-oss-120b-Q8_0-00001-of-00002.gguf",
-    "n_gpu_layers" : 99,
+    "model-path" : "/model_data/legacy/huggingface/Q8_0/gpt-oss-120b-Q8_0-00001-of-00002.gguf",
+    "n-gpu-layers" : 99,
     "jinja" : true,
-    "ctx_size" : 32768,
-    "no_mmap" : true,
-    "flash_attn" : "on",
-    "batch_size" : 2048,
-    "ubatch_size" : 2048,
-    "cache_type_v" : "q8_0",
-    "cache_type_k" : "q8_0",
+    "ctx-size" : 32768,
+    "no-mmap" : true,
+    "flash-attn" : "on",
+    "batch-size" : 2048,
+    "ubatch-size" : 2048,
+    "cache-type_v" : "q8_0",
+    "cache-type_k" : "q8_0",
     "parallel" : 1,
-    "no_context_shift" : true,
-    "no_cont_batching" : true
+    "no-context-shift" : true,
+    "no-cont-batching" : true
+}
+
+###
+
+# gemma-3-12b-it-qat
+PUT https://{{hostname}}:{{port}}/admin/llamacpp
+Authorization: Bearer {{bearer_token}}
+Content-Type: application/json
+
+{
+    "env": {
+        "GGML_CUDA_ENABLE_UNIFIED_MEMORY" : "1"
+    },
+    "alias" : "gemma-3-12b-it-qat-Q8_0",
+    "model-path" : "/model_data/huggingface/unsloth/gemma-3-12b-it-qat-GGUF/gemma-3-12b-it-qat-Q8_0.gguf",
+    "mmproj-path" : "/model_data/huggingface/unsloth/gemma-3-12b-it-qat-GGUF/mmproj-BF16.gguf",
+    "n-gpu-layers" : 99,
+    "jinja" : true,
+    "ctx-size" : 131072,
+    "no-mmap" : true,
+    "flash-attn" : "on",
+    "prio": 2,
+    "threads": 8,
+    "temp": 1.0,
+    "repeat-penalty": 1.0,
+    "seed": 3407,
+    "min-p": 0.01,
+    "top-k": 64,
+    "top-p": 0.95
+}
+
+###
+
+# gemma-3-27b-it-qat
+PUT https://{{hostname}}:{{port}}/admin/llamacpp
+Authorization: Bearer {{bearer_token}}
+Content-Type: application/json
+
+{
+    "env": {
+        "GGML_CUDA_ENABLE_UNIFIED_MEMORY" : "1"
+    },
+    "alias" : "gemma-3-27b-it-qat-Q8_0",
+    "model-path" : "/model_data/huggingface/unsloth/gemma-3-27b-it-GGUF/gemma-3-27b-it-Q8_0.gguf",
+    "mmproj-path" : "/model_data/huggingface/unsloth/gemma-3-27b-it-GGUF/mmproj-BF16.gguf",
+    "n-gpu-layers" : 99,
+    "jinja" : true,
+    "ctx-size" : 131072,
+    "no-mmap" : true,
+    "flash-attn" : "on",
+    "prio": 2,
+    "threads": 8,
+    "temp": 1.0,
+    "repeat-penalty": 1.0,
+    "seed": 3407,
+    "min-p": 0.01,
+    "top-k": 64,
+    "top-p": 0.95
+}
+
+###
+
+# granite-4.0-h-small
+PUT https://{{hostname}}:{{port}}/admin/llamacpp
+Authorization: Bearer {{bearer_token}}
+Content-Type: application/json
+
+{
+    "env": {
+        "GGML_CUDA_ENABLE_UNIFIED_MEMORY" : "1"
+    },
+    "alias" : "granite-4.0-h-small",
+    "model-path" : "/model_data/huggingface/unsloth/granite-4.0-h-small-GGUF/granite-4.0-h-small-Q8_0.gguf",
+    "n-gpu-layers" : 99,
+    "jinja" : true,
+    "ctx-size" : 131072,
+    "no-mmap" : true,
+    "flash-attn" : "on",
+    "threads": 8,
+    "temp": 0.0,
+    "top-k": 0,
+    "top-p": 1.0
+}
+
+###
+
+# phi-4-reasoning-plus
+PUT https://{{hostname}}:{{port}}/admin/llamacpp
+Authorization: Bearer {{bearer_token}}
+Content-Type: application/json
+
+{
+    "env": {
+        "GGML_CUDA_ENABLE_UNIFIED_MEMORY" : "1"
+    },
+    "alias" : "phi-4-reasoning-plus",
+    "model-path" : "/model_data/huggingface/unsloth/Phi-4-reasoning-plus-GGUF/Phi-4-reasoning-plus-Q8_0.gguf",
+    "jinja" : true,
+    "prio": 3,
+    "threads": -1,
+    "ctx-size" : 32768,
+    "n-gpu-layers" : 99,
+    "temp": 0.8,
+    "top-p": 0.95,
+    "min-p": 0.00
+}
+
+###
+
+# glm-4.6v-flash
+PUT https://{{hostname}}:{{port}}/admin/llamacpp
+Authorization: Bearer {{bearer_token}}
+Content-Type: application/json
+
+{
+    "env": {
+        "GGML_CUDA_ENABLE_UNIFIED_MEMORY" : "1"
+    },
+    "alias" : "glm-4.6v-flash",
+    "model-path" : "/model_data/huggingface/unsloth/GLM-4.6V-Flash-GGUF/GLM-4.6V-Flash-BF16.gguf",
+    "n-gpu-layers" : 99,
+    "jinja" : true,
+    "ctx-size" : 16384,
+    "flash-attn" : "on",
+    "temp": 0.8,
+    "top-p": 0.6,
+    "top-k": 2,
+    "repeat-penalty": 1.1,
+    "prio": 3
 }

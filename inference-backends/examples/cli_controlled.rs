@@ -51,7 +51,12 @@ async fn main() {
             cache_type_k: None,
             parallel: None,
             no_context_shift: false,
-            no_cont_batching: false
+            no_cont_batching: false,
+            temp: None,
+            repeat_penalty: None,
+            seed:Some(1),
+            top_k:None,
+            top_p: None
         }
         .into()
     };
@@ -79,6 +84,11 @@ async fn main() {
             parallel: Some(1),
             no_context_shift: true,
             no_cont_batching: true,
+            temp: None,
+            repeat_penalty: None,
+            seed: Some(1),
+            top_k: None,
+            top_p: None,
         }
         .into(),
     };
@@ -86,8 +96,7 @@ async fn main() {
     let comfyui_config = ComfyUiConfig {
         env_handle: shared_env,
         args_handle: ComfyUiConfigArgs {
-            //allow_cors: Some(String::from("https://w0zteduifhh6rjyc.myfritz.net:5050")),w0zteduifhh6rjyc.myfritz.net:5050
-            allow_origin: Some(String::from("w0zteduifhh6rjyc.myfritz.net:5050")),
+            allow_origin: Some(String::from("localhost:5050")),
             fp32_vae: true,
             use_flash_attention: true,
             vram_setting: Some(VRamSetting::HighVram),
