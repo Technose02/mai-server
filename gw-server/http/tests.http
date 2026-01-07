@@ -185,3 +185,50 @@ Content-Type: application/json
     "repeat-penalty": 1.1,
     "prio": 3
 }
+
+###
+
+# qwen3-vl-30b-a3b-instruct
+PUT https://{{hostname}}:{{port}}/admin/llamacpp
+Authorization: Bearer {{bearer_token}}
+Content-Type: application/json
+
+{
+    "env": {
+        "GGML_CUDA_ENABLE_UNIFIED_MEMORY" : "1"
+    },
+    "alias" : "qwen3-vl-30b-a3b-instruct",
+    "model-path" : "/model_data/huggingface/unsloth/Qwen3-VL-30B-A3B-Instruct-GGUF/BF16/Qwen3-VL-30B-A3B-Instruct-BF16-00001-of-00002.gguf",
+    "n-gpu-layers" : 99,
+    "jinja" : true,
+    "top-p": 0.8,
+    "top-k": 20,
+    "temp": 0.7,
+    "min-p": 0.0,
+    "flash-attn" : "on",
+    "ctx-size" : 131072,
+    "repeat-penalty": 1.5
+}
+
+###
+
+# nemotron-3-nano-30b-a3b
+PUT https://{{hostname}}:{{port}}/admin/llamacpp
+Authorization: Bearer {{bearer_token}}
+Content-Type: application/json
+
+{
+    "env": {
+        "GGML_CUDA_ENABLE_UNIFIED_MEMORY" : "1"
+    },
+    "alias" : "nemotron-3-nano-30b-a3b",
+    "model-path" : "//model_data/huggingface/unsloth/Nemotron-3-Nano-30B-A3B-GGUF/Nemotron-3-Nano-30B-A3B-UD-Q8_K_XL.gguf",
+    "n-gpu-layers" : 99,
+    "jinja" : true,
+    "threads": -1,
+    "ctx-size" : 32768,
+    "temp": 1.0,
+    "top-p": 1.0,
+    "fit":  "on",
+    "flash-attn" : "on"
+}
