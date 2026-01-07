@@ -30,12 +30,12 @@ async fn create_app(provided_api_key: Option<String>) -> Router {
     println!("your current api-key is '{}'", app_state.api_key());
 
     Router::new()
-        // LLAMA.CPP (implicitly protected via llama.cpp)
-        .merge(ReverseProxy::new("/chat", "http://localhost:11440"))
-        .merge(ReverseProxy::new("/v1", "http://localhost:11440/v1"))
-        .merge(ReverseProxy::new("/props", "http://localhost:11440/props"))
         // Manager (explicitly proteced)
         .merge(manager_router(app_state))
+
+        // LLAMA.CPP (implicitly protected via llama.cpp)
+        // !! THIS SHOULD BE IN THE LAST POSITION !!
+        .merge(ReverseProxy::new("/", "http://localhost:11440"))
 }
 
 #[tokio::main]
