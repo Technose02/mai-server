@@ -38,6 +38,7 @@ pub struct LlamaCppConfigArgs {
     pub no_mmap: bool,
 
     pub flash_attn: Option<String>,
+    pub fit: Option<String>,
     pub batch_size: Option<u16>,
     pub ubatch_size: Option<u16>,
     pub cache_type_v: Option<String>,
