@@ -57,6 +57,8 @@ pub struct LlamaCppConfig {
     #[serde(skip_serializing_if = "Option::is_none", default = "Option::default")]
     pub flash_attn: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none", default = "Option::default")]
+    pub fit: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none", default = "Option::default")]
     pub batch_size: Option<u16>,
     #[serde(skip_serializing_if = "Option::is_none", default = "Option::default")]
     pub ubatch_size: Option<u16>,
@@ -120,6 +122,7 @@ impl From<inference_backends::LlamaCppConfig> for LlamaCppConfig {
             cache_type_v: value.args_handle.cache_type_v.clone(),
             no_mmap: value.args_handle.no_mmap,
             flash_attn: value.args_handle.flash_attn.clone(),
+            fit: value.args_handle.fit.clone(),
             ubatch_size: value.args_handle.ubatch_size,
             no_context_shift: value.args_handle.no_context_shift,
             no_cont_batching: value.args_handle.no_cont_batching,
@@ -152,6 +155,7 @@ impl LlamaCppConfig {
             jinja: self.jinja,
             no_mmap: self.no_mmap,
             flash_attn: self.flash_attn.clone(),
+            fit: self.fit.clone(),
             ubatch_size: self.ubatch_size,
             parallel: self.parallel,
             no_cont_batching: self.no_cont_batching,
