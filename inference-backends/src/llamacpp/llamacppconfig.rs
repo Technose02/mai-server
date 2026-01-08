@@ -1,3 +1,4 @@
+use serde::{Deserialize, Serialize, de::Visitor};
 use std::{collections::HashMap, sync::Arc};
 use tokio::process::Command;
 
@@ -19,6 +20,180 @@ impl LlamaCppConfig {
     }
 }
 
+#[derive(Debug, Clone, Copy)]
+pub enum ContextSize {
+    T8192,
+    T16384,
+    T32768,
+    T65536,
+    T131072,
+    T262144,
+}
+
+impl From<&ContextSize> for u64 {
+    fn from(value: &ContextSize) -> Self {
+        match value {
+            ContextSize::T8192 => 8192,
+            ContextSize::T16384 => 16384,
+            ContextSize::T32768 => 32768,
+            ContextSize::T65536 => 65536,
+            ContextSize::T131072 => 131072,
+            ContextSize::T262144 => 262144,
+        }
+    }
+}
+
+impl From<u64> for ContextSize {
+    fn from(value: u64) -> Self {
+        match value {
+            0..12288 => Self::T8192,
+            12288..24576 => Self::T16384,
+            24576..49152 => Self::T32768,
+            49152..98304 => Self::T65536,
+            98304..196608 => Self::T131072,
+            _ => Self::T262144,
+        }
+    }
+}
+
+impl PartialEq for ContextSize {
+    fn eq(&self, other: &Self) -> bool {
+        Into::<u64>::into(self) == Into::<u64>::into(other)
+    }
+}
+
+#[derive(Debug, Clone)]
+pub enum OnOffValue {
+    On,
+    Off,
+    Other(String),
+}
+
+impl<'a, 's> From<&'a OnOffValue> for &'s str
+where
+    'a: 's,
+{
+    fn from(value: &'a OnOffValue) -> Self {
+        match value {
+            OnOffValue::Off => "off",
+            OnOffValue::On => "on",
+            OnOffValue::Other(s) => s,
+        }
+    }
+}
+
+impl From<OnOffValue> for String {
+    fn from(value: OnOffValue) -> Self {
+        match value {
+            OnOffValue::Off => "off".into(),
+            OnOffValue::On => "on".into(),
+            OnOffValue::Other(s) => s,
+        }
+    }
+}
+
+impl From<String> for OnOffValue {
+    fn from(value: String) -> Self {
+        match value.to_lowercase().as_str() {
+            "on" => OnOffValue::On,
+            "off" => OnOffValue::Off,
+            _ => OnOffValue::Other(value),
+        }
+    }
+}
+
+impl PartialEq for OnOffValue {
+    fn eq(&self, other: &Self) -> bool {
+        match self {
+            OnOffValue::On => matches!(other, OnOffValue::On),
+            OnOffValue::Off => matches!(other, OnOffValue::Off),
+            OnOffValue::Other(s) => {
+                if let OnOffValue::Other(other_s) = other
+                    && other_s == s
+                {
+                    true
+                } else {
+                    false
+                }
+            }
+        }
+    }
+}
+
+struct OnOffValueVisitor();
+
+impl<'de> Visitor<'de> for OnOffValueVisitor {
+    type Value = OnOffValue;
+
+    fn visit_string<E>(self, v: String) -> Result<Self::Value, E>
+    where
+        E: serde::de::Error,
+    {
+        Ok(Into::<OnOffValue>::into(v))
+    }
+
+    fn visit_str<E>(self, v: &str) -> Result<Self::Value, E>
+    where
+        E: serde::de::Error,
+    {
+        Ok(Into::<OnOffValue>::into(String::from(v)))
+    }
+
+    fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
+        formatter.write_str("expected any String")
+    }
+}
+
+impl<'de> Deserialize<'de> for OnOffValue {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        deserializer.deserialize_string(OnOffValueVisitor())
+    }
+}
+
+impl Serialize for OnOffValue {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        serializer.serialize_str(self.into())
+    }
+}
+
+struct ContextSizeVisitor();
+impl<'de> Visitor<'de> for ContextSizeVisitor {
+    type Value = ContextSize;
+    fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
+        formatter.write_str("expected a u64")
+    }
+    fn visit_u64<E>(self, v: u64) -> Result<Self::Value, E>
+    where
+        E: serde::de::Error,
+    {
+        Ok(Into::<ContextSize>::into(v))
+    }
+}
+
+impl<'de> Deserialize<'de> for ContextSize {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        deserializer.deserialize_u64(ContextSizeVisitor())
+    }
+}
+
+impl Serialize for ContextSize {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        serializer.serialize_u64(self.into())
+    }
+}
+
 #[derive(Debug, Clone, PartialEq)]
 pub struct LlamaCppConfigArgs {
     pub alias: String,
@@ -34,11 +209,11 @@ pub struct LlamaCppConfigArgs {
     pub threads: Option<i8>,
     pub n_gpu_layers: Option<u8>,
     pub jinja: bool,
-    pub ctx_size: Option<u64>,
+    pub ctx_size: Option<ContextSize>,
     pub no_mmap: bool,
 
-    pub flash_attn: Option<String>,
-    pub fit: Option<String>,
+    pub flash_attn: Option<OnOffValue>,
+    pub fit: Option<OnOffValue>,
     pub batch_size: Option<u16>,
     pub ubatch_size: Option<u16>,
     pub cache_type_v: Option<String>,
@@ -49,6 +224,7 @@ pub struct LlamaCppConfigArgs {
     pub min_p: Option<f32>,
     pub temp: Option<f32>,
     pub repeat_penalty: Option<f32>,
+    pub presence_penalty: Option<f32>,
     pub seed: Option<u64>,
     pub top_k: Option<u16>,
     pub top_p: Option<f32>,
@@ -97,12 +273,17 @@ impl LlamaCppConfigArgs {
 
         if let Some(ctx_size) = self.ctx_size {
             cmd.arg("--ctx-size");
-            cmd.arg(ctx_size.to_string());
+            cmd.arg(Into::<u64>::into(&ctx_size).to_string());
         }
 
         if let Some(flash_attn) = &self.flash_attn {
             cmd.arg("--flash-attn");
-            cmd.arg(flash_attn);
+            cmd.arg(Into::<String>::into(flash_attn.clone()));
+        }
+
+        if let Some(fit) = &self.fit {
+            cmd.arg("--fit");
+            cmd.arg(Into::<String>::into(fit.clone()));
         }
 
         if let Some(batch_size) = self.batch_size {
@@ -151,6 +332,11 @@ impl LlamaCppConfigArgs {
         if let Some(repeat_penalty) = self.repeat_penalty {
             cmd.arg("--repeat-penalty");
             cmd.arg(format!("{repeat_penalty:.2}"));
+        }
+
+        if let Some(presence_penalty) = self.presence_penalty {
+            cmd.arg("--presence-penalty");
+            cmd.arg(format!("{presence_penalty:.2}"));
         }
 
         if let Some(seed) = self.seed {
