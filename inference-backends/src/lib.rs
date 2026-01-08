@@ -6,7 +6,8 @@ pub use comfyui::{
     VRamSetting,
 };
 pub use llamacpp::{
-    LlamaCppBackend, LlamaCppBackendController, LlamaCppConfig, LlamaCppConfigArgs,
+    ContextSize, LlamaCppBackend, LlamaCppBackendController, LlamaCppConfig, LlamaCppConfigArgs,
+    OnOffValue,
 };
 
 pub type LlamaCppProcessState = managed_process::ProcessState<LlamaCppConfig>;

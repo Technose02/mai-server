@@ -7,7 +7,7 @@ use tokio::{
 };
 
 mod llamacppconfig;
-pub use llamacppconfig::{LlamaCppConfig, LlamaCppConfigArgs};
+pub use llamacppconfig::{ContextSize, LlamaCppConfig, LlamaCppConfigArgs, OnOffValue};
 
 pub type LlamaCppProtocol = ProcessProtocol<LlamaCppConfig>;
 pub type LlamaCppBackendController = BackendController<LlamaCppConfig>;
