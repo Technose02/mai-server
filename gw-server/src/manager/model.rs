@@ -1,6 +1,6 @@
 use std::{collections::HashMap, sync::Arc};
 
-use inference_backends::LlamaCppConfigArgs;
+use inference_backends::{ContextSize, LlamaCppConfigArgs, OnOffValue};
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -53,11 +53,11 @@ pub struct LlamaCppConfig {
     #[serde(skip_serializing_if = "Option::is_none", default = "Option::default")]
     pub n_gpu_layers: Option<u8>,
     #[serde(skip_serializing_if = "Option::is_none", default = "Option::default")]
-    pub ctx_size: Option<u64>,
+    pub ctx_size: Option<ContextSize>,
     #[serde(skip_serializing_if = "Option::is_none", default = "Option::default")]
-    pub flash_attn: Option<String>,
+    pub flash_attn: Option<OnOffValue>,
     #[serde(skip_serializing_if = "Option::is_none", default = "Option::default")]
-    pub fit: Option<String>,
+    pub fit: Option<OnOffValue>,
     #[serde(skip_serializing_if = "Option::is_none", default = "Option::default")]
     pub batch_size: Option<u16>,
     #[serde(skip_serializing_if = "Option::is_none", default = "Option::default")]
@@ -72,6 +72,8 @@ pub struct LlamaCppConfig {
     pub temp: Option<f32>,
     #[serde(skip_serializing_if = "Option::is_none", default = "Option::default")]
     pub repeat_penalty: Option<f32>,
+    #[serde(skip_serializing_if = "Option::is_none", default = "Option::default")]
+    pub presence_penalty: Option<f32>,
     #[serde(skip_serializing_if = "Option::is_none", default = "Option::default")]
     pub seed: Option<u64>,
     #[serde(skip_serializing_if = "Option::is_none", default = "Option::default")]
@@ -129,6 +131,7 @@ impl From<inference_backends::LlamaCppConfig> for LlamaCppConfig {
             parallel: value.args_handle.parallel,
             temp: value.args_handle.temp,
             repeat_penalty: value.args_handle.repeat_penalty,
+            presence_penalty: value.args_handle.presence_penalty,
             seed: value.args_handle.seed,
             top_k: value.args_handle.top_k,
             top_p: value.args_handle.top_p,
@@ -162,6 +165,7 @@ impl LlamaCppConfig {
             no_context_shift: self.no_context_shift,
             temp: self.temp,
             repeat_penalty: self.repeat_penalty,
+            presence_penalty: self.presence_penalty,
             seed: self.seed,
             top_k: self.top_k,
             top_p: self.top_p,

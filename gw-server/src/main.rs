@@ -32,7 +32,6 @@ async fn create_app(provided_api_key: Option<String>) -> Router {
     Router::new()
         // Manager (explicitly proteced)
         .merge(manager_router(app_state))
-
         // LLAMA.CPP (implicitly protected via llama.cpp)
         // !! THIS SHOULD BE IN THE LAST POSITION !!
         .merge(ReverseProxy::new("/", "http://localhost:11440"))
@@ -73,11 +72,11 @@ async fn main() {
     // configure certificate and private key used by https
     let config = RustlsConfig::from_pem_file(
         PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-            .join("self_signed_certs")
-            .join("cert.pem"),
+            .join("letsencrypt")
+            .join("fullchain.pem"),
         PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-            .join("self_signed_certs")
-            .join("key.pem"),
+            .join("letsencrypt")
+            .join("privkey.pem"),
     )
     .await
     .unwrap();

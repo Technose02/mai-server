@@ -841,6 +841,7 @@ name = "inference-backends"
 version = "0.1.0"
 dependencies = [
  "managed-process",
+ "serde",
  "tokio",
 ]
 
