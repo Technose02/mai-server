@@ -2,7 +2,8 @@ use std::{collections::HashMap, io::stdin, sync::Arc};
 
 use inference_backends::{
     AttnSetting, ComfyUiBackend, ComfyUiBackendController, ComfyUiConfig, ComfyUiConfigArgs,
-    LlamaCppBackend, LlamaCppBackendController, LlamaCppConfig, LlamaCppConfigArgs, VRamSetting,
+    ContextSize, LlamaCppBackend, LlamaCppBackendController, LlamaCppConfig, LlamaCppConfigArgs,
+    OnOffValue, VRamSetting,
 };
 
 #[tokio::main]
@@ -42,9 +43,9 @@ async fn main() {
             threads: Some(-1),
             n_gpu_layers: Some(99),
             jinja: true,
-            ctx_size: Some(262144),
+            ctx_size: Some(ContextSize::T262144),
             no_mmap: true,
-            flash_attn: Some("on".to_string()),
+            flash_attn: Some(OnOffValue::On),
             batch_size: None,
             ubatch_size: None,
             cache_type_v: None,
@@ -56,7 +57,9 @@ async fn main() {
             repeat_penalty: None,
             seed:Some(1),
             top_k:None,
-            top_p: None
+            top_p: None,
+            fit: None,
+            presence_penalty: None,
         }
         .into()
     };
@@ -74,9 +77,9 @@ async fn main() {
             threads: None,
             n_gpu_layers: Some(99),
             jinja: true,
-            ctx_size: Some(32768),
+            ctx_size: Some(ContextSize::T32768),
             no_mmap: true,
-            flash_attn: Some("on".to_string()),
+            flash_attn: Some(OnOffValue::On),
             batch_size: Some(2048),
             ubatch_size: Some(2048),
             cache_type_v: Some("q8_0".to_string()),
@@ -89,6 +92,8 @@ async fn main() {
             seed: Some(1),
             top_k: None,
             top_p: None,
+            fit: None,
+            presence_penalty: None,
         }
         .into(),
     };
