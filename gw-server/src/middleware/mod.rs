@@ -27,3 +27,8 @@ pub async fn auth_middleware(
         Err(StatusCode::UNAUTHORIZED)
     }
 }
+
+pub async fn requested_path_mw(req: Request, next: Next) -> Result<Response, StatusCode> {
+    println!("{} {}", req.method(), req.uri().path());
+    Ok(next.run(req).await)
+}
