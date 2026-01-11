@@ -2,4 +2,5 @@
 /**/_git
 /**/self_signed_certs
 /**/letsencrypt
-/.vscode
+/.vscode/settings.json
+*.secret*

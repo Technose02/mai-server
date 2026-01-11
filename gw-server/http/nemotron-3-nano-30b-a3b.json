@@ -1,0 +1,15 @@
+{
+    "env": {
+        "GGML_CUDA_ENABLE_UNIFIED_MEMORY" : "1"
+    },
+    "alias" : "nemotron-3-nano-30b-a3b",
+    "model-path" : "//model_data/huggingface/unsloth/Nemotron-3-Nano-30B-A3B-GGUF/Nemotron-3-Nano-30B-A3B-UD-Q8_K_XL.gguf",
+    "n-gpu-layers" : 99,
+    "jinja" : true,
+    "threads": -1,
+    "ctx-size": 32768,
+    "temp": 1.0,
+    "top-p": 1.0,
+    "fit":  "on",
+    "flash-attn" : "on"
+}

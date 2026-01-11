@@ -1,0 +1,21 @@
+{
+    "env": {
+        "GGML_CUDA_ENABLE_UNIFIED_MEMORY" : "1"
+    },
+    "alias" : "gemma-3-12b-it-qat-Q8_0",
+    "model-path" : "/model_data/huggingface/unsloth/gemma-3-12b-it-qat-GGUF/gemma-3-12b-it-qat-Q8_0.gguf",
+    "mmproj-path" : "/model_data/huggingface/unsloth/gemma-3-12b-it-qat-GGUF/mmproj-BF16.gguf",
+    "n-gpu-layers" : 99,
+    "jinja" : true,
+    "ctx-size" : 131072,
+    "no-mmap" : true,
+    "flash-attn" : "on",
+    "prio": 2,
+    "threads": 8,
+    "temp": 1.0,
+    "repeat-penalty": 1.0,
+    "seed": 3407,
+    "min-p": 0.01,
+    "top-k": 64,
+    "top-p": 0.95
+}

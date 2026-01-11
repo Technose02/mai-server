@@ -1,0 +1,19 @@
+{
+    "env": {
+        "GGML_CUDA_ENABLE_UNIFIED_MEMORY" : "1"
+    },
+    "alias" : "gpt-oss-120b-Q8_0",
+    "model-path" : "/model_data/legacy/huggingface/Q8_0/gpt-oss-120b-Q8_0-00001-of-00002.gguf",
+    "n-gpu-layers" : 99,
+    "jinja" : true,
+    "ctx-size" : 32768,
+    "no-mmap" : true,
+    "flash-attn" : "on",
+    "batch-size" : 2048,
+    "ubatch-size" : 2048,
+    "cache-type_v" : "q8_0",
+    "cache-type_k" : "q8_0",
+    "parallel" : 1,
+    "no-context-shift" : true,
+    "no-cont-batching" : true
+}

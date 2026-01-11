@@ -1,0 +1,15 @@
+{
+    "env": {
+        "GGML_CUDA_ENABLE_UNIFIED_MEMORY" : "1"
+    },
+    "alias" : "phi-4-reasoning-plus",
+    "model-path" : "/model_data/huggingface/unsloth/Phi-4-reasoning-plus-GGUF/Phi-4-reasoning-plus-Q8_0.gguf",
+    "jinja" : true,
+    "prio": 3,
+    "threads": -1,
+    "ctx-size" : 32768,
+    "n-gpu-layers" : 99,
+    "temp": 0.8,
+    "top-p": 0.95,
+    "min-p": 0.00
+}
