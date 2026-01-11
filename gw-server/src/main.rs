@@ -13,7 +13,11 @@ pub(crate) use middleware::{auth_middleware, requested_path_mw};
 
 use crate::model::AppState;
 
-async fn create_app(provided_api_key: Option<String>, log_request_info: bool) -> Router {
+async fn create_app(
+    provided_api_key: Option<String>,
+    log_request_info: bool,
+    llama_cpp_chatui: bool,
+) -> Router {
     let llamacpp_backend = LlamaCppBackend {
         host: "0.0.0.0".to_owned(),
         port: 11440,
@@ -29,28 +33,50 @@ async fn create_app(provided_api_key: Option<String>, log_request_info: bool) ->
 
     println!("your current api-key is '{}'", app_state.api_key());
 
-    let mut llamacpp_backend_reverse_proxy: Router =
-        ReverseProxy::new("/", "http://localhost:11440").into();
-    if log_request_info {
-        llamacpp_backend_reverse_proxy =
-            llamacpp_backend_reverse_proxy.layer(axum::middleware::from_fn(requested_path_mw));
+    fn llamacpp_backend_reverse_proxy(
+        path: &'static str,
+        target: &'static str,
+        log_request_info: bool,
+    ) -> Router {
+        let mut llamacpp_backend_reverse_proxy: Router = ReverseProxy::new(path, target).into();
+        if log_request_info {
+            llamacpp_backend_reverse_proxy =
+                llamacpp_backend_reverse_proxy.layer(axum::middleware::from_fn(requested_path_mw));
+        }
+        llamacpp_backend_reverse_proxy
     }
 
-    Router::new()
+    let mut router = Router::new()
         // Manager (explicitly proteced)
         .merge(manager_router(app_state))
         // LLAMA.CPP (implicitly protected via llama.cpp)
+        .merge(llamacpp_backend_reverse_proxy(
+            "/api/v1/",
+            "http://localhost:11440/v1/",
+            log_request_info,
+        ));
+
+    if llama_cpp_chatui {
+        // LLAMA.CPP WITH UI (implicitly protected via llama.cpp) - replicated at context-root, necessary for frontend
         // !! THIS SHOULD BE IN THE LAST POSITION !!
-        .merge(llamacpp_backend_reverse_proxy)
+        router = router.merge(llamacpp_backend_reverse_proxy(
+            "/",
+            "http://localhost:11440",
+            log_request_info,
+        ))
+    }
+
+    router
 }
 
 #[tokio::main]
 async fn main() {
     let mut args = std::env::args();
-    let (provided_port, provided_api_key, log_request_info) = {
+    let (provided_port, provided_api_key, provided_log_request_info, provided_llama_cpp_chatui) = {
         let mut port = None;
         let mut api_key = None;
         let mut log_request_info = false;
+        let mut llama_cpp_chatui = false;
         while let Some(a) = args.next() {
             if port.is_none() && (a == "--port" || a == "-p") {
                 if let Some(port_value) = args.next() {
@@ -75,11 +101,20 @@ async fn main() {
             if a == "--log-request-info" || a == "-l" {
                 log_request_info = true;
             }
+
+            if a == "--chatui" {
+                llama_cpp_chatui = true;
+            }
         }
-        (port, api_key, log_request_info)
+        (port, api_key, log_request_info, llama_cpp_chatui)
     };
 
-    let app = create_app(provided_api_key, log_request_info).await;
+    let app = create_app(
+        provided_api_key,
+        provided_log_request_info,
+        provided_llama_cpp_chatui,
+    )
+    .await;
 
     // configure certificate and private key used by https
     let config = RustlsConfig::from_pem_file(
