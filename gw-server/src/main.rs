@@ -9,7 +9,7 @@ mod model;
 use manager::router as manager_router;
 
 mod middleware;
-pub(crate) use middleware::{auth_middleware, requested_path_mw};
+pub(crate) use middleware::{auth_middleware, request_logger};
 
 use crate::model::AppState;
 
@@ -41,7 +41,7 @@ async fn create_app(
         let mut llamacpp_backend_reverse_proxy: Router = ReverseProxy::new(path, target).into();
         if log_request_info {
             llamacpp_backend_reverse_proxy =
-                llamacpp_backend_reverse_proxy.layer(axum::middleware::from_fn(requested_path_mw));
+                llamacpp_backend_reverse_proxy.layer(axum::middleware::from_fn(request_logger));
         }
         llamacpp_backend_reverse_proxy
     }

@@ -28,9 +28,9 @@ pub async fn auth_middleware(
     }
 }
 
-pub async fn requested_path_mw(req: Request, next: Next) -> Result<Response, StatusCode> {
+pub async fn request_logger(req: Request, next: Next) -> Result<Response, StatusCode> {
     println!("{} {}", req.method(), req.uri().path());
     let res = next.run(req).await;
-    println!("\t-> {}",res.status());
+    println!("\t-> {}", res.status());
     Ok(res)
 }
