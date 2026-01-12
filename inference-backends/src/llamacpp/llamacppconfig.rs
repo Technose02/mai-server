@@ -197,7 +197,7 @@ impl Serialize for ContextSize {
 #[derive(Debug, Clone, PartialEq)]
 pub struct LlamaCppConfigArgs {
     pub alias: String,
-    pub api_key: String,
+    pub api_key: Option<String>,
 
     //pub model_path: PathBuf,
     pub model_path: String,
@@ -239,8 +239,10 @@ impl LlamaCppConfigArgs {
         //cmd.arg(self.model_path.to_string_lossy().as_ref());
         cmd.arg(self.model_path.as_str());
 
-        cmd.arg("--api-key");
-        cmd.arg(&self.api_key);
+        if let Some(api_key) = &self.api_key {
+            cmd.arg("--api-key");
+            cmd.arg(api_key);
+        }
 
         if let Some(mmproj_path) = &self.mmproj_path {
             cmd.arg("--mmproj");

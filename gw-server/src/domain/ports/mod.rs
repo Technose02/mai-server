@@ -1,0 +1,53 @@
+use crate::application::model::Llmodels;
+use async_trait::async_trait;
+use axum::{extract::Request, http::StatusCode, response::Response};
+use inference_backends::{LlamaCppConfig, LlamaCppProcessState};
+use std::{sync::Arc, time::Duration};
+
+/// IN-PORTS
+
+#[async_trait]
+pub trait OpenAiRequestForwardPServiceInPort: Send + Sync + 'static {
+    async fn process_openai_request(
+        &self,
+        request: Request,
+        api_path: &str,
+    ) -> Result<Response, StatusCode>;
+}
+
+#[async_trait]
+pub trait ModelManagerServiceInPort: Send + Sync + 'static {
+    async fn get_llamacpp_state(&self) -> LlamaCppProcessState;
+    async fn stop_llamacpp_process(&self);
+    async fn start_llamacpp_process(&self, llamacpp_config: LlamaCppConfig)
+    -> LlamaCppProcessState;
+}
+
+#[async_trait]
+pub trait ModelsServiceInPort: Send + Sync + 'static {
+    async fn ensure_requested_model_is_served(
+        &self,
+        requested_model: &str,
+        timeout: Duration,
+    ) -> Result<(), String>;
+    fn llmodels(&self) -> Arc<Llmodels>;
+}
+
+/// OUT-PORTS
+
+#[async_trait]
+pub trait OpenAiClientOutPort: Send + Sync + 'static {
+    async fn send_request(
+        &self,
+        request: Request,
+        override_path: Option<&str>,
+    ) -> Result<Response, StatusCode>;
+}
+
+#[async_trait]
+pub trait LlamaCppControllerOutPort: Send + Sync + 'static {
+    async fn get_llamacpp_state(&self) -> LlamaCppProcessState;
+    async fn start_llamacpp_process(&self, llamacpp_config: LlamaCppConfig)
+    -> LlamaCppProcessState;
+    async fn stop_llamacpp_process(&self);
+}

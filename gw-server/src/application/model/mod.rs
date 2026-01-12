@@ -3,6 +3,9 @@ use std::{collections::HashMap, sync::Arc};
 use inference_backends::{ContextSize, LlamaCppConfigArgs, OnOffValue};
 use serde::{Deserialize, Serialize};
 
+mod llmodels;
+pub use llmodels::{Data, DataMeta, Llmodels, Model, ModelDetails};
+
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub enum LlamaCppProcessState {
     Stopped,
@@ -140,11 +143,11 @@ impl From<inference_backends::LlamaCppConfig> for LlamaCppConfig {
 }
 
 impl LlamaCppConfig {
-    pub fn map(&self, api_key: impl Into<String>) -> inference_backends::LlamaCppConfig {
+    pub fn map(&self, apikey: Option<impl Into<String>>) -> inference_backends::LlamaCppConfig {
         let env_handle = Arc::new(self.env.clone());
         let args_handle = Arc::new(LlamaCppConfigArgs {
             alias: self.alias.clone(),
-            api_key: api_key.into(),
+            api_key: apikey.map(Into::<String>::into),
             batch_size: self.batch_size,
             cache_type_k: self.cache_type_k.clone(),
             cache_type_v: self.cache_type_v.clone(),

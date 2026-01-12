@@ -35,7 +35,7 @@ async fn main() {
         env_handle: shared_env.clone(),
         args_handle: LlamaCppConfigArgs {
             alias: "devstral-small-2-24B-instruct-2512".to_string(),
-            api_key: "apikey1".to_string(),
+            api_key: Some("apikey1".to_string()),
             model_path: "/model_data/huggingface/unsloth/Devstral-Small-2-24B-Instruct-2512-GGUF/Devstral-Small-2-24B-Instruct-2512-UD-Q8_K_XL.gguf".to_string(),
             mmproj_path: Some("/model_data/huggingface/unsloth/Devstral-Small-2-24B-Instruct-2512-GGUF/mmproj-F16.gguf".to_string()),
             prio: Some(3),
@@ -68,7 +68,7 @@ async fn main() {
         env_handle: shared_env.clone(),
         args_handle: LlamaCppConfigArgs {
             alias: "gpt-oss-120b-Q8_0".to_string(),
-            api_key: "apikey2".to_string(),
+            api_key: Some("apikey2".to_string()),
             model_path: "/model_data/legacy/huggingface/Q8_0/gpt-oss-120b-Q8_0-00001-of-00002.gguf"
                 .to_string(),
             mmproj_path: None,

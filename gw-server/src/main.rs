@@ -1,78 +1,165 @@
+use crate::infrastructure::adapter::{LlamaCppControllerAdapter, LocalLlamaCppClientAdapter};
+use crate::{
+    application::model::{Data, DataMeta, Llmodels, Model, ModelDetails},
+    domain::{
+        ports::{
+            ModelManagerServiceInPort, ModelsServiceInPort, OpenAiRequestForwardPServiceInPort,
+        },
+        service::{
+            DefaultModelsService, InferenceBackendModelManagerService,
+            OpenAiClientRequestForwardService,
+        },
+    },
+};
 use axum::routing::Router;
-use axum_reverse_proxy::ReverseProxy;
 use axum_server::tls_rustls::RustlsConfig;
-use inference_backends::LlamaCppBackend;
-use std::{net::SocketAddr, path::PathBuf, sync::Arc};
+use rand::Rng;
+use std::{borrow::Cow, net::SocketAddr, path::PathBuf, sync::Arc};
 
-mod manager;
+mod application;
+mod domain;
+mod infrastructure;
+
 mod model;
-use manager::router as manager_router;
+pub(crate) use model::{ApplicationConfig, SecurityConfig};
 
-mod middleware;
-pub(crate) use middleware::{auth_middleware, request_logger};
+const RANDOM_APIKEY_LEN: u8 = 25;
+const LLAMACPP_PORT: u16 = 11440;
+const LLAMACPP_COMMAND: &str = "./build/bin/llama-server";
+const LLAMACPP_EXECDIR: &str = "/data0/inference/llama.cpp/";
 
-use crate::model::AppState;
+struct MyAppState {
+    apikey: String,
+    openai_service: Arc<dyn OpenAiRequestForwardPServiceInPort>,
+    modelmanager_service: Arc<dyn ModelManagerServiceInPort>,
+    models_service: Arc<dyn ModelsServiceInPort>,
+}
 
-async fn create_app(
-    provided_api_key: Option<String>,
-    log_request_info: bool,
-    llama_cpp_chatui: bool,
-) -> Router {
-    let llamacpp_backend = LlamaCppBackend {
-        host: "0.0.0.0".to_owned(),
-        port: 11440,
-        llama_cpp_command: "./build/bin/llama-server".to_owned(),
-        llama_cpp_execdir: "/data0/inference/llama.cpp/".to_owned(),
+impl ApplicationConfig for MyAppState {
+    fn openapi_service(&self) -> Arc<dyn OpenAiRequestForwardPServiceInPort> {
+        self.openai_service.clone()
+    }
+
+    fn modelmanager_service(&self) -> Arc<dyn ModelManagerServiceInPort> {
+        self.modelmanager_service.clone()
+    }
+
+    fn models_service(&self) -> Arc<dyn ModelsServiceInPort> {
+        self.models_service.clone()
+    }
+}
+
+impl SecurityConfig for MyAppState {
+    fn get_apikey(&self) -> std::borrow::Cow<'_, str> {
+        Cow::Borrowed(&self.apikey)
+    }
+}
+
+async fn create_app(provided_apikey: Option<String>, log_request_info: bool) -> Router {
+    let apikey = provided_apikey.unwrap_or_else(|| {
+        const CHARSET: &[u8] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+
+        let mut rng = rand::rng();
+
+        let apikey = (0..RANDOM_APIKEY_LEN)
+            .map(|_| {
+                let idx = rng.random_range(0..CHARSET.len());
+                CHARSET[idx] as char
+            })
+            .collect();
+
+        println!("your current api-key is '{apikey}'");
+
+        apikey
+    });
+
+    // init adapters
+    let llamacpp_client = LocalLlamaCppClientAdapter::create_adapter(LLAMACPP_PORT);
+    let llamacpp_backend_controller = LlamaCppControllerAdapter::create_adapter(
+        LLAMACPP_PORT,
+        LLAMACPP_COMMAND,
+        LLAMACPP_EXECDIR,
+    )
+    .await;
+
+    // init services
+    let openai_service = OpenAiClientRequestForwardService::create_service(llamacpp_client);
+    let models_service = DefaultModelsService::create_service(
+        llamacpp_backend_controller.clone(),
+        create_llmodels_list(),
+    );
+    let modelmanager_service =
+        InferenceBackendModelManagerService::create_service(llamacpp_backend_controller);
+
+    // build configuration(s)
+    let config = Arc::new(MyAppState {
+        apikey,
+        openai_service,
+        modelmanager_service,
+        models_service,
+    });
+    let security_config = config.clone();
+
+    let router = Router::new()
+        .merge(application::open_ai_router(
+            config.clone(),
+            security_config.clone(),
+        ))
+        .merge(application::model_manager_router(config, security_config));
+
+    if log_request_info {
+        router.layer(axum::middleware::from_fn(
+            application::middleware::request_logger,
+        ))
+    } else {
+        router
+    }
+}
+
+fn create_llmodels_list() -> Llmodels {
+    let nemotron = String::from("nemotron-3-nano-30b-a3b");
+
+    let m = Model {
+        name: nemotron.clone(),
+        model: nemotron.clone(),
+        modified_at: String::new(),
+        size: String::new(),
+        digest: String::new(),
+        description: String::new(),
+        tags: Vec::new(),
+        capabilities: vec!["Completion".into()],
+        parameters: String::new(),
+        details: ModelDetails {
+            parent_model: String::new(),
+            format: "gguf".into(),
+            family: String::new(),
+            families: Vec::new(),
+            parameter_size: String::new(),
+            quantization_level: String::new(),
+        },
+    };
+    let d = Data {
+        id: nemotron,
+        created: 1768231590,
+        meta: DataMeta {
+            vocab_type: 2,
+            n_vocab: 131072,
+            n_ctx_train: 1048576,
+            n_embd: 2688,
+            n_params: 31577940288,
+            size: 40440063744,
+        },
     };
 
-    let mut builder = AppState::builder(llamacpp_backend);
-    if let Some(provided_api_key) = provided_api_key {
-        builder.with_api_key(provided_api_key);
-    }
-    let app_state = Arc::new(builder.build().await);
-
-    println!("your current api-key is '{}'", app_state.api_key());
-
-    fn llamacpp_backend_reverse_proxy(
-        path: &'static str,
-        target: &'static str,
-        log_request_info: bool,
-    ) -> Router {
-        let mut llamacpp_backend_reverse_proxy: Router = ReverseProxy::new(path, target).into();
-        if log_request_info {
-            llamacpp_backend_reverse_proxy =
-                llamacpp_backend_reverse_proxy.layer(axum::middleware::from_fn(request_logger));
-        }
-        llamacpp_backend_reverse_proxy
-    }
-
-    let mut router = Router::new()
-        // Manager (explicitly proteced)
-        .merge(manager_router(app_state))
-        // LLAMA.CPP (implicitly protected via llama.cpp)
-        .merge(llamacpp_backend_reverse_proxy(
-            "/api/v1/",
-            "http://localhost:11440/v1/",
-            log_request_info,
-        ));
-
-    if llama_cpp_chatui {
-        // LLAMA.CPP WITH UI (implicitly protected via llama.cpp) - replicated at context-root, necessary for frontend
-        // !! THIS SHOULD BE IN THE LAST POSITION !!
-        router = router.merge(llamacpp_backend_reverse_proxy(
-            "/",
-            "http://localhost:11440",
-            log_request_info,
-        ))
-    }
-
-    router
+    let mut llmodels = Llmodels::new();
+    llmodels.add(m, d);
+    llmodels
 }
 
 #[tokio::main]
 async fn main() {
     let mut args = std::env::args();
-    let (provided_port, provided_api_key, provided_log_request_info, provided_llama_cpp_chatui) = {
+    let (provided_port, provided_api_key, provided_log_request_info, _provided_llama_cpp_chatui) = {
         let mut port = None;
         let mut api_key = None;
         let mut log_request_info = false;
@@ -109,12 +196,7 @@ async fn main() {
         (port, api_key, log_request_info, llama_cpp_chatui)
     };
 
-    let app = create_app(
-        provided_api_key,
-        provided_log_request_info,
-        provided_llama_cpp_chatui,
-    )
-    .await;
+    let app = create_app(provided_api_key, provided_log_request_info).await;
 
     // configure certificate and private key used by https
     let config = RustlsConfig::from_pem_file(
