@@ -18,8 +18,7 @@ pub fn create_router(
     config: Arc<dyn ApplicationConfig>,
     security_config: Arc<dyn SecurityConfig>,
 ) -> Router {
-    let open_routes = Router::new()
-    .route("/api/v1/models", get(get_models));
+    let open_routes = Router::new().route("/api/v1/models", get(get_models));
 
     let secured_routes = Router::new()
         .route("/api/v1/chat/completions", post(post_completions))
@@ -52,8 +51,8 @@ async fn post_completions(
 ) -> Result<Response, StatusCode> {
     let (request, provided_requested_model) = extract_model_from_request_payload(request)
         .await
-        .map_err(|e| {
-            println!("error reading request-payload: {e}");
+        .map_err(|_| {
+            println!("error reading request-payload");
             StatusCode::BAD_REQUEST
         })?;
 
@@ -62,8 +61,8 @@ async fn post_completions(
             .models_service()
             .ensure_requested_model_is_served(&requested_model, Duration::from_mins(5))
             .await
-            .map_err(|e| {
-                eprintln!("error serving requested model: {e}");
+            .map_err(|_| {
+                eprintln!("error serving requested model");
                 StatusCode::INTERNAL_SERVER_ERROR
             })?;
     } else {
@@ -88,26 +87,31 @@ async fn fallback(
 
 async fn extract_model_from_request_payload(
     request: Request,
-) -> Result<(Request, Option<String>), String> {
+) -> Result<(Request, Option<String>), ()> {
     #[derive(Deserialize)]
     struct ModelContainer {
         model: String,
     }
 
     let (parts, body) = request.into_parts();
-    let body_data = body_to_bytes(body, usize::MAX)
-        .await
-        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)
-        .map_err(|e| format!("error serializing payload to Bytes: {e}"))?;
 
-    if let Ok(Json(model_container)) =
-        Json::<ModelContainer>::from_bytes(body_data.clone().trim_ascii())
-    {
-        Ok((
-            Request::from_parts(parts, Body::from(body_data)),
-            Some(model_container.model),
-        ))
-    } else {
-        Ok((Request::from_parts(parts, Body::from(body_data)), None))
+    match body_to_bytes(body, usize::MAX).await {
+        Ok(body_data) => {
+            if let Ok(Json(model_container)) =
+                Json::<ModelContainer>::from_bytes(body_data.clone().trim_ascii())
+            {
+                Ok((
+                    Request::from_parts(parts, Body::from(body_data)),
+                    Some(model_container.model),
+                ))
+            } else {
+                Ok((Request::from_parts(parts, Body::from(body_data)), None))
+            }
+        }
+
+        Err(e) => {
+            eprintln!("error serializing payload to Bytes {e}");
+            Err(())
+        }
     }
 }

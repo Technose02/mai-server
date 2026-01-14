@@ -32,7 +32,7 @@ pub trait ModelsServiceInPort: Send + Sync + 'static {
         &self,
         requested_model: &str,
         timeout: Duration,
-    ) -> Result<(), String>;
+    ) -> Result<(), ()>;
     async fn get_model_configuration_list(&self) -> Vec<ModelConfiguration>;
 }
 
@@ -60,5 +60,5 @@ pub trait LlamaCppControllerOutPort: Send + Sync + 'static {
 #[async_trait]
 pub trait ModelLoaderOutPort: Send + Sync + 'static {
     async fn get_model_configurations(&self) -> Vec<ModelConfiguration>;
-    async fn get_model_configuration(&self, alias: &str) -> Result<Arc<LlamaCppConfig>, String>;
+    async fn get_model_configuration(&self, alias: &str) -> Result<Arc<LlamaCppConfig>, ()>;
 }

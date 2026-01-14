@@ -1,9 +1,6 @@
-use crate::{
-    application::model::ContextSizeAwareAlias,
-    domain::{
-        model::ModelConfiguration,
-        ports::{LlamaCppControllerOutPort, ModelLoaderOutPort, ModelsServiceInPort},
-    },
+use crate::domain::{
+    model::ModelConfiguration,
+    ports::{LlamaCppControllerOutPort, ModelLoaderOutPort, ModelsServiceInPort},
 };
 use async_trait::async_trait;
 use std::{sync::Arc, time::Duration};
@@ -31,26 +28,17 @@ impl ModelsServiceInPort for DefaultModelsService {
         &self,
         requested_model: &str,
         timeout: Duration,
-    ) -> Result<(), String> {
+    ) -> Result<(), ()> {
         let start_time = std::time::Instant::now();
-
-        let requested_model_alias = if let Ok(context_size_aware_alias) =
-            ContextSizeAwareAlias::try_from(requested_model.to_owned())
-        {
-            context_size_aware_alias.model()
-        } else {
-            requested_model.to_owned()
-        };
 
         loop {
             if start_time.elapsed() >= timeout {
-                return Err(format!(
-                    "starting model '{requested_model}' ran into timeout"
-                ));
+                println!("starting model '{requested_model}' ran into timeout");
+                return Err(());
             }
             if let inference_backends::LlamaCppProcessState::Running(s) =
                 self.llamacpp_controller.get_llamacpp_state().await
-                && s.args_handle.alias == requested_model_alias
+                && s.args_handle.alias == requested_model
             {
                 return Ok(());
             }
@@ -69,10 +57,9 @@ impl ModelsServiceInPort for DefaultModelsService {
                     );
                     tokio::time::sleep(Duration::from_millis(500)).await
                 }
-                Err(e) => {
-                    return Err(format!(
-                        "could not retrieve a configuration for model '{requested_model}': {e}"
-                    ));
+                Err(()) => {
+                    eprintln!("could not retrieve a configuration for model '{requested_model}'");
+                    return Err(());
                 }
             }
         }

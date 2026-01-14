@@ -28,7 +28,7 @@ impl ModelLoaderOutPort for StaticModelLoader {
     async fn get_model_configurations(&self) -> Vec<DomainModelConfiguration> {
         self.static_model_configuration_list.clone()
     }
-    async fn get_model_configuration(&self, alias: &str) -> Result<Arc<LlamaCppConfig>, String> {
+    async fn get_model_configuration(&self, alias: &str) -> Result<Arc<LlamaCppConfig>, ()> {
         let (alias, context_size) = if let Ok(context_size_aware_alias) =
             ContextSizeAwareAlias::try_from(alias.to_owned())
         {
@@ -77,7 +77,8 @@ impl ModelLoaderOutPort for StaticModelLoader {
                 }),
             }))
         } else {
-            Err(format!("no model-configuration found for alias '{alias}'"))
+            eprintln!("no model-configuration found for alias '{alias}'");
+            Err(())
         }
     }
 }
