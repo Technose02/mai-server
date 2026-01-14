@@ -1,13 +1,16 @@
 use crate::{
     ApplicationConfig, SecurityConfig,
-    application::{middleware::check_auth, model::ModelList},
+    application::{
+        middleware::check_auth,
+        model::{ContextSizeAwareAlias, ModelList},
+    },
 };
 use axum::{
     Json,
     body::{Body, to_bytes as body_to_bytes},
     debug_handler,
     extract::{Path, Request, State},
-    http::StatusCode,
+    http::{ StatusCode},
     response::{IntoResponse, Response},
     routing::{Router, any, get, post},
 };
@@ -23,6 +26,7 @@ pub fn create_router(
     let secured_routes = Router::new()
         .route("/api/v1/chat/completions", post(post_completions))
         .route("/api/v1/{*path}", any(fallback))
+        .route("/api/v2/{*path}", any(|| async { StatusCode::NOT_FOUND }))
         .layer(axum::middleware::from_fn_with_state(
             security_config,
             check_auth,
@@ -56,22 +60,24 @@ async fn post_completions(
             StatusCode::BAD_REQUEST
         })?;
 
-    if let Some(requested_model) = provided_requested_model {
+    if let Some(requested_model_variant) = provided_requested_model {
         config
             .models_service()
-            .ensure_requested_model_is_served(&requested_model, Duration::from_mins(5))
+            .ensure_requested_model_is_served(&requested_model_variant, Duration::from_mins(5))
             .await
             .map_err(|_| {
                 eprintln!("error serving requested model");
                 StatusCode::INTERNAL_SERVER_ERROR
             })?;
+
+        Ok(config
+            .openapi_service()
+            .process_openai_request(request, "chat/completions")
+            .await?)
     } else {
-        println!("warning: no model found in request-payload");
+        println!("error: no model found in request-payload");
+        Err(StatusCode::BAD_REQUEST)
     }
-    config
-        .openapi_service()
-        .process_openai_request(request, "chat/completions")
-        .await
 }
 
 async fn fallback(
@@ -79,6 +85,7 @@ async fn fallback(
     Path(api_path): Path<String>,
     request: Request,
 ) -> Result<Response, StatusCode> {
+    println!("unexpected {}-request to {api_path}", request.method());
     service_state
         .openapi_service()
         .process_openai_request(request, &api_path)
@@ -97,12 +104,25 @@ async fn extract_model_from_request_payload(
 
     match body_to_bytes(body, usize::MAX).await {
         Ok(body_data) => {
+            let text_data = String::from_utf8(body_data.clone().trim_ascii().into())
+                .expect("expected body to be text-data");
+
             if let Ok(Json(model_container)) =
                 Json::<ModelContainer>::from_bytes(body_data.clone().trim_ascii())
             {
+                let (_, model_variant) = if let Ok(caa) =
+                    ContextSizeAwareAlias::try_from(model_container.model.clone())
+                {
+                    (caa.model(), caa.alias())
+                } else {
+                    (model_container.model.clone(), model_container.model)
+                };
+
+                let body_bytes = text_data.as_bytes().to_owned();
+
                 Ok((
-                    Request::from_parts(parts, Body::from(body_data)),
-                    Some(model_container.model),
+                    Request::from_parts(parts, body_bytes.into()),
+                    Some(model_variant),
                 ))
             } else {
                 Ok((Request::from_parts(parts, Body::from(body_data)), None))

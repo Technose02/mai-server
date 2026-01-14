@@ -155,13 +155,7 @@ struct Model {
 impl Model {
     fn simple(alias: impl Into<String>, capabilities: Vec<String>) -> Self {
         let name = alias.into();
-        let model =
-            if let Ok(context_size_aware_alias) = ContextSizeAwareAlias::try_from(name.clone()) {
-                context_size_aware_alias.model()
-            } else {
-                name.clone()
-            };
-
+        let model = name.clone();
         Self {
             name,
             model,

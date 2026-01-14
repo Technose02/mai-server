@@ -39,6 +39,7 @@ impl LlamaCppControllerOutPort for LlamaCppControllerAdapter {
         &self,
         llamacpp_config: &LlamaCppConfig,
     ) -> LlamaCppProcessState {
+        println!("starting llamacpp-process with configuration {llamacpp_config:#?}");
         self.llamacpp_controller
             .start(llamacpp_config.clone())
             .await;
