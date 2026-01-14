@@ -10,15 +10,17 @@ use std::{collections::HashMap, sync::Arc};
 pub struct StaticModelLoader {
     static_model_configuration_list: Vec<DomainModelConfiguration>,
     env_handle: Arc<HashMap<String, String>>,
+    api_key: Option<String>,
 }
 
 impl StaticModelLoader {
-    pub fn create_adapter() -> Arc<dyn ModelLoaderOutPort> {
+    pub fn create_adapter(api_key: Option<&String>) -> Arc<dyn ModelLoaderOutPort> {
         let mut env = HashMap::new();
         env.insert("GGML_CUDA_ENABLE_UNIFIED_MEMORY".into(), "1".into());
         Arc::new(Self {
             static_model_configuration_list: default_model_configuration_list(),
             env_handle: Arc::new(env),
+            api_key: api_key.map(String::to_owned),
         })
     }
 }
@@ -49,7 +51,7 @@ impl ModelLoaderOutPort for StaticModelLoader {
                 env_handle: self.env_handle.clone(),
                 args_handle: Arc::new(LlamaCppConfigArgs {
                     alias: model_configuration.alias.clone(),
-                    api_key: None,
+                    api_key: self.api_key.clone(),
                     model_path: model_configuration.model_path.clone(),
                     mmproj_path: model_configuration.mmproj_path.clone(),
                     prio: model_configuration.prio,

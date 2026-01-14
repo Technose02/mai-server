@@ -78,7 +78,7 @@ async fn create_app(provided_apikey: Option<String>, log_request_info: bool) -> 
         LLAMACPP_EXECDIR,
     )
     .await;
-    let model_loader = StaticModelLoader::create_adapter();
+    let model_loader = StaticModelLoader::create_adapter(Some(&apikey));
 
     // init services
     let openai_service = OpenAiClientRequestForwardService::create_service(llamacpp_client);
