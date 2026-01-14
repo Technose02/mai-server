@@ -65,7 +65,7 @@ async fn start_llama_cpp_process(
     let llamacpp_process_state: LlamaCppProcessState = combined_state
         .config
         .modelmanager_service()
-        .start_llamacpp_process(llamacpp_config)
+        .start_llamacpp_process(&llamacpp_config)
         .await
         .into();
     Ok(JsonBody::from(llamacpp_process_state))

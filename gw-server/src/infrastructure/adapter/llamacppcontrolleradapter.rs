@@ -37,9 +37,11 @@ impl LlamaCppControllerOutPort for LlamaCppControllerAdapter {
 
     async fn start_llamacpp_process(
         &self,
-        llamacpp_config: LlamaCppConfig,
+        llamacpp_config: &LlamaCppConfig,
     ) -> LlamaCppProcessState {
-        self.llamacpp_controller.start(llamacpp_config).await;
+        self.llamacpp_controller
+            .start(llamacpp_config.clone())
+            .await;
         self.llamacpp_controller.read_state().await
     }
 

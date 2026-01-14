@@ -1,8 +1,9 @@
-use crate::application::model::Llmodels;
 use async_trait::async_trait;
 use axum::{extract::Request, http::StatusCode, response::Response};
 use inference_backends::{LlamaCppConfig, LlamaCppProcessState};
 use std::{sync::Arc, time::Duration};
+
+use crate::domain::model::ModelConfiguration;
 
 /// IN-PORTS
 
@@ -19,8 +20,10 @@ pub trait OpenAiRequestForwardPServiceInPort: Send + Sync + 'static {
 pub trait ModelManagerServiceInPort: Send + Sync + 'static {
     async fn get_llamacpp_state(&self) -> LlamaCppProcessState;
     async fn stop_llamacpp_process(&self);
-    async fn start_llamacpp_process(&self, llamacpp_config: LlamaCppConfig)
-    -> LlamaCppProcessState;
+    async fn start_llamacpp_process(
+        &self,
+        llamacpp_config: &LlamaCppConfig,
+    ) -> LlamaCppProcessState;
 }
 
 #[async_trait]
@@ -30,7 +33,7 @@ pub trait ModelsServiceInPort: Send + Sync + 'static {
         requested_model: &str,
         timeout: Duration,
     ) -> Result<(), String>;
-    fn llmodels(&self) -> Arc<Llmodels>;
+    async fn get_model_configuration_list(&self) -> Vec<ModelConfiguration>;
 }
 
 /// OUT-PORTS
@@ -47,7 +50,15 @@ pub trait OpenAiClientOutPort: Send + Sync + 'static {
 #[async_trait]
 pub trait LlamaCppControllerOutPort: Send + Sync + 'static {
     async fn get_llamacpp_state(&self) -> LlamaCppProcessState;
-    async fn start_llamacpp_process(&self, llamacpp_config: LlamaCppConfig)
-    -> LlamaCppProcessState;
+    async fn start_llamacpp_process(
+        &self,
+        llamacpp_config: &LlamaCppConfig,
+    ) -> LlamaCppProcessState;
     async fn stop_llamacpp_process(&self);
+}
+
+#[async_trait]
+pub trait ModelLoaderOutPort: Send + Sync + 'static {
+    async fn get_model_configurations(&self) -> Vec<ModelConfiguration>;
+    async fn get_model_configuration(&self, alias: &str) -> Result<Arc<LlamaCppConfig>, String>;
 }

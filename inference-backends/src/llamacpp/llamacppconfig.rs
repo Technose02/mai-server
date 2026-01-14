@@ -62,6 +62,30 @@ impl PartialEq for ContextSize {
     }
 }
 
+impl PartialOrd for ContextSize {
+    fn ge(&self, other: &Self) -> bool {
+        Into::<u64>::into(self) >= Into::<u64>::into(other)
+    }
+    fn gt(&self, other: &Self) -> bool {
+        Into::<u64>::into(self) > Into::<u64>::into(other)
+    }
+    fn le(&self, other: &Self) -> bool {
+        Into::<u64>::into(self) <= Into::<u64>::into(other)
+    }
+    fn lt(&self, other: &Self) -> bool {
+        Into::<u64>::into(self) < Into::<u64>::into(other)
+    }
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        if self.gt(other) {
+            Some(std::cmp::Ordering::Greater)
+        } else if self.lt(other) {
+            Some(std::cmp::Ordering::Less)
+        } else {
+            Some(std::cmp::Ordering::Equal)
+        }
+    }
+}
+
 #[derive(Debug, Clone)]
 pub enum OnOffValue {
     On,

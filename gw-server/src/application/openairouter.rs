@@ -1,6 +1,6 @@
 use crate::{
     ApplicationConfig, SecurityConfig,
-    application::{middleware::check_auth, model::Llmodels},
+    application::{middleware::check_auth, model::ModelList},
 };
 use axum::{
     Json,
@@ -18,7 +18,8 @@ pub fn create_router(
     config: Arc<dyn ApplicationConfig>,
     security_config: Arc<dyn SecurityConfig>,
 ) -> Router {
-    let open_routes = Router::new().route("/api/v1/models", get(get_models));
+    let open_routes = Router::new()
+    .route("/api/v1/models", get(get_models));
 
     let secured_routes = Router::new()
         .route("/api/v1/chat/completions", post(post_completions))
@@ -37,12 +38,11 @@ pub fn create_router(
 async fn get_models(
     State(config): State<Arc<dyn ApplicationConfig>>,
 ) -> Result<Response, StatusCode> {
-    println!("todo: return generated models response");
-    Ok((
-        StatusCode::OK,
-        Json::<&Llmodels>::from(config.models_service().llmodels().as_ref()),
-    )
-        .into_response())
+    let mut model_list = ModelList::new();
+    for model_configuration in config.models_service().get_model_configuration_list().await {
+        model_list.extend_from_domain_model_configuration(&model_configuration);
+    }
+    Ok((StatusCode::OK, Json::<ModelList>::from(model_list)).into_response())
 }
 
 #[debug_handler]
@@ -52,7 +52,10 @@ async fn post_completions(
 ) -> Result<Response, StatusCode> {
     let (request, provided_requested_model) = extract_model_from_request_payload(request)
         .await
-        .map_err(|_| StatusCode::BAD_REQUEST)?;
+        .map_err(|e| {
+            println!("error reading request-payload: {e}");
+            StatusCode::BAD_REQUEST
+        })?;
 
     if let Some(requested_model) = provided_requested_model {
         config
@@ -63,13 +66,13 @@ async fn post_completions(
                 eprintln!("error serving requested model: {e}");
                 StatusCode::INTERNAL_SERVER_ERROR
             })?;
-        config
-            .openapi_service()
-            .process_openai_request(request, "chat/completions")
-            .await
     } else {
-        Err(StatusCode::BAD_REQUEST)
+        println!("warning: no model found in request-payload");
     }
+    config
+        .openapi_service()
+        .process_openai_request(request, "chat/completions")
+        .await
 }
 
 async fn fallback(

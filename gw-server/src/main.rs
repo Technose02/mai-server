@@ -1,15 +1,12 @@
-use crate::infrastructure::adapter::{LlamaCppControllerAdapter, LocalLlamaCppClientAdapter};
-use crate::{
-    application::model::{Data, DataMeta, Llmodels, Model, ModelDetails},
-    domain::{
-        ports::{
-            ModelManagerServiceInPort, ModelsServiceInPort, OpenAiRequestForwardPServiceInPort,
-        },
-        service::{
-            DefaultModelsService, InferenceBackendModelManagerService,
-            OpenAiClientRequestForwardService,
-        },
+use crate::domain::{
+    ports::{ModelManagerServiceInPort, ModelsServiceInPort, OpenAiRequestForwardPServiceInPort},
+    service::{
+        DefaultModelsService, InferenceBackendModelManagerService,
+        OpenAiClientRequestForwardService,
     },
+};
+use crate::infrastructure::adapter::{
+    LlamaCppControllerAdapter, LocalLlamaCppClientAdapter, StaticModelLoader,
 };
 use axum::routing::Router;
 use axum_server::tls_rustls::RustlsConfig;
@@ -81,13 +78,12 @@ async fn create_app(provided_apikey: Option<String>, log_request_info: bool) -> 
         LLAMACPP_EXECDIR,
     )
     .await;
+    let model_loader = StaticModelLoader::create_adapter();
 
     // init services
     let openai_service = OpenAiClientRequestForwardService::create_service(llamacpp_client);
-    let models_service = DefaultModelsService::create_service(
-        llamacpp_backend_controller.clone(),
-        create_llmodels_list(),
-    );
+    let models_service =
+        DefaultModelsService::create_service(llamacpp_backend_controller.clone(), model_loader);
     let modelmanager_service =
         InferenceBackendModelManagerService::create_service(llamacpp_backend_controller);
 
@@ -114,46 +110,6 @@ async fn create_app(provided_apikey: Option<String>, log_request_info: bool) -> 
     } else {
         router
     }
-}
-
-fn create_llmodels_list() -> Llmodels {
-    let nemotron = String::from("nemotron-3-nano-30b-a3b");
-
-    let m = Model {
-        name: nemotron.clone(),
-        model: nemotron.clone(),
-        modified_at: String::new(),
-        size: String::new(),
-        digest: String::new(),
-        description: String::new(),
-        tags: Vec::new(),
-        capabilities: vec!["Completion".into()],
-        parameters: String::new(),
-        details: ModelDetails {
-            parent_model: String::new(),
-            format: "gguf".into(),
-            family: String::new(),
-            families: Vec::new(),
-            parameter_size: String::new(),
-            quantization_level: String::new(),
-        },
-    };
-    let d = Data {
-        id: nemotron,
-        created: 1768231590,
-        meta: DataMeta {
-            vocab_type: 2,
-            n_vocab: 131072,
-            n_ctx_train: 1048576,
-            n_embd: 2688,
-            n_params: 31577940288,
-            size: 40440063744,
-        },
-    };
-
-    let mut llmodels = Llmodels::new();
-    llmodels.add(m, d);
-    llmodels
 }
 
 #[tokio::main]

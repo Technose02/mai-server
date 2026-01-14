@@ -15,3 +15,4 @@ tokio = { workspace = true }
 serde = { workspace = true }
 hyper-util = { version = "0.1.19", features = ["client", "client-legacy", "tokio"] }
 async-trait = "0.1.89"
+serde_json = "1.0.149"
