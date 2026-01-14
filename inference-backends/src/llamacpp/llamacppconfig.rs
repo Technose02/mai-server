@@ -30,16 +30,21 @@ pub enum ContextSize {
     T262144,
 }
 
+impl AsRef<u64> for ContextSize {
+    fn as_ref(&self) -> &u64 {
+        match self {
+            ContextSize::T8192 => &8192,
+            ContextSize::T16384 => &16384,
+            ContextSize::T32768 => &32768,
+            ContextSize::T65536 => &65536,
+            ContextSize::T131072 => &131072,
+            ContextSize::T262144 => &262144,
+        }
+    }
+}
 impl From<&ContextSize> for u64 {
     fn from(value: &ContextSize) -> Self {
-        match value {
-            ContextSize::T8192 => 8192,
-            ContextSize::T16384 => 16384,
-            ContextSize::T32768 => 32768,
-            ContextSize::T65536 => 65536,
-            ContextSize::T131072 => 131072,
-            ContextSize::T262144 => 262144,
-        }
+        value.as_ref().to_owned()
     }
 }
 

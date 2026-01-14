@@ -1,10 +1,9 @@
 use crate::{
-    application::model::ContextSizeAwareAlias,
     domain::{model::ModelConfiguration as DomainModelConfiguration, ports::ModelLoaderOutPort},
     infrastructure::model::ModelConfiguration,
 };
 use async_trait::async_trait;
-use inference_backends::{LlamaCppConfig, LlamaCppConfigArgs};
+use inference_backends::{ContextSize, LlamaCppConfig, LlamaCppConfigArgs};
 use std::{collections::HashMap, sync::Arc};
 
 pub struct StaticModelLoader {
@@ -30,27 +29,20 @@ impl ModelLoaderOutPort for StaticModelLoader {
     async fn get_model_configurations(&self) -> Vec<DomainModelConfiguration> {
         self.static_model_configuration_list.clone()
     }
-    async fn get_model_configuration(&self, alias: &str) -> Result<Arc<LlamaCppConfig>, ()> {
-        let (alias, context_size) = if let Ok(context_size_aware_alias) =
-            ContextSizeAwareAlias::try_from(alias.to_owned())
-        {
-            (
-                context_size_aware_alias.model(),
-                Some(context_size_aware_alias.context_size()),
-            )
-        } else {
-            (alias.to_owned(), None)
-        };
-
+    async fn get_model_configuration(
+        &self,
+        model: &str,
+        optional_context_size: Option<ContextSize>,
+    ) -> Result<Arc<LlamaCppConfig>, ()> {
         if let Some(model_configuration) = self
             .static_model_configuration_list
             .iter()
-            .find(|&config| config.alias == alias)
+            .find(|&config| config.alias == model)
         {
             Ok(Arc::new(LlamaCppConfig {
                 env_handle: self.env_handle.clone(),
                 args_handle: Arc::new(LlamaCppConfigArgs {
-                    alias: model_configuration.alias.clone(),
+                    alias: model.to_owned(),
                     api_key: self.api_key.clone(),
                     model_path: model_configuration.model_path.clone(),
                     mmproj_path: model_configuration.mmproj_path.clone(),
@@ -58,7 +50,7 @@ impl ModelLoaderOutPort for StaticModelLoader {
                     threads: model_configuration.threads,
                     n_gpu_layers: model_configuration.n_gpu_layers,
                     jinja: model_configuration.jinja,
-                    ctx_size: context_size,
+                    ctx_size: optional_context_size,
                     no_mmap: model_configuration.no_mmap,
                     flash_attn: model_configuration.flash_attn.clone(),
                     fit: model_configuration.fit.clone(),
@@ -79,7 +71,7 @@ impl ModelLoaderOutPort for StaticModelLoader {
                 }),
             }))
         } else {
-            eprintln!("no model-configuration found for alias '{alias}'");
+            eprintln!("no model-configuration found for alias '{model}'");
             Err(())
         }
     }

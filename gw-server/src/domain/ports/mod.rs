@@ -1,6 +1,6 @@
 use async_trait::async_trait;
 use axum::{extract::Request, http::StatusCode, response::Response};
-use inference_backends::{LlamaCppConfig, LlamaCppProcessState};
+use inference_backends::{ContextSize, LlamaCppConfig, LlamaCppProcessState};
 use std::{sync::Arc, time::Duration};
 
 use crate::domain::model::ModelConfiguration;
@@ -30,7 +30,7 @@ pub trait ModelManagerServiceInPort: Send + Sync + 'static {
 pub trait ModelsServiceInPort: Send + Sync + 'static {
     async fn ensure_requested_model_is_served(
         &self,
-        requested_model: &str,
+        requested_model_variant: &str,
         timeout: Duration,
     ) -> Result<(), ()>;
     async fn get_model_configuration_list(&self) -> Vec<ModelConfiguration>;
@@ -60,5 +60,9 @@ pub trait LlamaCppControllerOutPort: Send + Sync + 'static {
 #[async_trait]
 pub trait ModelLoaderOutPort: Send + Sync + 'static {
     async fn get_model_configurations(&self) -> Vec<ModelConfiguration>;
-    async fn get_model_configuration(&self, alias: &str) -> Result<Arc<LlamaCppConfig>, ()>;
+    async fn get_model_configuration(
+        &self,
+        alias: &str,
+        optional_context_size: Option<ContextSize>,
+    ) -> Result<Arc<LlamaCppConfig>, ()>;
 }
