@@ -101,12 +101,13 @@ fn default_model_configuration_list() -> Vec<DomainModelConfiguration> {
     "flash-attn" : "on",
     "vocab-type" : 2,
     "n-vocab": 131072,
-    "n-ctx-train" : 1048576,
-    "n-embd" : 2688,
-    "n-params" : 31577940288,
-    "size" : 40440063744,
+    "n-ctx-train" : 393216,
+    "n-embd" : 5120,
+    "n-params" : 23572403200,
+    "size" : 28983971840,
     "capabilities": [
-        "completion"
+        "completion",
+        "multimodal"
     ]
 },
 {
@@ -126,14 +127,15 @@ fn default_model_configuration_list() -> Vec<DomainModelConfiguration> {
     "min-p": 0.01,
     "top-k": 64,
     "top-p": 0.95,
-    "vocab-type" : 2,
-    "n-vocab": 131072,
+    "vocab-type" : 1,
+    "n-vocab": 262208,
     "n-ctx-train" : 1048576,
-    "n-embd" : 2688,
-    "n-params" : 31577940288,
-    "size" : 40440063744,
+    "n-embd" : 3840,
+    "n-params" : 11766034176,
+    "size" : 12503660544,
     "capabilities": [
-        "completion"
+        "completion",
+        "multimodal"
     ]
 },
 {
@@ -153,14 +155,15 @@ fn default_model_configuration_list() -> Vec<DomainModelConfiguration> {
     "min-p": 0.01,
     "top-k": 64,
     "top-p": 0.95,
-    "vocab-type" : 2,
-    "n-vocab": 131072,
+    "vocab-type" : 1,
+    "n-vocab": 262208,
     "n-ctx-train" : 1048576,
-    "n-embd" : 2688,
-    "n-params" : 31577940288,
-    "size" : 40440063744,
+    "n-embd" : 5376,
+    "n-params" : 27009346304,
+    "size" : 28701409280,
     "capabilities": [
-        "completion"
+        "completion",
+        "multimodal"
     ]
 },
 {
@@ -176,14 +179,14 @@ fn default_model_configuration_list() -> Vec<DomainModelConfiguration> {
     "repeat-penalty": 1.1,
     "prio": 3,
     "vocab-type" : 2,
-    "n-vocab": 131072,
-    "n-ctx-train" : 1048576,
-    "n-embd" : 2688,
-    "n-params" : 31577940288,
-    "size" : 40440063744,
+    "n-vocab": 151552,
+    "n-ctx-train" : 131072,
+    "n-embd" : 4096,
+    "n-params" : 9400279040,
+    "size" : 18802245632,
     "capabilities": [
         "completion",
-        "vision"
+        "multimodal"
     ]
 },
 {
@@ -202,11 +205,11 @@ fn default_model_configuration_list() -> Vec<DomainModelConfiguration> {
     "no-context-shift" : true,
     "no-cont-batching" : true,
     "vocab-type" : 2,
-    "n-vocab": 131072,
-    "n-ctx-train" : 1048576,
-    "n-embd" : 2688,
-    "n-params" : 31577940288,
-    "size" : 40440063744,
+    "n-vocab": 201088,
+    "n-ctx-train" : 131072,
+    "n-embd" : 2880,
+    "n-params" : 116829156672,
+    "size" : 63374323968,
     "capabilities": [
         "completion"
     ]
@@ -224,11 +227,11 @@ fn default_model_configuration_list() -> Vec<DomainModelConfiguration> {
     "top-k": 0,
     "top-p": 1.0,
     "vocab-type" : 2,
-    "n-vocab": 131072,
+    "n-vocab": 100352,
     "n-ctx-train" : 1048576,
-    "n-embd" : 2688,
-    "n-params" : 31577940288,
-    "size" : 40440063744,
+    "n-embd" : 4096,
+    "n-params" : 32207337984,
+    "size" : 34261297152,
     "capabilities": [
         "completion"
     ]
@@ -266,11 +269,11 @@ fn default_model_configuration_list() -> Vec<DomainModelConfiguration> {
     "top-p": 0.95,
     "min-p": 0.00,
     "vocab-type" : 2,
-    "n-vocab": 131072,
-    "n-ctx-train" : 1048576,
-    "n-embd" : 2688,
-    "n-params" : 31577940288,
-    "size" : 40440063744,
+    "n-vocab": 100352,
+    "n-ctx-train" : 32768,
+    "n-embd" : 5120,
+    "n-params" : 14659507200,
+    "size" : 15576944640,
     "capabilities": [
         "completion"
     ]
@@ -288,14 +291,14 @@ fn default_model_configuration_list() -> Vec<DomainModelConfiguration> {
     "max-ctx-size" : 131072,
     "presence-penalty": 1.5,
     "vocab-type" : 2,
-    "n-vocab": 131072,
-    "n-ctx-train" : 1048576,
-    "n-embd" : 2688,
-    "n-params" : 31577940288,
-    "size" : 40440063744,
+    "n-vocab": 151936,
+    "n-ctx-train" : 262144,
+    "n-embd" : 2048,
+    "n-params" : 30532122624,
+    "size" : 61089832960,
     "capabilities": [
         "completion",
-        "vision"
+        "multimodal"
     ]
 },
 {
@@ -311,14 +314,14 @@ fn default_model_configuration_list() -> Vec<DomainModelConfiguration> {
     "max-ctx-size" : 131072,
     "presence-penalty": 0.0,
     "vocab-type" : 2,
-    "n-vocab": 131072,
-    "n-ctx-train" : 1048576,
-    "n-embd" : 2688,
-    "n-params" : 31577940288,
-    "size" : 40440063744,
+    "n-vocab": 151936,
+    "n-ctx-train" : 262144,
+    "n-embd" : 2048,
+    "n-params" : 30532122624,
+    "size" : 61089832960,
     "capabilities": [
         "completion",
-        "vision"
+        "multimodal"
     ]
 }]
 "#).unwrap();
