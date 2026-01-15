@@ -1,20 +1,15 @@
 use crate::{
     ApplicationConfig, SecurityConfig,
-    application::{
-        middleware::check_auth,
-        model::{ContextSizeAwareAlias, ModelList},
-    },
+    application::{middleware::check_auth, model::ModelList},
 };
 use axum::{
-    Json,
-    body::{Body, to_bytes as body_to_bytes},
-    debug_handler,
+    Json, debug_handler,
     extract::{Path, Request, State},
-    http::{ StatusCode},
+    http::StatusCode,
     response::{IntoResponse, Response},
     routing::{Router, any, get, post},
 };
-use serde::Deserialize;
+use openai_api_rust::chat::ChatBody as ChatCompletionsRequest;
 use std::{sync::Arc, time::Duration};
 
 pub fn create_router(
@@ -51,33 +46,21 @@ async fn get_models(
 #[debug_handler]
 async fn post_completions(
     State(config): State<Arc<dyn ApplicationConfig>>,
-    request: Request,
+    Json(chat_completions_request): Json<ChatCompletionsRequest>, //request: Request,
 ) -> Result<Response, StatusCode> {
-    let (request, provided_requested_model) = extract_model_from_request_payload(request)
+    config
+        .models_service()
+        .ensure_requested_model_is_served(&chat_completions_request.model, Duration::from_mins(3))
         .await
         .map_err(|_| {
-            println!("error reading request-payload");
-            StatusCode::BAD_REQUEST
+            eprintln!("error serving requested model");
+            StatusCode::INTERNAL_SERVER_ERROR
         })?;
 
-    if let Some(requested_model_variant) = provided_requested_model {
-        config
-            .models_service()
-            .ensure_requested_model_is_served(&requested_model_variant, Duration::from_mins(5))
-            .await
-            .map_err(|_| {
-                eprintln!("error serving requested model");
-                StatusCode::INTERNAL_SERVER_ERROR
-            })?;
-
-        Ok(config
-            .openapi_service()
-            .process_openai_request(request, "chat/completions")
-            .await?)
-    } else {
-        println!("error: no model found in request-payload");
-        Err(StatusCode::BAD_REQUEST)
-    }
+    config
+        .openapi_service()
+        .process_chat_completions_request(chat_completions_request)
+        .await
 }
 
 async fn fallback(
@@ -88,50 +71,6 @@ async fn fallback(
     println!("unexpected {}-request to {api_path}", request.method());
     service_state
         .openapi_service()
-        .process_openai_request(request, &api_path)
+        .forward_openai_request(request)
         .await
-}
-
-async fn extract_model_from_request_payload(
-    request: Request,
-) -> Result<(Request, Option<String>), ()> {
-    #[derive(Deserialize)]
-    struct ModelContainer {
-        model: String,
-    }
-
-    let (parts, body) = request.into_parts();
-
-    match body_to_bytes(body, usize::MAX).await {
-        Ok(body_data) => {
-            let text_data = String::from_utf8(body_data.clone().trim_ascii().into())
-                .expect("expected body to be text-data");
-
-            if let Ok(Json(model_container)) =
-                Json::<ModelContainer>::from_bytes(body_data.clone().trim_ascii())
-            {
-                let (_, model_variant) = if let Ok(caa) =
-                    ContextSizeAwareAlias::try_from(model_container.model.clone())
-                {
-                    (caa.model(), caa.alias())
-                } else {
-                    (model_container.model.clone(), model_container.model)
-                };
-
-                let body_bytes = text_data.as_bytes().to_owned();
-
-                Ok((
-                    Request::from_parts(parts, body_bytes.into()),
-                    Some(model_variant),
-                ))
-            } else {
-                Ok((Request::from_parts(parts, Body::from(body_data)), None))
-            }
-        }
-
-        Err(e) => {
-            eprintln!("error serializing payload to Bytes {e}");
-            Err(())
-        }
-    }
 }

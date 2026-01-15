@@ -4,12 +4,6 @@ use serde::Serialize;
 use std::time::{SystemTime, UNIX_EPOCH};
 
 const OWNER: &str = "Mai-Server";
-const CTX_SIZE_HINT_T262144: &str = "max";
-const CTX_SIZE_HINT_T131072: &str = "large";
-const CTX_SIZE_HINT_T65536: &str = "moderate";
-const CTX_SIZE_HINT_T32768: &str = "small";
-const CTX_SIZE_HINT_T16384: &str = "tiny";
-const CTX_SIZE_HINT_T8192: &str = "min";
 
 #[derive(Debug, Serialize)]
 pub struct ModelList {
@@ -54,18 +48,14 @@ impl ModelList {
                 break;
             }
 
-            self.add_domain_model_configuration(ctx_size, domain_model_configuration);
+            self.add_domain_model_configuration(domain_model_configuration);
         }
     }
 
     fn add_domain_model_configuration(
         &mut self,
-        ctx_size: ContextSize,
         domain_model_configuration: &DomainModelConfiguration,
     ) {
-        let context_aware_alias =
-            ContextSizeAwareAlias::from((domain_model_configuration.alias.clone(), ctx_size));
-
         let data_meta = DataMeta {
             vocab_type: domain_model_configuration.vocab_type,
             n_vocab: domain_model_configuration.n_vocab,
@@ -76,64 +66,10 @@ impl ModelList {
         };
 
         self.add_simple(
-            context_aware_alias.alias(),
+            domain_model_configuration.alias.clone(),
             domain_model_configuration.capabilities.clone(),
             data_meta,
         );
-    }
-}
-
-pub struct ContextSizeAwareAlias(String, ContextSize);
-
-impl ContextSizeAwareAlias {
-    pub fn model(&self) -> String {
-        self.0.clone()
-    }
-    pub fn alias(&self) -> String {
-        match self.context_size() {
-            ContextSize::T262144 => format!("{}-{}", self.0, CTX_SIZE_HINT_T262144),
-            ContextSize::T131072 => format!("{}-{}", self.0, CTX_SIZE_HINT_T131072),
-            ContextSize::T65536 => format!("{}-{}", self.0, CTX_SIZE_HINT_T65536),
-            ContextSize::T32768 => format!("{}-{}", self.0, CTX_SIZE_HINT_T32768),
-            ContextSize::T16384 => format!("{}-{}", self.0, CTX_SIZE_HINT_T16384),
-            ContextSize::T8192 => format!("{}-{}", self.0, CTX_SIZE_HINT_T8192),
-        }
-    }
-    pub fn context_size(&self) -> ContextSize {
-        self.1
-    }
-}
-
-impl From<(String, ContextSize)> for ContextSizeAwareAlias {
-    fn from(value: (String, ContextSize)) -> Self {
-        Self(value.0, value.1)
-    }
-}
-
-impl TryFrom<String> for ContextSizeAwareAlias {
-    type Error = String;
-
-    fn try_from(value: String) -> Result<Self, Self::Error> {
-        if let Some((alias, context_size_hint)) = value.rsplit_once("-") {
-            let context_size = match context_size_hint {
-                CTX_SIZE_HINT_T262144 => ContextSize::T262144,
-                CTX_SIZE_HINT_T131072 => ContextSize::T131072,
-                CTX_SIZE_HINT_T65536 => ContextSize::T65536,
-                CTX_SIZE_HINT_T32768 => ContextSize::T32768,
-                CTX_SIZE_HINT_T16384 => ContextSize::T16384,
-                CTX_SIZE_HINT_T8192 => ContextSize::T8192,
-                _ => {
-                    return Err(format!(
-                        "value '{value}' contains invalid content-size-hint '{context_size_hint}'"
-                    ));
-                }
-            };
-            Ok(ContextSizeAwareAlias(alias.into(), context_size))
-        } else {
-            Err(format!(
-                "value '{value}' does not contain context-size-hint"
-            ))
-        }
     }
 }
 

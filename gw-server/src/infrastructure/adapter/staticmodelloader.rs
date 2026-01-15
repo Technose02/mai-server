@@ -1,4 +1,5 @@
 use crate::{
+    SecurityConfig,
     domain::{model::ModelConfiguration as DomainModelConfiguration, ports::ModelLoaderOutPort},
     infrastructure::model::ModelConfiguration,
 };
@@ -9,17 +10,17 @@ use std::{collections::HashMap, sync::Arc};
 pub struct StaticModelLoader {
     static_model_configuration_list: Vec<DomainModelConfiguration>,
     env_handle: Arc<HashMap<String, String>>,
-    api_key: Option<String>,
+    security_config: Arc<dyn SecurityConfig>,
 }
 
 impl StaticModelLoader {
-    pub fn create_adapter(api_key: Option<&String>) -> Arc<dyn ModelLoaderOutPort> {
+    pub fn create_adapter(security_config: Arc<dyn SecurityConfig>) -> Arc<dyn ModelLoaderOutPort> {
         let mut env = HashMap::new();
         env.insert("GGML_CUDA_ENABLE_UNIFIED_MEMORY".into(), "1".into());
         Arc::new(Self {
             static_model_configuration_list: default_model_configuration_list(),
             env_handle: Arc::new(env),
-            api_key: api_key.map(String::to_owned),
+            security_config,
         })
     }
 }
@@ -29,21 +30,24 @@ impl ModelLoaderOutPort for StaticModelLoader {
     async fn get_model_configurations(&self) -> Vec<DomainModelConfiguration> {
         self.static_model_configuration_list.clone()
     }
-    async fn get_model_configuration(
-        &self,
-        model: &str,
-        optional_context_size: Option<ContextSize>,
-    ) -> Result<Arc<LlamaCppConfig>, ()> {
+    async fn get_model_configuration(&self, alias: &str) -> Result<Arc<LlamaCppConfig>, ()> {
+        let alias = alias.to_owned();
+        let (model_key, optional_context_size) =
+            match ContextSizeAwareAlias::try_from(alias.clone()) {
+                Ok(caa) => (caa.model(), Some(caa.context_size())),
+                Err(_) => (alias.clone(), None),
+            };
+
         if let Some(model_configuration) = self
             .static_model_configuration_list
             .iter()
-            .find(|&config| config.alias == model)
+            .find(|&config| config.alias == model_key)
         {
             Ok(Arc::new(LlamaCppConfig {
                 env_handle: self.env_handle.clone(),
                 args_handle: Arc::new(LlamaCppConfigArgs {
-                    alias: model.to_owned(),
-                    api_key: self.api_key.clone(),
+                    alias,
+                    api_key: Some(self.security_config.get_apikey().to_string()),
                     model_path: model_configuration.model_path.clone(),
                     mmproj_path: model_configuration.mmproj_path.clone(),
                     prio: model_configuration.prio,
@@ -71,7 +75,7 @@ impl ModelLoaderOutPort for StaticModelLoader {
                 }),
             }))
         } else {
-            eprintln!("no model-configuration found for alias '{model}'");
+            eprintln!("no model-configuration found for alias '{model_key}'");
             Err(())
         }
     }
@@ -322,44 +326,53 @@ fn default_model_configuration_list() -> Vec<DomainModelConfiguration> {
         .collect()
 }
 
-/*
-fn create_llmodels_list() -> Llmodels {
-    let nemotron = String::from("nemotron-3-nano-30b-a3b");
+const CTX_SIZE_HINT_T262144: &str = "max";
+const CTX_SIZE_HINT_T131072: &str = "large";
+const CTX_SIZE_HINT_T65536: &str = "moderate";
+const CTX_SIZE_HINT_T32768: &str = "small";
+const CTX_SIZE_HINT_T16384: &str = "tiny";
+const CTX_SIZE_HINT_T8192: &str = "min";
 
-    let m = Model {
-        name: nemotron.clone(),
-        model: nemotron.clone(),
-        modified_at: String::new(),
-        size: String::new(),
-        digest: String::new(),
-        description: String::new(),
-        tags: Vec::new(),
-        capabilities: vec!["Completion".into()],
-        parameters: String::new(),
-        details: ModelDetails {
-            parent_model: String::new(),
-            format: "gguf".into(),
-            family: String::new(),
-            families: Vec::new(),
-            parameter_size: String::new(),
-            quantization_level: String::new(),
-        },
-    };
-    let d = Data {
-        id: nemotron,
-        created: 1768231590,
-        meta: DataMeta {
-            vocab_type: 2,
-            n_vocab: 131072,
-            n_ctx_train: 1048576,
-            n_embd: 2688,
-            n_params: 31577940288,
-            size: 40440063744,
-        },
-    };
+pub struct ContextSizeAwareAlias(String, ContextSize);
 
-    let mut llmodels = Llmodels::new();
-    llmodels.add(m, d);
-    llmodels
+impl ContextSizeAwareAlias {
+    pub fn model(&self) -> String {
+        self.0.clone()
+    }
+    pub fn context_size(&self) -> ContextSize {
+        self.1
+    }
 }
-*/
+
+impl From<(String, ContextSize)> for ContextSizeAwareAlias {
+    fn from(value: (String, ContextSize)) -> Self {
+        Self(value.0, value.1)
+    }
+}
+
+impl TryFrom<String> for ContextSizeAwareAlias {
+    type Error = String;
+
+    fn try_from(value: String) -> Result<Self, Self::Error> {
+        if let Some((alias, context_size_hint)) = value.rsplit_once("-") {
+            let context_size = match context_size_hint {
+                CTX_SIZE_HINT_T262144 => ContextSize::T262144,
+                CTX_SIZE_HINT_T131072 => ContextSize::T131072,
+                CTX_SIZE_HINT_T65536 => ContextSize::T65536,
+                CTX_SIZE_HINT_T32768 => ContextSize::T32768,
+                CTX_SIZE_HINT_T16384 => ContextSize::T16384,
+                CTX_SIZE_HINT_T8192 => ContextSize::T8192,
+                _ => {
+                    return Err(format!(
+                        "value '{value}' contains invalid content-size-hint '{context_size_hint}'"
+                    ));
+                }
+            };
+            Ok(ContextSizeAwareAlias(alias.into(), context_size))
+        } else {
+            Err(format!(
+                "value '{value}' does not contain context-size-hint"
+            ))
+        }
+    }
+}

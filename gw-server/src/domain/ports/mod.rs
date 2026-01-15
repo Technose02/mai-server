@@ -1,6 +1,7 @@
 use async_trait::async_trait;
 use axum::{extract::Request, http::StatusCode, response::Response};
-use inference_backends::{ContextSize, LlamaCppConfig, LlamaCppProcessState};
+use inference_backends::{LlamaCppConfig, LlamaCppProcessState};
+use openai_api_rust::chat::ChatBody as ChatCompletionsRequest;
 use std::{sync::Arc, time::Duration};
 
 use crate::domain::model::ModelConfiguration;
@@ -9,11 +10,12 @@ use crate::domain::model::ModelConfiguration;
 
 #[async_trait]
 pub trait OpenAiRequestForwardPServiceInPort: Send + Sync + 'static {
-    async fn process_openai_request(
+    async fn process_chat_completions_request(
         &self,
-        request: Request,
-        api_path: &str,
+        request: ChatCompletionsRequest,
     ) -> Result<Response, StatusCode>;
+
+    async fn forward_openai_request(&self, request: Request) -> Result<Response, StatusCode>;
 }
 
 #[async_trait]
@@ -40,11 +42,11 @@ pub trait ModelsServiceInPort: Send + Sync + 'static {
 
 #[async_trait]
 pub trait OpenAiClientOutPort: Send + Sync + 'static {
-    async fn send_request(
+    async fn post_chat_completions(
         &self,
-        request: Request,
-        override_path: Option<&str>,
+        payload: ChatCompletionsRequest,
     ) -> Result<Response, StatusCode>;
+    async fn forward_request(&self, request: Request) -> Result<Response, StatusCode>;
 }
 
 #[async_trait]
@@ -60,9 +62,5 @@ pub trait LlamaCppControllerOutPort: Send + Sync + 'static {
 #[async_trait]
 pub trait ModelLoaderOutPort: Send + Sync + 'static {
     async fn get_model_configurations(&self) -> Vec<ModelConfiguration>;
-    async fn get_model_configuration(
-        &self,
-        alias: &str,
-        optional_context_size: Option<ContextSize>,
-    ) -> Result<Arc<LlamaCppConfig>, ()>;
+    async fn get_model_configuration(&self, alias: &str) -> Result<Arc<LlamaCppConfig>, ()>;
 }

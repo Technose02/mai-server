@@ -26,7 +26,7 @@ const LLAMACPP_COMMAND: &str = "./build/bin/llama-server";
 const LLAMACPP_EXECDIR: &str = "/data0/inference/llama.cpp/";
 
 struct MyAppState {
-    apikey: String,
+    //apikey: String,
     openai_service: Arc<dyn OpenAiRequestForwardPServiceInPort>,
     modelmanager_service: Arc<dyn ModelManagerServiceInPort>,
     models_service: Arc<dyn ModelsServiceInPort>,
@@ -46,7 +46,11 @@ impl ApplicationConfig for MyAppState {
     }
 }
 
-impl SecurityConfig for MyAppState {
+struct MySecurityConfig {
+    apikey: String,
+}
+
+impl SecurityConfig for MySecurityConfig {
     fn get_apikey(&self) -> std::borrow::Cow<'_, str> {
         Cow::Borrowed(&self.apikey)
     }
@@ -70,15 +74,18 @@ async fn create_app(provided_apikey: Option<String>, log_request_info: bool) -> 
         apikey
     });
 
+    let security_config = Arc::new(MySecurityConfig { apikey });
+
     // init adapters
-    let llamacpp_client = LocalLlamaCppClientAdapter::create_adapter(LLAMACPP_PORT);
+    let llamacpp_client =
+        LocalLlamaCppClientAdapter::create_adapter(LLAMACPP_PORT, security_config.clone());
     let llamacpp_backend_controller = LlamaCppControllerAdapter::create_adapter(
         LLAMACPP_PORT,
         LLAMACPP_COMMAND,
         LLAMACPP_EXECDIR,
     )
     .await;
-    let model_loader = StaticModelLoader::create_adapter(Some(&apikey));
+    let model_loader = StaticModelLoader::create_adapter(security_config.clone());
 
     // init services
     let openai_service = OpenAiClientRequestForwardService::create_service(llamacpp_client);
@@ -89,12 +96,10 @@ async fn create_app(provided_apikey: Option<String>, log_request_info: bool) -> 
 
     // build configuration(s)
     let config = Arc::new(MyAppState {
-        apikey,
         openai_service,
         modelmanager_service,
         models_service,
     });
-    let security_config = config.clone();
 
     let router = Router::new()
         .merge(application::open_ai_router(
@@ -114,6 +119,10 @@ async fn create_app(provided_apikey: Option<String>, log_request_info: bool) -> 
 
 #[tokio::main]
 async fn main() {
+    rustls::crypto::ring::default_provider()
+        .install_default()
+        .expect("Failed to install rustls crypto provider");
+
     let mut args = std::env::args();
     let (provided_port, provided_api_key, provided_log_request_info, _provided_llama_cpp_chatui) = {
         let mut port = None;
