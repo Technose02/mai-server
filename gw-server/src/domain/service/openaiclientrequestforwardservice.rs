@@ -1,7 +1,7 @@
 use crate::domain::ports::{OpenAiClientOutPort, OpenAiRequestForwardPServiceInPort};
+use async_openai::types::chat::CreateChatCompletionRequest;
 use async_trait::async_trait;
 use axum::{extract::Request, http::StatusCode, response::Response};
-use openai_api_rust::chat::ChatBody as ChatCompletionsRequest;
 use std::sync::Arc;
 
 pub struct OpenAiClientRequestForwardService {
@@ -20,7 +20,7 @@ impl OpenAiClientRequestForwardService {
 impl OpenAiRequestForwardPServiceInPort for OpenAiClientRequestForwardService {
     async fn process_chat_completions_request(
         &self,
-        request: ChatCompletionsRequest,
+        request: CreateChatCompletionRequest,
     ) -> Result<Response, StatusCode> {
         self.llamacpp_client.post_chat_completions(request).await
     }

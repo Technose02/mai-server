@@ -31,8 +31,6 @@ impl ModelsServiceInPort for DefaultModelsService {
     ) -> Result<(), ()> {
         let start_time = std::time::Instant::now();
 
-        println!("requested model '{requested_model}'");
-
         loop {
             if start_time.elapsed() >= timeout {
                 println!("starting model variant '{requested_model}' ran into timeout");

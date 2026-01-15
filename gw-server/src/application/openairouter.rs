@@ -2,6 +2,7 @@ use crate::{
     ApplicationConfig, SecurityConfig,
     application::{middleware::check_auth, model::ModelList},
 };
+use async_openai::types::chat::CreateChatCompletionRequest;
 use axum::{
     Json, debug_handler,
     extract::{Path, Request, State},
@@ -9,7 +10,6 @@ use axum::{
     response::{IntoResponse, Response},
     routing::{Router, any, get, post},
 };
-use openai_api_rust::chat::ChatBody as ChatCompletionsRequest;
 use std::{sync::Arc, time::Duration};
 
 pub fn create_router(
@@ -46,7 +46,7 @@ async fn get_models(
 #[debug_handler]
 async fn post_completions(
     State(config): State<Arc<dyn ApplicationConfig>>,
-    Json(chat_completions_request): Json<ChatCompletionsRequest>, //request: Request,
+    Json(chat_completions_request): Json<CreateChatCompletionRequest>, //request: Request,
 ) -> Result<Response, StatusCode> {
     config
         .models_service()

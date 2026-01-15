@@ -58,9 +58,6 @@ async fn start_llama_cpp_process(
     State(combined_state): State<CombinedState>,
     JsonBody(llamacpp_config): JsonExtract<LlamaCppConfig>,
 ) -> Result<JsonBody<LlamaCppProcessState>, StatusCode> {
-    //println!(
-    //    "[modelmanagerrouter::start_llama_cpp_process] received llamacpp_config:\n{llamacpp_config:#?}"
-    //);
     let llamacpp_config = llamacpp_config.map(Some(combined_state.security_config.get_apikey()));
     let llamacpp_process_state: LlamaCppProcessState = combined_state
         .config
