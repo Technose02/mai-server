@@ -28,4 +28,8 @@ impl OpenAiRequestForwardPServiceInPort for OpenAiClientRequestForwardService {
     async fn forward_openai_request(&self, request: Request) -> Result<Response, StatusCode> {
         self.llamacpp_client.forward_request(request).await
     }
+
+    async fn get_chat(&self) -> Result<Response, StatusCode> {
+        self.llamacpp_client.request_chat().await
+    }
 }

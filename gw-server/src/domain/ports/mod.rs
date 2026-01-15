@@ -16,6 +16,8 @@ pub trait OpenAiRequestForwardPServiceInPort: Send + Sync + 'static {
     ) -> Result<Response, StatusCode>;
 
     async fn forward_openai_request(&self, request: Request) -> Result<Response, StatusCode>;
+
+    async fn get_chat(&self) -> Result<Response, StatusCode>;
 }
 
 #[async_trait]
@@ -30,12 +32,19 @@ pub trait ModelManagerServiceInPort: Send + Sync + 'static {
 
 #[async_trait]
 pub trait ModelsServiceInPort: Send + Sync + 'static {
+    async fn ensure_any_model_is_served(
+        &self,
+        default_model_alias: &str,
+        timeout: Duration,
+    ) -> Result<(), ()>;
     async fn ensure_requested_model_is_served(
         &self,
         requested_model_variant: &str,
         timeout: Duration,
     ) -> Result<(), ()>;
     async fn get_model_configuration_list(&self) -> Vec<ModelConfiguration>;
+
+    fn get_default_model_alias(&self) -> String;
 }
 
 /// OUT-PORTS
@@ -47,6 +56,7 @@ pub trait OpenAiClientOutPort: Send + Sync + 'static {
         payload: CreateChatCompletionRequest,
     ) -> Result<Response, StatusCode>;
     async fn forward_request(&self, request: Request) -> Result<Response, StatusCode>;
+    async fn request_chat(&self) -> Result<Response, StatusCode>;
 }
 
 #[async_trait]

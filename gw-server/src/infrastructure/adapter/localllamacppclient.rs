@@ -6,10 +6,13 @@ use axum::{
     extract::Request,
     http::{
         StatusCode, Uri, Version,
-        header::{AUTHORIZATION, HOST as HOST_HEADER, HeaderValue},
+        header::{ACCEPT_ENCODING, AUTHORIZATION, CONTENT_ENCODING, CONTENT_TYPE, HOST as HOST_HEADER, HeaderValue},
     },
     response::{IntoResponse, Response},
 };
+use flate2::{ read::GzDecoder};
+use http_body_util::BodyExt;
+use std::{io::Read, path::PathBuf};
 use std::sync::Arc;
 
 const LLAMACPP_HTTP_SCHEME: &str = "http";
@@ -116,5 +119,51 @@ impl OpenAiClientOutPort for LocalLlamaCppClientAdapter {
                 StatusCode::INTERNAL_SERVER_ERROR
             })?
             .into_response())
+    }
+
+    async fn request_chat(&self) -> Result<Response, StatusCode> {
+        let request = Request::get(format!(
+            "{LLAMACPP_HTTP_SCHEME}://{LLAMACPP_HOST}:{}",
+            self.llamacpp_port
+        ))
+        .header(HOST_HEADER, LLAMACPP_HOST)
+        .header(ACCEPT_ENCODING, "gzip")
+        .version(Version::HTTP_11)
+        .body(Body::empty())
+        .map_err(|e| {
+            eprintln!("error building llama.cpp-request: {e}");
+            StatusCode::INTERNAL_SERVER_ERROR
+        })?;
+
+        let response = self.client.request(request).await.map_err(|e| {
+            eprintln!("error loading llama-server's chat: {e}");
+            StatusCode::INTERNAL_SERVER_ERROR
+        })?;
+
+        let (mut res_parts, res_body) = response.into_parts();
+        // Den gesamten Body sammeln und in Bytes umwandeln
+        let bytes = res_body
+            .collect()
+            .await
+            .map_err(|e| {
+                eprintln!("Fehler beim Sammeln des Body: {e}");
+                StatusCode::INTERNAL_SERVER_ERROR
+            })?
+            .to_bytes();
+
+        println!("received {} bytes", bytes.len());
+        let mut decoder = GzDecoder::new(&bytes[..]);
+        let mut decoded_text = String::new();
+        decoder.read_to_string(&mut decoded_text).map_err(|e| {
+            eprintln!("Gzip Dekomprimierung fehlgeschlagen: {e}");
+            StatusCode::INTERNAL_SERVER_ERROR
+        })?;
+        _=std::fs::write(PathBuf::from("/home/technose02/test.txt"), &decoded_text);
+
+        res_parts.headers.insert(CONTENT_TYPE, HeaderValue::from_str("text/html; charset=utf-8").unwrap());
+        res_parts.headers.insert(CONTENT_ENCODING, HeaderValue::from_str("identity").unwrap());
+
+        println!("res_parts: {res_parts:#?}");
+        Ok(Response::from_parts(res_parts, decoded_text.into()))
     }
 }

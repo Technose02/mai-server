@@ -16,7 +16,9 @@ pub fn create_router(
     config: Arc<dyn ApplicationConfig>,
     security_config: Arc<dyn SecurityConfig>,
 ) -> Router {
-    let open_routes = Router::new().route("/api/v1/models", get(get_models));
+    let open_routes = Router::new()
+        .route("/api/v1/models", get(get_models))
+        .route("/chat", get(chat_handler));
 
     let secured_routes = Router::new()
         .route("/api/v1/chat/completions", post(post_completions))
@@ -73,4 +75,16 @@ async fn fallback(
         .openapi_service()
         .forward_openai_request(request)
         .await
+}
+
+async fn chat_handler(
+    State(service_state): State<Arc<dyn ApplicationConfig>>,
+) -> Result<Response, StatusCode> {
+    let default_model_alias = service_state.models_service().get_default_model_alias();
+    service_state
+        .models_service()
+        .ensure_any_model_is_served(&default_model_alias, Duration::from_mins(3))
+        .await
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+    service_state.openapi_service().get_chat().await
 }

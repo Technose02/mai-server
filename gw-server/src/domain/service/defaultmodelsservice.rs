@@ -24,6 +24,23 @@ impl DefaultModelsService {
 
 #[async_trait]
 impl ModelsServiceInPort for DefaultModelsService {
+    async fn ensure_any_model_is_served(
+        &self,
+        default_model_alias: &str,
+        timeout: Duration,
+    ) -> Result<(), ()> {
+        let current_state = self.llamacpp_controller.get_llamacpp_state().await;
+        if matches!(
+            current_state,
+            inference_backends::LlamaCppProcessState::Running(_)
+        ) {
+            Ok(())
+        } else {
+            self.ensure_requested_model_is_served(default_model_alias, timeout)
+                .await
+        }
+    }
+
     async fn ensure_requested_model_is_served(
         &self,
         requested_model: &str,
@@ -74,5 +91,10 @@ impl ModelsServiceInPort for DefaultModelsService {
 
     async fn get_model_configuration_list(&self) -> Vec<ModelConfiguration> {
         self.model_loader.get_model_configurations().await
+    }
+
+    fn get_default_model_alias(&self) -> String {
+        //"gpt-oss-120b-Q8_0-small".to_string()
+        "gemma-3-12b-it-qat-Q8_0-moderate".to_string()
     }
 }
