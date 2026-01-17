@@ -28,7 +28,27 @@ impl StaticModelLoader {
 #[async_trait]
 impl ModelLoaderOutPort for StaticModelLoader {
     async fn get_model_configurations(&self) -> Vec<DomainModelConfiguration> {
-        self.static_model_configuration_list.clone()
+        let mut models = Vec::with_capacity(self.static_model_configuration_list.len() * 6);
+        for base in self.static_model_configuration_list.iter().cloned() {
+            'inner: for ctx_size in [
+                ContextSize::T8192,
+                ContextSize::T16384,
+                ContextSize::T32768,
+                ContextSize::T65536,
+                ContextSize::T131072,
+                ContextSize::T262144,
+            ] {
+                if ctx_size > base.max_ctx_size {
+                    break 'inner;
+                }
+                let mut base = base.clone();
+                let alias = ContextSizeAwareAlias::from((base.alias, ctx_size));
+                base.alias = alias.alias();
+                //println!("adding model '{}' to list",base.alias);
+                models.push(base);
+            }
+        }
+        models
     }
     async fn get_model_configuration(&self, alias: &str) -> Result<Arc<LlamaCppConfig>, ()> {
         let alias = alias.to_owned();
@@ -165,6 +185,7 @@ fn default_model_configuration_list() -> Vec<DomainModelConfiguration> {
 {
     "alias" : "glm-4.6v-flash",
     "model-path" : "/model_data/huggingface/unsloth/GLM-4.6V-Flash-GGUF/GLM-4.6V-Flash-BF16.gguf",
+    "mmproj-path" : "/model_data/huggingface/unsloth/GLM-4.6V-Flash-GGUF/mmproj-F16.gguf",
     "n-gpu-layers" : 99,
     "jinja" : true,
     "max-ctx-size" : 16384,
@@ -277,6 +298,7 @@ fn default_model_configuration_list() -> Vec<DomainModelConfiguration> {
 {
     "alias" : "qwen3-vl-30b-a3b-instruct",
     "model-path" : "/model_data/huggingface/unsloth/Qwen3-VL-30B-A3B-Instruct-GGUF/BF16/Qwen3-VL-30B-A3B-Instruct-BF16-00001-of-00002.gguf",
+    "mmproj-path" : "/model_data/huggingface/unsloth/Qwen3-VL-30B-A3B-Instruct-GGUF/mmproj-BF16.gguf",
     "n-gpu-layers" : 99,
     "jinja" : true,
     "top-p": 0.8,
@@ -300,6 +322,7 @@ fn default_model_configuration_list() -> Vec<DomainModelConfiguration> {
 {
     "alias" : "qwen3-vl-30b-a3b-thinking",
     "model-path" : "/model_data/huggingface/unsloth/Qwen3-VL-30B-A3B-Thinking-GGUF/BF16/Qwen3-VL-30B-A3B-Thinking-BF16-00001-of-00002.gguf",
+    "mmproj-path" : "/model_data/huggingface/unsloth/Qwen3-VL-30B-A3B-Thinking-GGUF/mmproj-BF16.gguf",
     "n-gpu-layers" : 99,
     "jinja" : true,
     "top-p": 0.95,
@@ -341,6 +364,17 @@ impl ContextSizeAwareAlias {
     }
     pub fn context_size(&self) -> ContextSize {
         self.1
+    }
+    pub fn alias(&self) -> String {
+        let suffix = match self.context_size() {
+            ContextSize::T262144 => CTX_SIZE_HINT_T262144,
+            ContextSize::T131072 => CTX_SIZE_HINT_T131072,
+            ContextSize::T65536 => CTX_SIZE_HINT_T65536,
+            ContextSize::T32768 => CTX_SIZE_HINT_T32768,
+            ContextSize::T16384 => CTX_SIZE_HINT_T16384,
+            ContextSize::T8192 => CTX_SIZE_HINT_T8192,
+        };
+        format!("{}-{suffix}", self.0)
     }
 }
 
