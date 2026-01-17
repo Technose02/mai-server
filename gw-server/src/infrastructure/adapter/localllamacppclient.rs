@@ -6,14 +6,17 @@ use axum::{
     extract::Request,
     http::{
         StatusCode, Uri, Version,
-        header::{ACCEPT_ENCODING, AUTHORIZATION, CONTENT_ENCODING, CONTENT_TYPE, HOST as HOST_HEADER, HeaderValue},
+        header::{
+            ACCEPT_ENCODING, AUTHORIZATION, CONTENT_ENCODING, CONTENT_TYPE, HOST as HOST_HEADER,
+            HeaderValue,
+        },
     },
     response::{IntoResponse, Response},
 };
-use flate2::{ read::GzDecoder};
+use flate2::read::GzDecoder;
 use http_body_util::BodyExt;
-use std::{io::Read, path::PathBuf};
 use std::sync::Arc;
+use std::{io::Read, path::PathBuf};
 
 const LLAMACPP_HTTP_SCHEME: &str = "http";
 const LLAMACPP_HOST: &str = "localhost";
@@ -158,10 +161,15 @@ impl OpenAiClientOutPort for LocalLlamaCppClientAdapter {
             eprintln!("Gzip Dekomprimierung fehlgeschlagen: {e}");
             StatusCode::INTERNAL_SERVER_ERROR
         })?;
-        _=std::fs::write(PathBuf::from("/home/technose02/test.txt"), &decoded_text);
+        _ = std::fs::write(PathBuf::from("/home/technose02/test.txt"), &decoded_text);
 
-        res_parts.headers.insert(CONTENT_TYPE, HeaderValue::from_str("text/html; charset=utf-8").unwrap());
-        res_parts.headers.insert(CONTENT_ENCODING, HeaderValue::from_str("identity").unwrap());
+        res_parts.headers.insert(
+            CONTENT_TYPE,
+            HeaderValue::from_str("text/html; charset=utf-8").unwrap(),
+        );
+        res_parts
+            .headers
+            .insert(CONTENT_ENCODING, HeaderValue::from_str("identity").unwrap());
 
         println!("res_parts: {res_parts:#?}");
         Ok(Response::from_parts(res_parts, decoded_text.into()))
