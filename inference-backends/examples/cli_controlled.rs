@@ -69,7 +69,7 @@ async fn main() {
         args_handle: LlamaCppConfigArgs {
             alias: "gpt-oss-120b-Q8_0".to_string(),
             api_key: Some("apikey2".to_string()),
-            model_path: "/model_data/legacy/huggingface/Q8_0/gpt-oss-120b-Q8_0-00001-of-00002.gguf"
+            model_path: "/model_data/huggingface/unsloth/gpt-oss-120b-GGUF/Q8_0/gpt-oss-120b-Q8_0-00001-of-00002.gguf"
                 .to_string(),
             mmproj_path: None,
             prio: None,

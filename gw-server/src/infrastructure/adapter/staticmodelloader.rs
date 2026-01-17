@@ -208,7 +208,7 @@ fn default_model_configuration_list() -> Vec<DomainModelConfiguration> {
 },
 {
     "alias" : "gpt-oss-120b-Q8_0",
-    "model-path" : "/model_data/legacy/huggingface/Q8_0/gpt-oss-120b-Q8_0-00001-of-00002.gguf",
+    "model-path" : "/model_data/huggingface/unsloth/gpt-oss-120b-GGUF/Q8_0/gpt-oss-120b-Q8_0-00001-of-00002.gguf",
     "n-gpu-layers" : 99,
     "jinja" : true,
     "max-ctx-size" : 32768,
