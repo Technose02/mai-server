@@ -40,7 +40,7 @@ async fn get_models(
 ) -> Result<Response, StatusCode> {
     let mut model_list = ModelList::new();
     for model_configuration in config.models_service().get_model_configuration_list().await {
-        model_list.extend_from_domain_model_configuration(&model_configuration);
+        model_list.add_domain_model_configuration(&model_configuration);
     }
     Ok((StatusCode::OK, Json::<ModelList>::from(model_list)).into_response())
 }

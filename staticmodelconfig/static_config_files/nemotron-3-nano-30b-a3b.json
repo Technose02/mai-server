@@ -1,0 +1,21 @@
+{
+  "alias": "nemotron-3-nano-30b-a3b",
+  "model-path": "//model_data/huggingface/unsloth/Nemotron-3-Nano-30B-A3B-GGUF/Nemotron-3-Nano-30B-A3B-UD-Q8_K_XL.gguf",
+  "max-ctx-size": 32768,
+  "vocab-type": 2,
+  "n-vocab": 131072,
+  "n-ctx-train": 1048576,
+  "n-embd": 2688,
+  "n-params": 31577940288,
+  "size": 40440063744,
+  "capabilities": [
+    "completion"
+  ],
+  "threads": 8,
+  "n-gpu-layers": 99,
+  "flash-attn": "on",
+  "fit": "on",
+  "temp": 1.0,
+  "top-p": 1.0,
+  "jinja": true
+}

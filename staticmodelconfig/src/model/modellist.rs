@@ -1,10 +1,10 @@
-use crate::domain::model::ModelConfiguration as DomainModelConfiguration;
-use serde::Serialize;
+use super::modelconfiguration::ModelConfiguration;
+use serde::{Deserialize, Serialize};
 use std::time::{SystemTime, UNIX_EPOCH};
 
 const OWNER: &str = "Mai-Server";
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct ModelList {
     models: Vec<Model>,
     object: String,
@@ -20,6 +20,23 @@ impl ModelList {
         }
     }
 
+    pub fn as_list_of_meta_data_and_capabilities(&self) -> Vec<(DataMeta, Vec<String>)> {
+        let mut ret = Vec::with_capacity(self.models.len());
+        for (model, data) in self.models.iter().zip(self.data.iter()) {
+            let meta_data = DataMeta {
+                vocab_type: data.meta.vocab_type,
+                n_vocab: data.meta.n_vocab,
+                n_ctx_train: data.meta.n_ctx_train,
+                n_embd: data.meta.n_embd,
+                n_params: data.meta.n_params,
+                size: data.meta.size,
+            };
+            let capabilities = model.capabilities.clone();
+            ret.push((meta_data, capabilities));
+        }
+        ret
+    }
+
     fn add_simple(
         &mut self,
         alias: impl Into<String>,
@@ -31,49 +48,26 @@ impl ModelList {
         self.data.push(Data::simple(alias, data_meta));
     }
 
-    //pub fn extend_from_domain_model_configuration(
-    //    &mut self,
-    //    domain_model_configuration: &DomainModelConfiguration,
-    //) {
-    //    for ctx_size in [
-    //        ContextSize::T8192,
-    //        ContextSize::T16384,
-    //        ContextSize::T32768,
-    //        ContextSize::T65536,
-    //        ContextSize::T131072,
-    //        ContextSize::T262144,
-    //    ] {
-    //        if ctx_size > domain_model_configuration.max_ctx_size {
-    //            break;
-    //        }
-    //
-    //        self.add_domain_model_configuration(domain_model_configuration);
-    //    }
-    //}
-
-    pub fn add_domain_model_configuration(
-        &mut self,
-        domain_model_configuration: &DomainModelConfiguration,
-    ) {
+    pub fn add_domain_model_configuration(&mut self, model_configuration: &ModelConfiguration) {
         let data_meta = DataMeta {
-            vocab_type: domain_model_configuration.vocab_type,
-            n_vocab: domain_model_configuration.n_vocab,
-            n_embd: domain_model_configuration.n_embd,
-            n_ctx_train: domain_model_configuration.n_ctx_train,
-            n_params: domain_model_configuration.n_params,
-            size: domain_model_configuration.size,
+            vocab_type: model_configuration.vocab_type,
+            n_vocab: model_configuration.n_vocab,
+            n_embd: model_configuration.n_embd,
+            n_ctx_train: model_configuration.n_ctx_train,
+            n_params: model_configuration.n_params,
+            size: model_configuration.size,
         };
 
         self.add_simple(
-            domain_model_configuration.alias.clone(),
-            domain_model_configuration.capabilities.clone(),
+            model_configuration.alias.clone(),
+            model_configuration.capabilities.clone(),
             data_meta,
         );
     }
 }
 
-#[derive(Debug, Serialize)]
-struct Model {
+#[derive(Debug, Serialize, Deserialize)]
+pub struct Model {
     name: String,
     model: String,
     modified_at: String,
@@ -114,8 +108,8 @@ impl Model {
     }
 }
 
-#[derive(Debug, Serialize)]
-struct ModelDetails {
+#[derive(Debug, Serialize, Deserialize)]
+pub struct ModelDetails {
     parent_model: String,
     format: String,
     family: String,
@@ -124,8 +118,8 @@ struct ModelDetails {
     quantization_level: String,
 }
 
-#[derive(Debug, Serialize)]
-struct Data {
+#[derive(Debug, Serialize, Deserialize)]
+pub struct Data {
     id: String,
     object: String,
     created: u64,
@@ -148,12 +142,12 @@ impl Data {
     }
 }
 
-#[derive(Debug, Serialize)]
-struct DataMeta {
-    vocab_type: u8,
-    n_vocab: u64,
-    n_ctx_train: u64,
-    n_embd: u64,
-    n_params: u64,
-    size: u64,
+#[derive(Debug, Serialize, Deserialize)]
+pub struct DataMeta {
+    pub vocab_type: u8,
+    pub n_vocab: u64,
+    pub n_ctx_train: u64,
+    pub n_embd: u64,
+    pub n_params: u64,
+    pub size: u64,
 }

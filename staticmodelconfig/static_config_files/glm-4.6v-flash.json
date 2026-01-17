@@ -1,0 +1,24 @@
+{
+  "alias": "glm-4.6v-flash",
+  "model-path": "/model_data/huggingface/unsloth/GLM-4.6V-Flash-GGUF/GLM-4.6V-Flash-BF16.gguf",
+  "max-ctx-size": 16384,
+  "vocab-type": 2,
+  "n-vocab": 151552,
+  "n-ctx-train": 131072,
+  "n-embd": 4096,
+  "n-params": 9400279040,
+  "size": 18802245632,
+  "capabilities": [
+    "completion",
+    "multimodal"
+  ],
+  "mmproj-path": "/model_data/huggingface/unsloth/GLM-4.6V-Flash-GGUF/mmproj-F16.gguf",
+  "prio": 3,
+  "n-gpu-layers": 99,
+  "flash-attn": "on",
+  "temp": 0.8,
+  "repeat-penalty": 1.1,
+  "top-k": 2,
+  "top-p": 0.6,
+  "jinja": true
+}

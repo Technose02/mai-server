@@ -1,0 +1,28 @@
+{
+  "alias": "gemma-3-27b-it-qat-Q8_0",
+  "model-path": "/model_data/huggingface/unsloth/gemma-3-27b-it-GGUF/gemma-3-27b-it-Q8_0.gguf",
+  "max-ctx-size": 131072,
+  "vocab-type": 1,
+  "n-vocab": 262208,
+  "n-ctx-train": 131072,
+  "n-embd": 5376,
+  "n-params": 27009346304,
+  "size": 28701409280,
+  "capabilities": [
+    "completion",
+    "multimodal"
+  ],
+  "mmproj-path": "/model_data/huggingface/unsloth/gemma-3-27b-it-GGUF/mmproj-BF16.gguf",
+  "prio": 2,
+  "threads": 8,
+  "n-gpu-layers": 99,
+  "flash-attn": "on",
+  "temp": 1.0,
+  "repeat-penalty": 1.0,
+  "seed": 3407,
+  "min-p": 0.01,
+  "top-k": 64,
+  "top-p": 0.95,
+  "jinja": true,
+  "no-mmap": true
+}

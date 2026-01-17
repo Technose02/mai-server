@@ -1,0 +1,21 @@
+{
+  "alias": "phi-4-reasoning-plus",
+  "model-path": "/model_data/huggingface/unsloth/Phi-4-reasoning-plus-GGUF/Phi-4-reasoning-plus-Q8_0.gguf",
+  "max-ctx-size": 32768,
+  "vocab-type": 2,
+  "n-vocab": 100352,
+  "n-ctx-train": 32768,
+  "n-embd": 5120,
+  "n-params": 14659507200,
+  "size": 15576944640,
+  "capabilities": [
+    "completion"
+  ],
+  "prio": 3,
+  "threads": 8,
+  "n-gpu-layers": 99,
+  "temp": 0.8,
+  "min-p": 0.0,
+  "top-p": 0.95,
+  "jinja": true
+}
