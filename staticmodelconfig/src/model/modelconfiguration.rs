@@ -1,5 +1,7 @@
+use crate::{Error, Result};
 use inference_backends::{ContextSize, OnOffValue};
 use serde::{Deserialize, Serialize};
+use std::path::{Path, PathBuf};
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "kebab-case")]
@@ -80,4 +82,50 @@ pub struct ModelConfiguration {
 
 fn default_to_false() -> bool {
     false
+}
+
+impl ModelConfiguration {
+    pub fn load_from_json_file(file: &Path) -> Result<Self> {
+        if !file.is_file()
+            || !file
+                .file_name()
+                .unwrap()
+                .to_string_lossy()
+                .ends_with(".json")
+        {
+            Err(Error::NotAJsonFile(file.to_path_buf()))
+        } else {
+            let data = std::fs::read(file).map_err(Error::IoError)?;
+            let model_configuration =
+                serde_json::from_slice::<ModelConfiguration>(&data).map_err(|e| {
+                    Error::DeserializationError(format!(
+                        "failed to deserialize a file as model_configuraton: {e}"
+                    ))
+                })?;
+            Ok(model_configuration)
+        }
+    }
+
+    pub fn load_from_json_files(dir: &Path) -> Result<(Vec<Self>, Vec<PathBuf>)> {
+        let (mut model_configurations, mut json_files) = (Vec::new(), Vec::new());
+
+        let mut read_dir = dir.read_dir().map_err(Error::IoError)?;
+
+        while let Some(Ok(entry)) = read_dir.next() {
+            if entry.path().is_file()
+                && entry
+                    .file_name()
+                    .to_string_lossy()
+                    .to_ascii_lowercase()
+                    .ends_with(".json")
+            {
+                json_files.push(entry.path());
+
+                model_configurations.push(ModelConfiguration::load_from_json_file(
+                    entry.path().as_path(),
+                )?);
+            }
+        }
+        Ok((model_configurations, json_files))
+    }
 }

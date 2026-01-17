@@ -3,16 +3,14 @@ use inference_backends::{
     LlamaCppProcessState,
 };
 use reqwest::get;
-use serde_json::from_slice;
 use staticmodelconfig::{ModelConfiguration, ModelList};
-use std::{
-    collections::HashMap,
-    path::{Path, PathBuf},
-    sync::Arc,
-};
+use std::{collections::HashMap, path::PathBuf, sync::Arc};
 
 const LLAMA_SERVER_HOST: &str = "localhost";
 const LLAMA_SERVER_PORT: u16 = 11440;
+
+const ENV_VAR_GGML_CUDA_ENABLE_UNIFIED_MEMORY:&str = "GGML_CUDA_ENABLE_UNIFIED_MEMORY";
+const ENV_VALUE_GGML_CUDA_ENABLE_UNIFIED_MEMORY:&str="1";
 
 #[tokio::main]
 async fn main() {
@@ -26,58 +24,44 @@ async fn main() {
 
     let env_handle = Arc::new({
         let mut env = HashMap::<String, String>::new();
-        env.insert("GGML_CUDA_ENABLE_UNIFIED_MEMORY".into(), "1".into());
+        env.insert(ENV_VAR_GGML_CUDA_ENABLE_UNIFIED_MEMORY.into(), ENV_VALUE_GGML_CUDA_ENABLE_UNIFIED_MEMORY.into());
         env
     });
 
     let mut dir = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
     dir.push("static_config_files");
 
-    let mut read_dir = dir
-        .read_dir()
-        .unwrap_or_else(|e| panic!("error reading dir '{:#?}': {e}", dir));
-    while let Some(Ok(entry)) = read_dir.next() {
-        if entry.path().is_file()
-            && entry
-                .file_name()
-                .to_string_lossy()
-                .to_ascii_lowercase()
-                .ends_with(".json")
-        {
-            process_configuration(
-                entry.path().as_path(),
-                &llamacpp_controller,
-                env_handle.clone(),
-            )
-            .await;
-        }
+    let (mut model_configurations, json_files) = ModelConfiguration::load_from_json_files(&dir)
+        .unwrap_or_else(|e| panic!("error reading model_configurations from dir {dir:#?}: {e}"));
+
+    for (mut model_configuration, json_file) in
+        model_configurations.iter_mut().zip(json_files.iter())
+    {
+        update_model_configuration(
+            &mut model_configuration,
+            &llamacpp_controller,
+            env_handle.clone(),
+        )
+        .await;
+
+        // save with updated model_configuration
+        std::fs::write(
+            json_file,
+            serde_json::to_string_pretty(&model_configuration).unwrap_or_else(|e| {
+                panic!("error serializing model_configuration to pretty-string: {e}")
+            }),
+        )
+        .unwrap_or_else(|e| panic!("error writing serialized model_configuration to file: {e}"));
     }
+
 }
 
-async fn process_configuration(
-    json_file: &Path,
+async fn update_model_configuration(
+    model_configuration: &mut ModelConfiguration,
     llamacpp_backend_controller: &LlamaCppBackendController,
     env_handle: Arc<HashMap<String, String>>,
 ) {
-    println!("processing {:#?}", json_file);
-
-    let mut model_configuration = {
-        // read file to Vec<u8>
-        let data = std::fs::read(json_file).unwrap_or_else(|e| {
-            panic!(
-                "error parsing file '{}': {e}",
-                json_file.as_os_str().to_string_lossy()
-            )
-        });
-
-        // parse json
-        from_slice::<ModelConfiguration>(&data).unwrap_or_else(|e| {
-            panic!(
-                "error parsing file '{}': {e}",
-                json_file.as_os_str().to_string_lossy()
-            )
-        })
-    };
+    println!("processing {}", model_configuration.alias);
 
     // create llamacpp_config from model_configuration
     let llamacpp_config = LlamaCppConfig {
@@ -151,15 +135,6 @@ async fn process_configuration(
     model_configuration.n_embd = model_meta_data.n_embd;
     model_configuration.n_params = model_meta_data.n_params;
     model_configuration.size = model_meta_data.size;
-
-    // save with updated model_configuration
-    std::fs::write(
-        json_file,
-        serde_json::to_string_pretty(&model_configuration).unwrap_or_else(|e| {
-            panic!("error serializing model_configuration to pretty-string: {e}")
-        }),
-    )
-    .unwrap_or_else(|e| panic!("error writing serialized model_configuration to file: {e}"));
 
     // stop llama-server
     llamacpp_backend_controller.stop().await;
