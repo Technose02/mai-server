@@ -8,6 +8,7 @@ license.workspace = true
 [dependencies]
 managed-process = { path = "../managed-process" }
 inference-backends = { path = "../inference-backends" }
+staticmodelconfig = { path = "../staticmodelconfig" }
 axum = { version = "0.8.8", features = ["http2", "macros", "multipart", "ws"] }
 rand = "0.9.2"
 tokio = { workspace = true }

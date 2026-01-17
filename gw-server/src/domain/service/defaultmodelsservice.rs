@@ -1,8 +1,7 @@
-use crate::domain::{
-    model::ModelConfiguration,
-    ports::{LlamaCppControllerOutPort, ModelLoaderOutPort, ModelsServiceInPort},
-};
+use crate::domain::ports::{LlamaCppControllerOutPort, ModelLoaderOutPort, ModelsServiceInPort};
 use async_trait::async_trait;
+use inference_backends::ContextSize;
+use staticmodelconfig::{ModelList,ContextSizeAwareAlias};
 use std::{sync::Arc, time::Duration};
 
 pub struct DefaultModelsService {
@@ -89,8 +88,37 @@ impl ModelsServiceInPort for DefaultModelsService {
         }
     }
 
-    async fn get_model_configuration_list(&self) -> Vec<ModelConfiguration> {
-        self.model_loader.get_model_configurations().await
+    async fn get_models(&self) -> ModelList {
+        self.model_loader.get_static_model_configurations().await;
+        let mut model_list = ModelList::new();
+
+        for base_configuration in self
+            .model_loader
+            .get_static_model_configurations()
+            .await
+            .iter()
+            .cloned()
+        {
+            'inner: for ctx_size in [
+                ContextSize::T8192,
+                ContextSize::T16384,
+                ContextSize::T32768,
+                ContextSize::T65536,
+                ContextSize::T131072,
+                ContextSize::T262144,
+            ] {
+                if ctx_size > base_configuration.max_ctx_size {
+                    break 'inner;
+                }
+                let mut base_configuration = base_configuration.clone();
+                let caa = ContextSizeAwareAlias::from((base_configuration.alias, ctx_size));
+                base_configuration.alias = caa.alias();
+                println!("adding model '{}' to list", base_configuration.alias);
+                model_list.add_model_configuration(&base_configuration);
+            }
+        }
+
+        model_list
     }
 
     fn get_default_model_alias(&self) -> String {

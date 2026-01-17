@@ -2,9 +2,9 @@ use async_openai::types::chat::CreateChatCompletionRequest;
 use async_trait::async_trait;
 use axum::{extract::Request, http::StatusCode, response::Response};
 use inference_backends::{LlamaCppConfig, LlamaCppProcessState};
+use staticmodelconfig::ModelConfiguration;
+use staticmodelconfig::ModelList;
 use std::{sync::Arc, time::Duration};
-
-use crate::domain::model::ModelConfiguration;
 
 /// IN-PORTS
 
@@ -42,7 +42,10 @@ pub trait ModelsServiceInPort: Send + Sync + 'static {
         requested_model_variant: &str,
         timeout: Duration,
     ) -> Result<(), ()>;
-    async fn get_model_configuration_list(&self) -> Vec<ModelConfiguration>;
+
+    /// returns the ModelList to return on the models-endpoint
+    async fn get_models(&self) -> ModelList;
+    //async fn get_model_configuration_list(&self) -> Vec<ModelConfiguration>;
 
     fn get_default_model_alias(&self) -> String;
 }
@@ -71,6 +74,6 @@ pub trait LlamaCppControllerOutPort: Send + Sync + 'static {
 
 #[async_trait]
 pub trait ModelLoaderOutPort: Send + Sync + 'static {
-    async fn get_model_configurations(&self) -> Vec<ModelConfiguration>;
+    async fn get_static_model_configurations(&self) -> Vec<ModelConfiguration>;
     async fn get_model_configuration(&self, alias: &str) -> Result<Arc<LlamaCppConfig>, ()>;
 }

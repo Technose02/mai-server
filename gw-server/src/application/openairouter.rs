@@ -1,7 +1,4 @@
-use crate::{
-    ApplicationConfig, SecurityConfig,
-    application::{middleware::check_auth, model::ModelList},
-};
+use crate::{ApplicationConfig, SecurityConfig, application::middleware::check_auth};
 use async_openai::types::chat::CreateChatCompletionRequest;
 use axum::{
     Json, debug_handler,
@@ -10,6 +7,7 @@ use axum::{
     response::{IntoResponse, Response},
     routing::{Router, any, get, post},
 };
+use staticmodelconfig::ModelList;
 use std::{sync::Arc, time::Duration};
 
 pub fn create_router(
@@ -38,11 +36,11 @@ pub fn create_router(
 async fn get_models(
     State(config): State<Arc<dyn ApplicationConfig>>,
 ) -> Result<Response, StatusCode> {
-    let mut model_list = ModelList::new();
-    for model_configuration in config.models_service().get_model_configuration_list().await {
-        model_list.add_domain_model_configuration(&model_configuration);
-    }
-    Ok((StatusCode::OK, Json::<ModelList>::from(model_list)).into_response())
+    Ok((
+        StatusCode::OK,
+        Json::<ModelList>::from(config.models_service().get_models().await),
+    )
+        .into_response())
 }
 
 #[debug_handler]

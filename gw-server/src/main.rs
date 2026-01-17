@@ -26,7 +26,6 @@ const LLAMACPP_COMMAND: &str = "./build/bin/llama-server";
 const LLAMACPP_EXECDIR: &str = "/data0/inference/llama.cpp/";
 
 struct MyAppState {
-    //apikey: String,
     openai_service: Arc<dyn OpenAiRequestForwardPServiceInPort>,
     modelmanager_service: Arc<dyn ModelManagerServiceInPort>,
     models_service: Arc<dyn ModelsServiceInPort>,
@@ -85,7 +84,11 @@ async fn create_app(provided_apikey: Option<String>, log_request_info: bool) -> 
         LLAMACPP_EXECDIR,
     )
     .await;
-    let model_loader = StaticModelLoader::create_adapter(security_config.clone());
+
+    let model_loader = StaticModelLoader::create_adapter(
+        &PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../staticmodelconfig/static_config_files"),
+        security_config.clone()
+    ).unwrap();
 
     // init services
     let openai_service = OpenAiClientRequestForwardService::create_service(llamacpp_client);

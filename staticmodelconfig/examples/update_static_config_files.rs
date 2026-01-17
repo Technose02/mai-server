@@ -9,8 +9,8 @@ use std::{collections::HashMap, path::PathBuf, sync::Arc};
 const LLAMA_SERVER_HOST: &str = "localhost";
 const LLAMA_SERVER_PORT: u16 = 11440;
 
-const ENV_VAR_GGML_CUDA_ENABLE_UNIFIED_MEMORY:&str = "GGML_CUDA_ENABLE_UNIFIED_MEMORY";
-const ENV_VALUE_GGML_CUDA_ENABLE_UNIFIED_MEMORY:&str="1";
+const ENV_VAR_GGML_CUDA_ENABLE_UNIFIED_MEMORY: &str = "GGML_CUDA_ENABLE_UNIFIED_MEMORY";
+const ENV_VALUE_GGML_CUDA_ENABLE_UNIFIED_MEMORY: &str = "1";
 
 #[tokio::main]
 async fn main() {
@@ -24,7 +24,10 @@ async fn main() {
 
     let env_handle = Arc::new({
         let mut env = HashMap::<String, String>::new();
-        env.insert(ENV_VAR_GGML_CUDA_ENABLE_UNIFIED_MEMORY.into(), ENV_VALUE_GGML_CUDA_ENABLE_UNIFIED_MEMORY.into());
+        env.insert(
+            ENV_VAR_GGML_CUDA_ENABLE_UNIFIED_MEMORY.into(),
+            ENV_VALUE_GGML_CUDA_ENABLE_UNIFIED_MEMORY.into(),
+        );
         env
     });
 
@@ -53,7 +56,6 @@ async fn main() {
         )
         .unwrap_or_else(|e| panic!("error writing serialized model_configuration to file: {e}"));
     }
-
 }
 
 async fn update_model_configuration(

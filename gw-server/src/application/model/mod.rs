@@ -3,9 +3,6 @@ use std::{collections::HashMap, sync::Arc};
 use inference_backends::{ContextSize, LlamaCppConfigArgs, OnOffValue};
 use serde::{Deserialize, Serialize};
 
-mod modellist;
-pub use modellist::ModelList;
-
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub enum LlamaCppProcessState {
     Stopped,

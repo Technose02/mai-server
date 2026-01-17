@@ -48,7 +48,7 @@ impl ModelList {
         self.data.push(Data::simple(alias, data_meta));
     }
 
-    pub fn add_domain_model_configuration(&mut self, model_configuration: &ModelConfiguration) {
+    pub fn add_model_configuration(&mut self, model_configuration: &ModelConfiguration) {
         let data_meta = DataMeta {
             vocab_type: model_configuration.vocab_type,
             n_vocab: model_configuration.n_vocab,
