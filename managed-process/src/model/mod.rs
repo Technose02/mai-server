@@ -11,7 +11,7 @@ where
     ProcessFinished(Option<ExitStatus>),
 
     // sent by controller
-    StartProcess(ProcessConfig),
+    StartProcess((ProcessConfig, u8)),
     StopProcess,
     ReadProcessState(OneShotSender<ProcessState<ProcessConfig>>),
 }
@@ -25,11 +25,11 @@ where
     Stopped,
 
     // process is stopping ; provides current config as well as optionally the next config to use (if set this state will transition to starting with the next_config, else it will transition to stopped)
-    Stopping(ProcessConfig, Option<ProcessConfig>),
+    Stopping(ProcessConfig, Option<(ProcessConfig, u8)>),
 
     // process is running with given configuration
-    Running(ProcessConfig),
+    Running((ProcessConfig, u8)),
 
     // process is starting using given configuration
-    Starting(ProcessConfig),
+    Starting((ProcessConfig, u8)),
 }

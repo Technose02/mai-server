@@ -14,15 +14,15 @@ pub enum LlamaCppProcessState {
 impl From<inference_backends::LlamaCppProcessState> for LlamaCppProcessState {
     fn from(value: inference_backends::LlamaCppProcessState) -> Self {
         match value {
-            managed_process::ProcessState::Running(config) => {
+            managed_process::ProcessState::Running((config, _parallel)) => {
                 LlamaCppProcessState::Running(config.into())
             }
-            managed_process::ProcessState::Starting(config) => {
+            managed_process::ProcessState::Starting((config, _parallel)) => {
                 LlamaCppProcessState::Starting(config.into())
             }
             managed_process::ProcessState::Stopped => LlamaCppProcessState::Stopped,
             managed_process::ProcessState::Stopping(_, None) => LlamaCppProcessState::Stopping,
-            managed_process::ProcessState::Stopping(_, Some(config)) => {
+            managed_process::ProcessState::Stopping(_, Some((config, _parallel))) => {
                 LlamaCppProcessState::Starting(config.into())
             }
         }
@@ -66,8 +66,6 @@ pub struct LlamaCppConfig {
     pub cache_type_v: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none", default = "Option::default")]
     pub cache_type_k: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none", default = "Option::default")]
-    pub parallel: Option<u8>,
     #[serde(skip_serializing_if = "Option::is_none", default = "Option::default")]
     pub temp: Option<f32>,
     #[serde(skip_serializing_if = "Option::is_none", default = "Option::default")]
@@ -128,7 +126,6 @@ impl From<inference_backends::LlamaCppConfig> for LlamaCppConfig {
             ubatch_size: value.args_handle.ubatch_size,
             no_context_shift: value.args_handle.no_context_shift,
             no_cont_batching: value.args_handle.no_cont_batching,
-            parallel: value.args_handle.parallel,
             temp: value.args_handle.temp,
             repeat_penalty: value.args_handle.repeat_penalty,
             presence_penalty: value.args_handle.presence_penalty,
@@ -160,7 +157,6 @@ impl LlamaCppConfig {
             flash_attn: self.flash_attn.clone(),
             fit: self.fit.clone(),
             ubatch_size: self.ubatch_size,
-            parallel: self.parallel,
             no_cont_batching: self.no_cont_batching,
             no_context_shift: self.no_context_shift,
             temp: self.temp,

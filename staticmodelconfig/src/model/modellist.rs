@@ -11,15 +11,17 @@ pub struct ModelList {
     data: Vec<Data>,
 }
 
-impl ModelList {
-    pub fn new() -> Self {
+impl Default for ModelList {
+    fn default() -> Self {
         Self {
             models: Vec::new(),
             object: "list".into(),
             data: Vec::new(),
         }
     }
+}
 
+impl ModelList {
     pub fn as_list_of_meta_data_and_capabilities(&self) -> Vec<(DataMeta, Vec<String>)> {
         let mut ret = Vec::with_capacity(self.models.len());
         for (model, data) in self.models.iter().zip(self.data.iter()) {

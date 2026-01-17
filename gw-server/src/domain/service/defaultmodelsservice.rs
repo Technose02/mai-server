@@ -1,22 +1,25 @@
 use crate::domain::ports::{LlamaCppControllerOutPort, ModelLoaderOutPort, ModelsServiceInPort};
 use async_trait::async_trait;
 use inference_backends::ContextSize;
-use staticmodelconfig::{ModelList,ContextSizeAwareAlias};
+use staticmodelconfig::{ContextSizeAwareAlias, ModelList};
 use std::{sync::Arc, time::Duration};
 
 pub struct DefaultModelsService {
     llamacpp_controller: Arc<dyn LlamaCppControllerOutPort>,
     model_loader: Arc<dyn ModelLoaderOutPort>,
+    parallel_llamacpp_requests: u8,
 }
 
 impl DefaultModelsService {
     pub fn create_service(
         llamacpp_controller: Arc<dyn LlamaCppControllerOutPort>,
         model_loader: Arc<dyn ModelLoaderOutPort>,
+        parallel_llamacpp_requests: u8,
     ) -> Arc<dyn ModelsServiceInPort> {
         Arc::new(Self {
             llamacpp_controller,
             model_loader,
+            parallel_llamacpp_requests,
         })
     }
 }
@@ -52,10 +55,10 @@ impl ModelsServiceInPort for DefaultModelsService {
                 println!("starting model variant '{requested_model}' ran into timeout");
                 return Err(());
             }
-            if let inference_backends::LlamaCppProcessState::Running(s) =
+            if let inference_backends::LlamaCppProcessState::Running((s, p)) =
                 self.llamacpp_controller.get_llamacpp_state().await
             {
-                if s.args_handle.alias == requested_model {
+                if s.args_handle.alias == requested_model && p == self.parallel_llamacpp_requests {
                     return Ok(());
                 } else {
                     println!(
@@ -72,7 +75,10 @@ impl ModelsServiceInPort for DefaultModelsService {
             {
                 Ok(llamacpp_config) => {
                     self.llamacpp_controller
-                        .start_llamacpp_process(llamacpp_config.as_ref())
+                        .start_llamacpp_process(
+                            llamacpp_config.as_ref(),
+                            self.parallel_llamacpp_requests,
+                        )
                         .await;
                     println!(
                         "waiting for backend to serve '{requested_model}' ({}s)",
@@ -90,7 +96,7 @@ impl ModelsServiceInPort for DefaultModelsService {
 
     async fn get_models(&self) -> ModelList {
         self.model_loader.get_static_model_configurations().await;
-        let mut model_list = ModelList::new();
+        let mut model_list = ModelList::default();
 
         for base_configuration in self
             .model_loader

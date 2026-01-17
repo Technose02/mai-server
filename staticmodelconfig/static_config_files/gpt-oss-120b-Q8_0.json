@@ -15,7 +15,6 @@
   "flash-attn": "on",
   "batch-size": 2048,
   "ubatch-size": 2048,
-  "parallel": 1,
   "jinja": true,
   "no-mmap": true,
   "no-context-shift": true,

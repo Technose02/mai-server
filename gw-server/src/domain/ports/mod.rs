@@ -27,6 +27,7 @@ pub trait ModelManagerServiceInPort: Send + Sync + 'static {
     async fn start_llamacpp_process(
         &self,
         llamacpp_config: &LlamaCppConfig,
+        parallel: u8,
     ) -> LlamaCppProcessState;
 }
 
@@ -68,6 +69,7 @@ pub trait LlamaCppControllerOutPort: Send + Sync + 'static {
     async fn start_llamacpp_process(
         &self,
         llamacpp_config: &LlamaCppConfig,
+        parallel: u8,
     ) -> LlamaCppProcessState;
     async fn stop_llamacpp_process(&self);
 }

@@ -30,9 +30,10 @@ impl ModelManagerServiceInPort for InferenceBackendModelManagerService {
     async fn start_llamacpp_process(
         &self,
         llamacpp_config: &LlamaCppConfig,
+        parallel: u8,
     ) -> LlamaCppProcessState {
         self.llamacpp_controller
-            .start_llamacpp_process(llamacpp_config)
+            .start_llamacpp_process(llamacpp_config, parallel)
             .await
     }
 }

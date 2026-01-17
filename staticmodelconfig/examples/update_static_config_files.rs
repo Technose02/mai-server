@@ -85,7 +85,7 @@ async fn update_model_configuration(
             ubatch_size: model_configuration.ubatch_size,
             cache_type_v: model_configuration.cache_type_v.clone(),
             cache_type_k: model_configuration.cache_type_k.clone(),
-            parallel: model_configuration.parallel, // FixMe: DAS SOLLTE KEIN TEIL DER MODELCONFIG SEIN
+            //parallel: model_configuration.parallel, // FixMe: DAS SOLLTE KEIN TEIL DER MODELCONFIG SEIN
             no_context_shift: model_configuration.no_context_shift,
             no_cont_batching: model_configuration.no_cont_batching,
             min_p: model_configuration.min_p,
@@ -99,7 +99,7 @@ async fn update_model_configuration(
     };
 
     // start llama-server
-    llamacpp_backend_controller.start(llamacpp_config).await;
+    llamacpp_backend_controller.start(llamacpp_config, 1).await;
     loop {
         match llamacpp_backend_controller.read_state().await {
             LlamaCppProcessState::Running(s)

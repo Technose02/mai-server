@@ -26,6 +26,7 @@ impl RunBackendProcess for ComfyUiBackend {
     fn run_backend_process(
         &self,
         process_config: Self::ProcessConfig,
+        _parallel: u8,
         cancel_receiver: tokio::sync::oneshot::Receiver<bool>,
         notifier: tokio::sync::mpsc::Sender<ProcessProtocol<Self::ProcessConfig>>,
     ) {

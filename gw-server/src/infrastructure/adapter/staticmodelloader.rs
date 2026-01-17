@@ -1,7 +1,7 @@
 use crate::{SecurityConfig, domain::ports::ModelLoaderOutPort};
 use async_trait::async_trait;
-use inference_backends::{ LlamaCppConfig, LlamaCppConfigArgs};
-use staticmodelconfig::{ModelConfiguration,ContextSizeAwareAlias};
+use inference_backends::{LlamaCppConfig, LlamaCppConfigArgs};
+use staticmodelconfig::{ContextSizeAwareAlias, ModelConfiguration};
 use std::{collections::HashMap, error::Error, path::Path, sync::Arc};
 
 pub struct StaticModelLoader {
@@ -67,7 +67,6 @@ impl ModelLoaderOutPort for StaticModelLoader {
                     ubatch_size: model_configuration.ubatch_size,
                     cache_type_k: model_configuration.cache_type_k.clone(),
                     cache_type_v: model_configuration.cache_type_v.clone(),
-                    parallel: model_configuration.parallel,
                     no_context_shift: model_configuration.no_context_shift,
                     no_cont_batching: model_configuration.no_cont_batching,
                     min_p: model_configuration.min_p,

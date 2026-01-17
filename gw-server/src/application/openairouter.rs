@@ -1,4 +1,7 @@
-use crate::{ApplicationConfig, SecurityConfig, application::middleware::check_auth};
+use crate::{
+    ApplicationConfig, SecurityConfig,
+    application::middleware::{check_auth, limit_max_parallel_requests},
+};
 use async_openai::types::chat::CreateChatCompletionRequest;
 use axum::{
     Json, debug_handler,
@@ -18,9 +21,19 @@ pub fn create_router(
         .route("/api/v1/models", get(get_models))
         .route("/chat", get(chat_handler));
 
-    let secured_routes = Router::new()
+    let secured_and_available = Router::new()
         .route("/api/v1/chat/completions", post(post_completions))
         .route("/api/v1/{*path}", any(fallback))
+        .layer(axum::middleware::from_fn_with_state(
+            config.clone(),
+            limit_max_parallel_requests,
+        ))
+        .layer(axum::middleware::from_fn_with_state(
+            security_config.clone(),
+            check_auth,
+        ));
+
+    let secured_routes_but_unavailable = Router::new()
         .route("/api/v2/{*path}", any(|| async { StatusCode::NOT_FOUND }))
         .layer(axum::middleware::from_fn_with_state(
             security_config,
@@ -29,7 +42,8 @@ pub fn create_router(
 
     Router::new()
         .merge(open_routes)
-        .merge(secured_routes)
+        .merge(secured_and_available)
+        .merge(secured_routes_but_unavailable)
         .with_state(config) // injects state in open_routes and secured_routes
 }
 
@@ -58,7 +72,7 @@ async fn post_completions(
         })?;
 
     config
-        .openapi_service()
+        .openai_service()
         .process_chat_completions_request(chat_completions_request)
         .await
 }
@@ -70,7 +84,7 @@ async fn fallback(
 ) -> Result<Response, StatusCode> {
     println!("unexpected {}-request to {api_path}", request.method());
     service_state
-        .openapi_service()
+        .openai_service()
         .forward_openai_request(request)
         .await
 }
@@ -84,5 +98,5 @@ async fn chat_handler(
         .ensure_any_model_is_served(&default_model_alias, Duration::from_mins(3))
         .await
         .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
-    service_state.openapi_service().get_chat().await
+    service_state.openai_service().get_chat().await
 }

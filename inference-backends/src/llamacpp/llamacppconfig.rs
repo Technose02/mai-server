@@ -9,8 +9,8 @@ pub struct LlamaCppConfig {
 }
 
 impl LlamaCppConfig {
-    pub fn apply_args(&self, cmd: &mut Command) {
-        self.args_handle.apply(cmd);
+    pub fn apply_args(&self, cmd: &mut Command, parallel: u8) {
+        self.args_handle.apply(cmd, parallel);
     }
 
     pub fn apply_env(&self, cmd: &mut Command) {
@@ -247,7 +247,6 @@ pub struct LlamaCppConfigArgs {
     pub ubatch_size: Option<u16>,
     pub cache_type_v: Option<String>,
     pub cache_type_k: Option<String>,
-    pub parallel: Option<u8>,
     pub no_context_shift: bool,
     pub no_cont_batching: bool,
     pub min_p: Option<f32>,
@@ -260,13 +259,16 @@ pub struct LlamaCppConfigArgs {
 }
 
 impl LlamaCppConfigArgs {
-    fn apply(&self, cmd: &mut Command) {
+    fn apply(&self, cmd: &mut Command, parallel: u8) {
         cmd.arg("--alias");
         cmd.arg(&self.alias);
 
         cmd.arg("--model");
         //cmd.arg(self.model_path.to_string_lossy().as_ref());
         cmd.arg(self.model_path.as_str());
+
+        cmd.arg("--parallel");
+        cmd.arg(parallel.to_string());
 
         if let Some(api_key) = &self.api_key {
             cmd.arg("--api-key");
@@ -335,11 +337,6 @@ impl LlamaCppConfigArgs {
         if let Some(cache_type_k) = &self.cache_type_k {
             cmd.arg("--cache-type-k");
             cmd.arg(cache_type_k);
-        }
-
-        if let Some(parallel) = self.parallel {
-            cmd.arg("--parallel");
-            cmd.arg(parallel.to_string());
         }
 
         if self.no_context_shift {

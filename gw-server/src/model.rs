@@ -8,7 +8,9 @@ pub trait SecurityConfig: Send + Sync + 'static {
 }
 
 pub(crate) trait ApplicationConfig: Send + Sync + 'static {
-    fn openapi_service(&self) -> Arc<dyn OpenAiRequestForwardPServiceInPort>;
+    fn openai_service(&self) -> Arc<dyn OpenAiRequestForwardPServiceInPort>;
     fn modelmanager_service(&self) -> Arc<dyn ModelManagerServiceInPort>;
     fn models_service(&self) -> Arc<dyn ModelsServiceInPort>;
+    fn increase_number_of_parallel_requests(&self) -> bool;
+    fn decrease_increase_number_of_parallel_requests(&self);
 }

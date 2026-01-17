@@ -47,8 +47,8 @@ where
                     Some(ProcessProtocol::<ProcessConfig>::ProcessStarted) => {
                         state_manager.on_process_started()
                     }
-                    Some(ProcessProtocol::<ProcessConfig>::StartProcess(config)) => {
-                        state_manager.on_start_process(config)
+                    Some(ProcessProtocol::<ProcessConfig>::StartProcess((config, parallel))) => {
+                        state_manager.on_start_process(config, parallel)
                     }
                     Some(ProcessProtocol::<ProcessConfig>::StopProcess) => {
                         state_manager.on_stop_process()
@@ -63,9 +63,11 @@ where
         ret
     }
 
-    pub async fn start(&self, config: ProcessConfig) {
+    pub async fn start(&self, config: ProcessConfig, parallel: u8) {
         self.0
-            .send(ProcessProtocol::<ProcessConfig>::StartProcess(config))
+            .send(ProcessProtocol::<ProcessConfig>::StartProcess((
+                config, parallel,
+            )))
             .await
             .unwrap();
     }
