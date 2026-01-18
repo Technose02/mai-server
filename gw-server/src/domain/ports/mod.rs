@@ -45,9 +45,10 @@ pub trait ModelsServiceInPort: Send + Sync + 'static {
 
     /// returns the ModelList to return on the models-endpoint
     async fn get_models(&self) -> ModelList;
-    //async fn get_model_configuration_list(&self) -> Vec<ModelConfiguration>;
 
     fn get_default_model_alias(&self) -> String;
+
+    fn set_parallel_backend_requests(&self, parallel_backend_requests: u8);
 }
 
 /// OUT-PORTS

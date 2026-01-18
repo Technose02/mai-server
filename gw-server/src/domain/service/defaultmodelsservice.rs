@@ -2,12 +2,16 @@ use crate::domain::ports::{LlamaCppControllerOutPort, ModelLoaderOutPort, Models
 use async_trait::async_trait;
 use inference_backends::{ContextSize, LlamaCppRunConfig};
 use staticmodelconfig::{ContextSizeAwareAlias, ModelList};
-use std::{collections::HashMap, sync::Arc, time::Duration};
+use std::{
+    collections::HashMap,
+    sync::{Arc, RwLock},
+    time::Duration,
+};
 
 pub struct DefaultModelsService {
     llamacpp_controller: Arc<dyn LlamaCppControllerOutPort>,
     model_loader: Arc<dyn ModelLoaderOutPort>,
-    llamacpp_parallel_processings: u8,
+    llamacpp_parallel_processings: RwLock<u8>,
     environment_args: Arc<HashMap<String, String>>,
 }
 
@@ -21,7 +25,7 @@ impl DefaultModelsService {
         Arc::new(Self {
             llamacpp_controller,
             model_loader,
-            llamacpp_parallel_processings,
+            llamacpp_parallel_processings: RwLock::new(llamacpp_parallel_processings),
             environment_args: Arc::new(environment_args),
         })
     }
@@ -44,6 +48,11 @@ impl ModelsServiceInPort for DefaultModelsService {
             self.ensure_requested_model_is_served(default_model_alias, timeout)
                 .await
         }
+    }
+
+    fn set_parallel_backend_requests(&self, parallel_backend_requests: u8) {
+        let mut _guard = self.llamacpp_parallel_processings.write().unwrap();
+        *_guard = parallel_backend_requests;
     }
 
     async fn ensure_requested_model_is_served(
@@ -77,10 +86,12 @@ impl ModelsServiceInPort for DefaultModelsService {
                 .await
             {
                 Ok(llamacpp_config_args) => {
+                    let llamacpp_parallel_processings =
+                        *self.llamacpp_parallel_processings.read().unwrap();
                     let llamacpp_run_config = LlamaCppRunConfig {
                         args_handle: llamacpp_config_args,
                         env_handle: self.environment_args.clone(),
-                        parallel: self.llamacpp_parallel_processings,
+                        parallel: llamacpp_parallel_processings,
                     };
 
                     self.llamacpp_controller

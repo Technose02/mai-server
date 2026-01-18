@@ -1,7 +1,7 @@
 use crate::{ApplicationConfig, SecurityConfig, application::middleware::check_auth};
 use async_openai::types::chat::CreateChatCompletionRequest;
 use axum::{
-    Json, debug_handler,
+    Json,
     extract::{Path, Request, State},
     http::StatusCode,
     response::{IntoResponse, Response},
@@ -19,8 +19,16 @@ pub fn create_router(
         .route("/chat", get(chat_handler));
 
     let secured = Router::new()
+        .route(
+            "/api/{n_parallel}/v1/chat/completions",
+            post(post_completions_with_parallel_param),
+        )
         .route("/api/v1/chat/completions", post(post_completions))
-        .route("/api/v1/{*path}", any(fallback))
+        .route(
+            "/api/{n_parallel}/v1/{*path}",
+            any(api_fallback_with_parallel_param),
+        )
+        .route("/api/v1/{*path}", any(api_fallback))
         .route("/api/v2/{*path}", any(|| async { StatusCode::NOT_FOUND }))
         .layer(axum::middleware::from_fn_with_state(
             security_config.clone(),
@@ -43,12 +51,38 @@ async fn get_models(
         .into_response())
 }
 
-#[debug_handler]
-async fn post_completions(
-    State(config): State<Arc<dyn ApplicationConfig>>,
+async fn post_completions_with_parallel_param(
+    State(application_config): State<Arc<dyn ApplicationConfig>>,
+    Path(n_parallel): Path<u8>,
     Json(chat_completions_request): Json<CreateChatCompletionRequest>, //request: Request,
 ) -> Result<Response, StatusCode> {
-    config
+    post_chat_completions_impl(
+        application_config,
+        Some(n_parallel),
+        chat_completions_request,
+    )
+    .await
+}
+
+async fn post_completions(
+    State(application_config): State<Arc<dyn ApplicationConfig>>,
+    Json(chat_completions_request): Json<CreateChatCompletionRequest>,
+) -> Result<Response, StatusCode> {
+    post_chat_completions_impl(application_config, None, chat_completions_request).await
+}
+
+async fn post_chat_completions_impl(
+    application_config: Arc<dyn ApplicationConfig>,
+    optional_parallel_backend_requests_to_set: Option<u8>,
+    chat_completions_request: CreateChatCompletionRequest,
+) -> Result<Response, StatusCode> {
+    if let Some(parallel_backend_requests_to_set) = optional_parallel_backend_requests_to_set {
+        application_config
+            .models_service()
+            .set_parallel_backend_requests(parallel_backend_requests_to_set);
+    }
+
+    application_config
         .models_service()
         .ensure_requested_model_is_served(&chat_completions_request.model, Duration::from_mins(3))
         .await
@@ -57,19 +91,44 @@ async fn post_completions(
             StatusCode::INTERNAL_SERVER_ERROR
         })?;
 
-    config
+    application_config
         .openai_service()
         .process_chat_completions_request(chat_completions_request)
         .await
 }
 
-async fn fallback(
-    State(service_state): State<Arc<dyn ApplicationConfig>>,
+async fn api_fallback_with_parallel_param(
+    State(application_config): State<Arc<dyn ApplicationConfig>>,
+    Path(n_parallel): Path<u8>,
     Path(api_path): Path<String>,
     request: Request,
 ) -> Result<Response, StatusCode> {
+    api_fallback_impl(application_config, Some(n_parallel), api_path, request).await
+}
+
+async fn api_fallback(
+    State(application_config): State<Arc<dyn ApplicationConfig>>,
+    Path(api_path): Path<String>,
+    request: Request,
+) -> Result<Response, StatusCode> {
+    api_fallback_impl(application_config, None, api_path, request).await
+}
+
+async fn api_fallback_impl(
+    application_config: Arc<dyn ApplicationConfig>,
+    optional_parallel_backend_requests_to_set: Option<u8>,
+    api_path: String,
+    request: Request,
+) -> Result<Response, StatusCode> {
     println!("unexpected {}-request to {api_path}", request.method());
-    service_state
+
+    if let Some(parallel_backend_requests_to_set) = optional_parallel_backend_requests_to_set {
+        application_config
+            .models_service()
+            .set_parallel_backend_requests(parallel_backend_requests_to_set);
+    }
+
+    application_config
         .openai_service()
         .forward_openai_request(request)
         .await
