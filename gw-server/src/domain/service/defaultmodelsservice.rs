@@ -1,6 +1,6 @@
 use crate::domain::ports::{LlamaCppControllerOutPort, ModelLoaderOutPort, ModelsServiceInPort};
 use async_trait::async_trait;
-use inference_backends::{ContextSize, LlamaCppRunConfig};
+use inference_backends::{ContextSize, LlamaCppConfigArgs, LlamaCppRunConfig};
 use staticmodelconfig::{ContextSizeAwareAlias, ModelList};
 use std::{
     collections::HashMap,
@@ -30,6 +30,18 @@ impl DefaultModelsService {
             environment_args: Arc::new(environment_args),
             cached_model_list: OnceLock::new(),
         })
+    }
+
+    fn create_run_config_from_args_and_current_state(
+        &self,
+        llamacpp_config_args: Arc<LlamaCppConfigArgs>,
+    ) -> LlamaCppRunConfig {
+        let llamacpp_parallel_processings = *self.llamacpp_parallel_processings.read().unwrap();
+        LlamaCppRunConfig {
+            args_handle: llamacpp_config_args.clone(),
+            env_handle: self.environment_args.clone(),
+            parallel: llamacpp_parallel_processings,
+        }
     }
 }
 
@@ -77,15 +89,24 @@ impl ModelsServiceInPort for DefaultModelsService {
                 println!("starting model variant '{requested_model}' ran into timeout");
                 return Err(());
             }
-            if let inference_backends::LlamaCppProcessState::Running(s) =
+            if let inference_backends::LlamaCppProcessState::Running(running_config) =
                 self.llamacpp_controller.get_llamacpp_state().await
             {
-                if s.args_handle.alias == requested_model {
-                    return Ok(());
+                let running_config_args_handle = running_config.args_handle.clone();
+                if requested_model == running_config_args_handle.alias {
+                    let runconfig_as_requested = self
+                        .create_run_config_from_args_and_current_state(running_config_args_handle);
+                    if runconfig_as_requested == running_config {
+                        return Ok(());
+                    } else {
+                        println!(
+                            "problem: requested-model is '{requested_model}' is running but the process was started with different run-params"
+                        );
+                    }
                 } else {
                     println!(
                         "problem: requested-model is '{requested_model}' but a model '{}' is still running",
-                        s.args_handle.alias
+                        running_config.args_handle.alias
                     )
                 }
             }
@@ -96,13 +117,8 @@ impl ModelsServiceInPort for DefaultModelsService {
                 .await
             {
                 Ok(llamacpp_config_args) => {
-                    let llamacpp_parallel_processings =
-                        *self.llamacpp_parallel_processings.read().unwrap();
-                    let llamacpp_run_config = LlamaCppRunConfig {
-                        args_handle: llamacpp_config_args,
-                        env_handle: self.environment_args.clone(),
-                        parallel: llamacpp_parallel_processings,
-                    };
+                    let llamacpp_run_config =
+                        self.create_run_config_from_args_and_current_state(llamacpp_config_args);
 
                     self.llamacpp_controller
                         .start_llamacpp_process(llamacpp_run_config)
