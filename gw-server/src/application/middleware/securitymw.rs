@@ -1,4 +1,4 @@
-use crate::AppState;
+use crate::model::SecurityConfig;
 use axum::{
     extract::{Request, State},
     http::{StatusCode, header::AUTHORIZATION},
@@ -7,8 +7,8 @@ use axum::{
 };
 use std::sync::Arc;
 
-pub async fn auth_middleware(
-    State(app_state): State<Arc<AppState>>,
+pub async fn check_auth(
+    State(security_config): State<Arc<dyn SecurityConfig>>,
     req: Request,
     next: Next,
 ) -> Result<Response, StatusCode> {
@@ -20,17 +20,10 @@ pub async fn auth_middleware(
         .map_err(|_| StatusCode::UNAUTHORIZED)?;
 
     if let Some(bearer_token) = auth_header.strip_prefix("Bearer ")
-        && app_state.api_key() == bearer_token
+        && security_config.get_apikey() == bearer_token
     {
         Ok(next.run(req).await)
     } else {
         Err(StatusCode::UNAUTHORIZED)
     }
-}
-
-pub async fn request_logger(req: Request, next: Next) -> Result<Response, StatusCode> {
-    println!("{} {}", req.method(), req.uri().path());
-    let res = next.run(req).await;
-    println!("\t-> {}", res.status());
-    Ok(res)
 }

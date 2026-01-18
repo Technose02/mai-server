@@ -1,78 +1,149 @@
+use crate::{
+    domain::{
+        ports::{
+            ModelManagerServiceInPort, ModelsServiceInPort, OpenAiRequestForwardPServiceInPort,
+        },
+        service::{
+            DefaultModelsService, InferenceBackendModelManagerService,
+            OpenAiClientRequestForwardService,
+        },
+    },
+    infrastructure::adapter::{
+        LlamaCppControllerAdapter, LocalLlamaCppClientAdapter, StaticModelLoader,
+    },
+};
 use axum::routing::Router;
-use axum_reverse_proxy::ReverseProxy;
 use axum_server::tls_rustls::RustlsConfig;
-use inference_backends::LlamaCppBackend;
-use std::{net::SocketAddr, path::PathBuf, sync::Arc};
+use rand::Rng;
+use std::{borrow::Cow, collections::HashMap, net::SocketAddr, path::PathBuf, sync::Arc};
 
-mod manager;
+mod application;
+mod domain;
+mod infrastructure;
+
 mod model;
-use manager::router as manager_router;
+pub(crate) use model::{ApplicationConfig, SecurityConfig};
 
-mod middleware;
-pub(crate) use middleware::{auth_middleware, request_logger};
+const RANDOM_APIKEY_LEN: u8 = 25;
+const LLAMACPP_PORT: u16 = 11440;
+const LLAMACPP_COMMAND: &str = "./build/bin/llama-server";
+const LLAMACPP_EXECDIR: &str = "/data0/inference/llama.cpp/";
 
-use crate::model::AppState;
+struct MyAppState {
+    openai_service: Arc<dyn OpenAiRequestForwardPServiceInPort>,
+    modelmanager_service: Arc<dyn ModelManagerServiceInPort>,
+    models_service: Arc<dyn ModelsServiceInPort>,
+}
 
-async fn create_app(
-    provided_api_key: Option<String>,
-    log_request_info: bool,
-    llama_cpp_chatui: bool,
-) -> Router {
-    let llamacpp_backend = LlamaCppBackend {
-        host: "0.0.0.0".to_owned(),
-        port: 11440,
-        llama_cpp_command: "./build/bin/llama-server".to_owned(),
-        llama_cpp_execdir: "/data0/inference/llama.cpp/".to_owned(),
+impl ApplicationConfig for MyAppState {
+    fn openai_service(&self) -> Arc<dyn OpenAiRequestForwardPServiceInPort> {
+        self.openai_service.clone()
+    }
+
+    fn modelmanager_service(&self) -> Arc<dyn ModelManagerServiceInPort> {
+        self.modelmanager_service.clone()
+    }
+
+    fn models_service(&self) -> Arc<dyn ModelsServiceInPort> {
+        self.models_service.clone()
+    }
+}
+
+struct MySecurityConfig {
+    apikey: String,
+}
+
+impl SecurityConfig for MySecurityConfig {
+    fn get_apikey(&self) -> std::borrow::Cow<'_, str> {
+        Cow::Borrowed(&self.apikey)
+    }
+}
+
+async fn create_app(provided_apikey: Option<String>, log_request_info: bool) -> Router {
+    let apikey = provided_apikey.unwrap_or_else(|| {
+        const CHARSET: &[u8] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+
+        let mut rng = rand::rng();
+
+        let apikey = (0..RANDOM_APIKEY_LEN)
+            .map(|_| {
+                let idx = rng.random_range(0..CHARSET.len());
+                CHARSET[idx] as char
+            })
+            .collect();
+
+        println!("your current api-key is '{apikey}'");
+
+        apikey
+    });
+
+    let security_config = Arc::new(MySecurityConfig { apikey });
+
+    // init adapters
+    let llamacpp_client =
+        LocalLlamaCppClientAdapter::create_adapter(LLAMACPP_PORT, security_config.clone());
+    let llamacpp_backend_controller = LlamaCppControllerAdapter::create_adapter(
+        LLAMACPP_PORT,
+        LLAMACPP_COMMAND,
+        LLAMACPP_EXECDIR,
+    )
+    .await;
+
+    let model_loader = StaticModelLoader::create_adapter(
+        &PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../staticmodelconfig/static_config_files"),
+        security_config.clone(),
+    )
+    .unwrap();
+
+    // init services
+    let parallel_llamacpp_requests = 1_u8;
+    let environment_args = {
+        let mut environment_args = HashMap::new();
+        environment_args.insert("GGML_CUDA_ENABLE_UNIFIED_MEMORY".into(), "1".into());
+        environment_args
     };
 
-    let mut builder = AppState::builder(llamacpp_backend);
-    if let Some(provided_api_key) = provided_api_key {
-        builder.with_api_key(provided_api_key);
-    }
-    let app_state = Arc::new(builder.build().await);
+    let openai_service = OpenAiClientRequestForwardService::create_service(llamacpp_client);
+    let models_service = DefaultModelsService::create_service(
+        llamacpp_backend_controller.clone(),
+        model_loader,
+        parallel_llamacpp_requests,
+        environment_args,
+    );
+    let modelmanager_service =
+        InferenceBackendModelManagerService::create_service(llamacpp_backend_controller);
 
-    println!("your current api-key is '{}'", app_state.api_key());
+    // build configuration(s)
+    let config = Arc::new(MyAppState {
+        openai_service,
+        modelmanager_service,
+        models_service,
+    });
 
-    fn llamacpp_backend_reverse_proxy(
-        path: &'static str,
-        target: &'static str,
-        log_request_info: bool,
-    ) -> Router {
-        let mut llamacpp_backend_reverse_proxy: Router = ReverseProxy::new(path, target).into();
-        if log_request_info {
-            llamacpp_backend_reverse_proxy =
-                llamacpp_backend_reverse_proxy.layer(axum::middleware::from_fn(request_logger));
-        }
-        llamacpp_backend_reverse_proxy
-    }
-
-    let mut router = Router::new()
-        // Manager (explicitly proteced)
-        .merge(manager_router(app_state))
-        // LLAMA.CPP (implicitly protected via llama.cpp)
-        .merge(llamacpp_backend_reverse_proxy(
-            "/api/v1/",
-            "http://localhost:11440/v1/",
-            log_request_info,
-        ));
-
-    if llama_cpp_chatui {
-        // LLAMA.CPP WITH UI (implicitly protected via llama.cpp) - replicated at context-root, necessary for frontend
-        // !! THIS SHOULD BE IN THE LAST POSITION !!
-        router = router.merge(llamacpp_backend_reverse_proxy(
-            "/",
-            "http://localhost:11440",
-            log_request_info,
+    let router = Router::new()
+        .merge(application::open_ai_router(
+            config.clone(),
+            security_config.clone(),
         ))
-    }
+        .merge(application::model_manager_router(config, security_config));
 
-    router
+    if log_request_info {
+        router.layer(axum::middleware::from_fn(
+            application::middleware::request_logger,
+        ))
+    } else {
+        router
+    }
 }
 
 #[tokio::main]
 async fn main() {
+    rustls::crypto::ring::default_provider()
+        .install_default()
+        .expect("Failed to install rustls crypto provider");
+
     let mut args = std::env::args();
-    let (provided_port, provided_api_key, provided_log_request_info, provided_llama_cpp_chatui) = {
+    let (provided_port, provided_api_key, provided_log_request_info, _provided_llama_cpp_chatui) = {
         let mut port = None;
         let mut api_key = None;
         let mut log_request_info = false;
@@ -109,12 +180,7 @@ async fn main() {
         (port, api_key, log_request_info, llama_cpp_chatui)
     };
 
-    let app = create_app(
-        provided_api_key,
-        provided_log_request_info,
-        provided_llama_cpp_chatui,
-    )
-    .await;
+    let app = create_app(provided_api_key, provided_log_request_info).await;
 
     // configure certificate and private key used by https
     let config = RustlsConfig::from_pem_file(

@@ -1,0 +1,22 @@
+{
+  "alias": "gpt-oss-120b-Q8_0",
+  "model-path": "/model_data/huggingface/unsloth/gpt-oss-120b-GGUF/Q8_0/gpt-oss-120b-Q8_0-00001-of-00002.gguf",
+  "max-ctx-size": 32768,
+  "vocab-type": 2,
+  "n-vocab": 201088,
+  "n-ctx-train": 131072,
+  "n-embd": 2880,
+  "n-params": 116829156672,
+  "size": 63374323968,
+  "capabilities": [
+    "completion"
+  ],
+  "n-gpu-layers": 99,
+  "flash-attn": "on",
+  "batch-size": 2048,
+  "ubatch-size": 2048,
+  "jinja": true,
+  "no-mmap": true,
+  "no-context-shift": true,
+  "no-cont-batching": true
+}

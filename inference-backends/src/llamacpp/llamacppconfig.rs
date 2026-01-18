@@ -3,14 +3,17 @@ use std::{collections::HashMap, sync::Arc};
 use tokio::process::Command;
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct LlamaCppConfig {
+pub struct LlamaCppRunConfig {
     pub env_handle: Arc<HashMap<String, String>>,
     pub args_handle: Arc<LlamaCppConfigArgs>,
+    pub parallel: u8,
 }
 
-impl LlamaCppConfig {
+impl LlamaCppRunConfig {
     pub fn apply_args(&self, cmd: &mut Command) {
         self.args_handle.apply(cmd);
+        cmd.arg("--parallel");
+        cmd.arg(self.parallel.to_string());
     }
 
     pub fn apply_env(&self, cmd: &mut Command) {
@@ -30,16 +33,21 @@ pub enum ContextSize {
     T262144,
 }
 
+impl AsRef<u64> for ContextSize {
+    fn as_ref(&self) -> &u64 {
+        match self {
+            ContextSize::T8192 => &8192,
+            ContextSize::T16384 => &16384,
+            ContextSize::T32768 => &32768,
+            ContextSize::T65536 => &65536,
+            ContextSize::T131072 => &131072,
+            ContextSize::T262144 => &262144,
+        }
+    }
+}
 impl From<&ContextSize> for u64 {
     fn from(value: &ContextSize) -> Self {
-        match value {
-            ContextSize::T8192 => 8192,
-            ContextSize::T16384 => 16384,
-            ContextSize::T32768 => 32768,
-            ContextSize::T65536 => 65536,
-            ContextSize::T131072 => 131072,
-            ContextSize::T262144 => 262144,
-        }
+        value.as_ref().to_owned()
     }
 }
 
@@ -59,6 +67,30 @@ impl From<u64> for ContextSize {
 impl PartialEq for ContextSize {
     fn eq(&self, other: &Self) -> bool {
         Into::<u64>::into(self) == Into::<u64>::into(other)
+    }
+}
+
+impl PartialOrd for ContextSize {
+    fn ge(&self, other: &Self) -> bool {
+        Into::<u64>::into(self) >= Into::<u64>::into(other)
+    }
+    fn gt(&self, other: &Self) -> bool {
+        Into::<u64>::into(self) > Into::<u64>::into(other)
+    }
+    fn le(&self, other: &Self) -> bool {
+        Into::<u64>::into(self) <= Into::<u64>::into(other)
+    }
+    fn lt(&self, other: &Self) -> bool {
+        Into::<u64>::into(self) < Into::<u64>::into(other)
+    }
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        if self.gt(other) {
+            Some(std::cmp::Ordering::Greater)
+        } else if self.lt(other) {
+            Some(std::cmp::Ordering::Less)
+        } else {
+            Some(std::cmp::Ordering::Equal)
+        }
     }
 }
 
@@ -197,7 +229,7 @@ impl Serialize for ContextSize {
 #[derive(Debug, Clone, PartialEq)]
 pub struct LlamaCppConfigArgs {
     pub alias: String,
-    pub api_key: String,
+    pub api_key: Option<String>,
 
     //pub model_path: PathBuf,
     pub model_path: String,
@@ -218,7 +250,6 @@ pub struct LlamaCppConfigArgs {
     pub ubatch_size: Option<u16>,
     pub cache_type_v: Option<String>,
     pub cache_type_k: Option<String>,
-    pub parallel: Option<u8>,
     pub no_context_shift: bool,
     pub no_cont_batching: bool,
     pub min_p: Option<f32>,
@@ -239,8 +270,10 @@ impl LlamaCppConfigArgs {
         //cmd.arg(self.model_path.to_string_lossy().as_ref());
         cmd.arg(self.model_path.as_str());
 
-        cmd.arg("--api-key");
-        cmd.arg(&self.api_key);
+        if let Some(api_key) = &self.api_key {
+            cmd.arg("--api-key");
+            cmd.arg(api_key);
+        }
 
         if let Some(mmproj_path) = &self.mmproj_path {
             cmd.arg("--mmproj");
@@ -304,11 +337,6 @@ impl LlamaCppConfigArgs {
         if let Some(cache_type_k) = &self.cache_type_k {
             cmd.arg("--cache-type-k");
             cmd.arg(cache_type_k);
-        }
-
-        if let Some(parallel) = self.parallel {
-            cmd.arg("--parallel");
-            cmd.arg(parallel.to_string());
         }
 
         if self.no_context_shift {

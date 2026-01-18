@@ -1,5 +1,5 @@
 [workspace]
-members = [ "managed-process", "gw-server" , "inference-backends"]
+members = [ "managed-process", "gw-server" , "inference-backends", "staticmodelconfig"]
 default-members = [ "gw-server" ]
 resolver = "2"
 

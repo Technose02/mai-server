@@ -2,6 +2,11 @@
 
 A Rust-based server for generative AI inference with multiple model backends.
 
+TODO:
+- error-handling and logging
+- apikey for security-layer AND llama.cpp
+- reintegrate UI (clever dedicated routing needed)
+
 ## Overview
 
 mai-server is a modular, high-performance server architecture designed for serving large language models and other generative AI systems. The project combines:

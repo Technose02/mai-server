@@ -1,0 +1,22 @@
+{
+  "alias": "granite-4.0-h-small",
+  "model-path": "/model_data/huggingface/unsloth/granite-4.0-h-small-GGUF/granite-4.0-h-small-Q8_0.gguf",
+  "max-ctx-size": 131072,
+  "vocab-type": 2,
+  "n-vocab": 100352,
+  "n-ctx-train": 1048576,
+  "n-embd": 4096,
+  "n-params": 32207337984,
+  "size": 34261297152,
+  "capabilities": [
+    "completion"
+  ],
+  "threads": 8,
+  "n-gpu-layers": 99,
+  "flash-attn": "on",
+  "temp": 0.0,
+  "top-k": 0,
+  "top-p": 1.0,
+  "jinja": true,
+  "no-mmap": true
+}

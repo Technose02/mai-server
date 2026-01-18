@@ -7,10 +7,10 @@ use tokio::{
 };
 
 mod llamacppconfig;
-pub use llamacppconfig::{ContextSize, LlamaCppConfig, LlamaCppConfigArgs, OnOffValue};
+pub use llamacppconfig::{ContextSize, LlamaCppConfigArgs, LlamaCppRunConfig, OnOffValue};
 
-pub type LlamaCppProtocol = ProcessProtocol<LlamaCppConfig>;
-pub type LlamaCppBackendController = BackendController<LlamaCppConfig>;
+pub type LlamaCppProtocol = ProcessProtocol<LlamaCppRunConfig>;
+pub type LlamaCppBackendController = BackendController<LlamaCppRunConfig>;
 
 pub struct LlamaCppBackend {
     pub host: String,
@@ -20,7 +20,7 @@ pub struct LlamaCppBackend {
 }
 
 impl RunBackendProcess for LlamaCppBackend {
-    type ProcessConfig = LlamaCppConfig;
+    type ProcessConfig = LlamaCppRunConfig;
 
     fn run_backend_process(
         &self,

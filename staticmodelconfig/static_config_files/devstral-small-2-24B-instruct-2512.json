@@ -1,0 +1,23 @@
+{
+  "alias": "devstral-small-2-24B-instruct-2512",
+  "model-path": "/model_data/huggingface/unsloth/Devstral-Small-2-24B-Instruct-2512-GGUF/Devstral-Small-2-24B-Instruct-2512-UD-Q8_K_XL.gguf",
+  "max-ctx-size": 262144,
+  "vocab-type": 2,
+  "n-vocab": 131072,
+  "n-ctx-train": 393216,
+  "n-embd": 5120,
+  "n-params": 23572403200,
+  "size": 28983971840,
+  "capabilities": [
+    "completion",
+    "multimodal"
+  ],
+  "mmproj-path": "/model_data/huggingface/unsloth/Devstral-Small-2-24B-Instruct-2512-GGUF/mmproj-F16.gguf",
+  "prio": 3,
+  "threads": 8,
+  "n-gpu-layers": 99,
+  "flash-attn": "on",
+  "min-p": 0.01,
+  "jinja": true,
+  "no-mmap": true
+}

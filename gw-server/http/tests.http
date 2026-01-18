@@ -9,7 +9,8 @@ Authorization: Bearer {{apikey}}
 ###
 
 # devstral-small-2-24B
-PUT https://{{hostname}}:{{port}}/admin/llamacpp
+#PUT https://{{hostname}}:{{port}}/admin/llamacpp
+PUT https://localhost:8443/admin/llamacpp
 Authorization: Bearer {{apikey}}
 Content-Type: application/json
 
