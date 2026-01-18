@@ -44,7 +44,10 @@ pub trait ModelsServiceInPort: Send + Sync + 'static {
     ) -> Result<(), ()>;
 
     /// returns the ModelList to return on the models-endpoint
-    async fn get_models(&self) -> ModelList;
+    fn get_models(&self) -> Arc<ModelList>;
+
+    /// returns a comma separated list of the aliases of the models available
+    fn get_model_names(&self) -> String;
 
     fn get_default_model_alias(&self) -> String;
 
@@ -75,6 +78,6 @@ pub trait LlamaCppControllerOutPort: Send + Sync + 'static {
 
 #[async_trait]
 pub trait ModelLoaderOutPort: Send + Sync + 'static {
-    async fn get_static_model_configurations(&self) -> Vec<ModelConfiguration>;
+    fn get_static_model_configurations(&self) -> Vec<ModelConfiguration>;
     async fn get_model_configuration(&self, alias: &str) -> Result<Arc<LlamaCppConfigArgs>, ()>;
 }

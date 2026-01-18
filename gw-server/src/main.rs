@@ -96,7 +96,7 @@ async fn create_app(provided_apikey: Option<String>, log_request_info: bool) -> 
     .unwrap();
 
     // init services
-    let parallel_llamacpp_requests = 2_u8;
+    let parallel_llamacpp_requests = 1_u8;
     let environment_args = {
         let mut environment_args = HashMap::new();
         environment_args.insert("GGML_CUDA_ENABLE_UNIFIED_MEMORY".into(), "1".into());

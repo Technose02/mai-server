@@ -2,19 +2,20 @@ use crate::{ApplicationConfig, SecurityConfig, application::middleware::check_au
 use async_openai::types::chat::CreateChatCompletionRequest;
 use axum::{
     Json,
-    extract::{Path, Request, State},
+    extract::{Path, Query, Request, State},
     http::StatusCode,
     response::{IntoResponse, Response},
     routing::{Router, any, get, post},
 };
 use staticmodelconfig::ModelList;
-use std::{sync::Arc, time::Duration};
+use std::{collections::HashMap, sync::Arc, time::Duration};
 
 pub fn create_router(
     config: Arc<dyn ApplicationConfig>,
     security_config: Arc<dyn SecurityConfig>,
 ) -> Router {
     let open_routes = Router::new()
+        .route("/api/{n_parallel}/v1/models", get(get_models_with_parallel_param))
         .route("/api/v1/models", get(get_models))
         .route("/chat", get(chat_handler));
 
@@ -41,14 +42,37 @@ pub fn create_router(
         .with_state(config) // injects state in open_routes and secured_routes
 }
 
-async fn get_models(
-    State(config): State<Arc<dyn ApplicationConfig>>,
+async fn get_models_with_parallel_param(
+    State(application_config): State<Arc<dyn ApplicationConfig>>,
+    Path(n_parallel): Path<u8>,
+    Query(query_map): Query<HashMap<String, String>>,
 ) -> Result<Response, StatusCode> {
-    Ok((
-        StatusCode::OK,
-        Json::<ModelList>::from(config.models_service().get_models().await),
-    )
-        .into_response())
+    println!("info: models-endpoint called for parallel={n_parallel}");
+    get_models_impl(application_config, query_map).await
+}
+
+async fn get_models(
+    State(application_config): State<Arc<dyn ApplicationConfig>>,
+    Query(query_map): Query<HashMap<String, String>>,
+) -> Result<Response, StatusCode> {
+    get_models_impl(application_config, query_map).await
+}
+
+async fn get_models_impl(
+    application_config: Arc<dyn ApplicationConfig>,
+    query_map:HashMap<String,String>
+) -> Result<Response, StatusCode> {
+    if let Some(val) = query_map.get("names-only")
+        && val == "true"
+    {
+        Ok((StatusCode::OK, application_config.models_service().get_model_names()).into_response())
+    } else {
+        Ok((
+            StatusCode::OK,
+            Json::<&ModelList>::from(application_config.models_service().get_models().as_ref()),
+        )
+            .into_response())
+    }
 }
 
 async fn post_completions_with_parallel_param(

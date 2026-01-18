@@ -26,7 +26,7 @@ impl StaticModelLoader {
 
 #[async_trait]
 impl ModelLoaderOutPort for StaticModelLoader {
-    async fn get_static_model_configurations(&self) -> Vec<ModelConfiguration> {
+    fn get_static_model_configurations(&self) -> Vec<ModelConfiguration> {
         self.static_model_configuration_list.clone()
     }
 

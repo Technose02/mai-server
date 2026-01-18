@@ -22,6 +22,14 @@ impl Default for ModelList {
 }
 
 impl ModelList {
+    pub fn with_capacity(capacity: usize) -> Self {
+        Self {
+            models: Vec::with_capacity(capacity),
+            object: "list".into(),
+            data: Vec::with_capacity(capacity),
+        }
+    }
+
     pub fn as_list_of_meta_data_and_capabilities(&self) -> Vec<(DataMeta, Vec<String>)> {
         let mut ret = Vec::with_capacity(self.models.len());
         for (model, data) in self.models.iter().zip(self.data.iter()) {
@@ -37,6 +45,14 @@ impl ModelList {
             ret.push((meta_data, capabilities));
         }
         ret
+    }
+
+    pub fn names(&self) -> String {
+        self.models
+            .iter()
+            .map(|m| m.name.clone())
+            .collect::<Vec<String>>()
+            .join(",")
     }
 
     fn add_simple(
