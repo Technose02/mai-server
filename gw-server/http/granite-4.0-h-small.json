@@ -12,5 +12,6 @@
     "threads": 8,
     "temp": 0.0,
     "top-k": 0,
-    "top-p": 1.0
+    "top-p": 1.0,
+    "parallel": 1
 }
