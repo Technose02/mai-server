@@ -39,7 +39,10 @@ impl LlamaCppControllerOutPort for LlamaCppControllerAdapter {
         &self,
         llamacpp_run_config: LlamaCppRunConfig,
     ) -> LlamaCppProcessState {
-        println!("starting llamacpp-backend process using 'parallel' of {}", llamacpp_run_config.parallel);
+        println!(
+            "starting llamacpp-backend process using 'parallel' of {}",
+            llamacpp_run_config.parallel
+        );
         self.llamacpp_controller.start(llamacpp_run_config).await;
         self.llamacpp_controller.read_state().await
     }

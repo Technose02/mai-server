@@ -15,7 +15,10 @@ pub fn create_router(
     security_config: Arc<dyn SecurityConfig>,
 ) -> Router {
     let open_routes = Router::new()
-        .route("/api/{n_parallel}/v1/models", get(get_models_with_parallel_param))
+        .route(
+            "/api/{n_parallel}/v1/models",
+            get(get_models_with_parallel_param),
+        )
         .route("/api/v1/models", get(get_models))
         .route("/chat", get(chat_handler));
 
@@ -60,12 +63,16 @@ async fn get_models(
 
 async fn get_models_impl(
     application_config: Arc<dyn ApplicationConfig>,
-    query_map:HashMap<String,String>
+    query_map: HashMap<String, String>,
 ) -> Result<Response, StatusCode> {
     if let Some(val) = query_map.get("names-only")
         && val == "true"
     {
-        Ok((StatusCode::OK, application_config.models_service().get_model_names()).into_response())
+        Ok((
+            StatusCode::OK,
+            application_config.models_service().get_model_names(),
+        )
+            .into_response())
     } else {
         Ok((
             StatusCode::OK,

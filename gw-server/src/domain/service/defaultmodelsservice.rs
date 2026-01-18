@@ -53,9 +53,15 @@ impl ModelsServiceInPort for DefaultModelsService {
     }
 
     fn set_parallel_backend_requests(&self, parallel_backend_requests: u8) {
-        println!("setting parallel_backend_requests to {parallel_backend_requests}");
-        let mut _guard = self.llamacpp_parallel_processings.write().unwrap();
-        *_guard = parallel_backend_requests;
+        let old = {
+            let _guard = self.llamacpp_parallel_processings.read().unwrap();
+            *_guard
+        };
+        if parallel_backend_requests != old {
+            println!("switching parallel_backend_requests to {parallel_backend_requests}");
+            let mut _guard = self.llamacpp_parallel_processings.write().unwrap();
+            *_guard = parallel_backend_requests;
+        }
     }
 
     async fn ensure_requested_model_is_served(
@@ -65,6 +71,7 @@ impl ModelsServiceInPort for DefaultModelsService {
     ) -> Result<(), ()> {
         let start_time = std::time::Instant::now();
 
+        let mut waiting_notified = false;
         loop {
             if start_time.elapsed() >= timeout {
                 println!("starting model variant '{requested_model}' ran into timeout");
@@ -100,10 +107,10 @@ impl ModelsServiceInPort for DefaultModelsService {
                     self.llamacpp_controller
                         .start_llamacpp_process(llamacpp_run_config)
                         .await;
-                    println!(
-                        "waiting for backend to serve '{requested_model}' ({}s)",
-                        start_time.elapsed().as_secs()
-                    );
+                    if !waiting_notified {
+                        println!("waiting for backend to serve '{requested_model}'...)");
+                    }
+                    waiting_notified = true;
                     tokio::time::sleep(Duration::from_millis(500)).await
                 }
                 Err(()) => {
