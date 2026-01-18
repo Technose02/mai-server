@@ -116,6 +116,7 @@ impl LlamaCppRunConfigDto {
         LlamaCppRunConfig {
             env_handle: Arc::new(self.env),
             parallel: self.parallel.unwrap_or(DEFAULT_PARALLEL),
+            threads: self.threads.unwrap_or(-1),
             args_handle: Arc::new(LlamaCppConfigArgs {
                 alias: self.alias.clone(),
                 api_key: Some(api_key.into()),
@@ -127,7 +128,6 @@ impl LlamaCppRunConfigDto {
                 mmproj_path: self.mmproj_path.clone(),
                 prio: self.prio,
                 min_p: self.min_p,
-                threads: self.threads,
                 n_gpu_layers: self.n_gpu_layers,
                 jinja: self.jinja,
                 no_mmap: self.no_mmap,
@@ -158,7 +158,7 @@ impl From<LlamaCppRunConfig> for LlamaCppRunConfigDto {
             mmproj_path: value.args_handle.mmproj_path.clone(),
             prio: value.args_handle.prio,
             min_p: value.args_handle.min_p,
-            threads: value.args_handle.threads,
+            threads: Some(value.threads),
             n_gpu_layers: value.args_handle.n_gpu_layers,
             jinja: value.args_handle.jinja,
             ctx_size: value.args_handle.ctx_size,

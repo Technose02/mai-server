@@ -12,6 +12,7 @@ pub struct DefaultModelsService {
     llamacpp_controller: Arc<dyn LlamaCppControllerOutPort>,
     model_loader: Arc<dyn ModelLoaderOutPort>,
     llamacpp_parallel_processings: RwLock<u8>,
+    threads: i8,
     environment_args: Arc<HashMap<String, String>>,
     cached_model_list: OnceLock<Arc<ModelList>>,
 }
@@ -21,12 +22,14 @@ impl DefaultModelsService {
         llamacpp_controller: Arc<dyn LlamaCppControllerOutPort>,
         model_loader: Arc<dyn ModelLoaderOutPort>,
         llamacpp_parallel_processings: u8,
+        threads: i8,
         environment_args: HashMap<String, String>,
     ) -> Arc<dyn ModelsServiceInPort> {
         Arc::new(Self {
             llamacpp_controller,
             model_loader,
             llamacpp_parallel_processings: RwLock::new(llamacpp_parallel_processings),
+            threads,
             environment_args: Arc::new(environment_args),
             cached_model_list: OnceLock::new(),
         })
@@ -41,6 +44,7 @@ impl DefaultModelsService {
             args_handle: llamacpp_config_args.clone(),
             env_handle: self.environment_args.clone(),
             parallel: llamacpp_parallel_processings,
+            threads: self.threads,
         }
     }
 }

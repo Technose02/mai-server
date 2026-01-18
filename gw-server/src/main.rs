@@ -97,6 +97,7 @@ async fn create_app(provided_apikey: Option<String>, log_request_info: bool) -> 
 
     // init services
     let parallel_llamacpp_requests = 1_u8;
+    let number_of_llamacpp_threads = 8_i8;
     let environment_args = {
         let mut environment_args = HashMap::new();
         environment_args.insert("GGML_CUDA_ENABLE_UNIFIED_MEMORY".into(), "1".into());
@@ -108,6 +109,7 @@ async fn create_app(provided_apikey: Option<String>, log_request_info: bool) -> 
         llamacpp_backend_controller.clone(),
         model_loader,
         parallel_llamacpp_requests,
+        number_of_llamacpp_threads,
         environment_args,
     );
     let modelmanager_service =

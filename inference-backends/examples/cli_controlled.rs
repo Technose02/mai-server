@@ -34,6 +34,7 @@ async fn main() {
     let config_1 = LlamaCppRunConfig {
         env_handle: shared_env.clone(),
         parallel: 1,
+        threads: 8,
         args_handle: LlamaCppConfigArgs {
             alias: "devstral-small-2-24B-instruct-2512".to_string(),
             api_key: Some("apikey1".to_string()),
@@ -41,7 +42,6 @@ async fn main() {
             mmproj_path: Some("/model_data/huggingface/unsloth/Devstral-Small-2-24B-Instruct-2512-GGUF/mmproj-F16.gguf".to_string()),
             prio: Some(3),
             min_p: Some(0.01),
-            threads: Some(-1),
             n_gpu_layers: Some(99),
             jinja: true,
             ctx_size: Some(ContextSize::T262144),
@@ -67,6 +67,7 @@ async fn main() {
     let config_2 = LlamaCppRunConfig {
         env_handle: shared_env.clone(),
         parallel: 1,
+        threads: 8,
         args_handle: LlamaCppConfigArgs {
             alias: "gpt-oss-120b-Q8_0".to_string(),
             api_key: Some("apikey2".to_string()),
@@ -75,7 +76,6 @@ async fn main() {
             mmproj_path: None,
             prio: None,
             min_p: None,
-            threads: None,
             n_gpu_layers: Some(99),
             jinja: true,
             ctx_size: Some(ContextSize::T32768),

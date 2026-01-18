@@ -7,6 +7,7 @@ pub struct LlamaCppRunConfig {
     pub env_handle: Arc<HashMap<String, String>>,
     pub args_handle: Arc<LlamaCppConfigArgs>,
     pub parallel: u8,
+    pub threads: i8,
 }
 
 impl LlamaCppRunConfig {
@@ -14,6 +15,8 @@ impl LlamaCppRunConfig {
         self.args_handle.apply(cmd);
         cmd.arg("--parallel");
         cmd.arg(self.parallel.to_string());
+        cmd.arg("--threads");
+        cmd.arg(self.threads.to_string());
     }
 
     pub fn apply_env(&self, cmd: &mut Command) {
@@ -238,7 +241,6 @@ pub struct LlamaCppConfigArgs {
     pub mmproj_path: Option<String>,
 
     pub prio: Option<u8>,
-    pub threads: Option<i8>,
     pub n_gpu_layers: Option<u8>,
     pub jinja: bool,
     pub ctx_size: Option<ContextSize>,
@@ -284,11 +286,6 @@ impl LlamaCppConfigArgs {
         if let Some(prio) = self.prio {
             cmd.arg("--prio");
             cmd.arg(prio.to_string());
-        }
-
-        if let Some(threads) = self.threads {
-            cmd.arg("--threads");
-            cmd.arg(threads.to_string());
         }
 
         if let Some(n_gpu_layers) = self.n_gpu_layers {

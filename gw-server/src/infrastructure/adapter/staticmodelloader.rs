@@ -49,7 +49,6 @@ impl ModelLoaderOutPort for StaticModelLoader {
                 model_path: model_configuration.model_path.clone(),
                 mmproj_path: model_configuration.mmproj_path.clone(),
                 prio: model_configuration.prio,
-                threads: model_configuration.threads,
                 n_gpu_layers: model_configuration.n_gpu_layers,
                 jinja: model_configuration.jinja,
                 ctx_size: optional_context_size,

@@ -69,13 +69,13 @@ async fn update_model_configuration(
     let llamacpp_config = LlamaCppRunConfig {
         env_handle,
         parallel: 1,
+        threads: 8,
         args_handle: Arc::new(LlamaCppConfigArgs {
             alias: model_configuration.alias.clone(),
             api_key: None,
             model_path: model_configuration.model_path.clone(),
             mmproj_path: model_configuration.mmproj_path.clone(),
             prio: model_configuration.prio,
-            threads: model_configuration.threads,
             n_gpu_layers: model_configuration.n_gpu_layers,
             jinja: model_configuration.jinja,
             ctx_size: Some(inference_backends::ContextSize::T8192),
