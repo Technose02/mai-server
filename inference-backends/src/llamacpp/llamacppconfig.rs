@@ -3,14 +3,17 @@ use std::{collections::HashMap, sync::Arc};
 use tokio::process::Command;
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct LlamaCppConfig {
+pub struct LlamaCppRunConfig {
     pub env_handle: Arc<HashMap<String, String>>,
     pub args_handle: Arc<LlamaCppConfigArgs>,
+    pub parallel: u8,
 }
 
-impl LlamaCppConfig {
-    pub fn apply_args(&self, cmd: &mut Command, parallel: u8) {
-        self.args_handle.apply(cmd, parallel);
+impl LlamaCppRunConfig {
+    pub fn apply_args(&self, cmd: &mut Command) {
+        self.args_handle.apply(cmd);
+        cmd.arg("--parallel");
+        cmd.arg(self.parallel.to_string());
     }
 
     pub fn apply_env(&self, cmd: &mut Command) {
@@ -259,16 +262,13 @@ pub struct LlamaCppConfigArgs {
 }
 
 impl LlamaCppConfigArgs {
-    fn apply(&self, cmd: &mut Command, parallel: u8) {
+    fn apply(&self, cmd: &mut Command) {
         cmd.arg("--alias");
         cmd.arg(&self.alias);
 
         cmd.arg("--model");
         //cmd.arg(self.model_path.to_string_lossy().as_ref());
         cmd.arg(self.model_path.as_str());
-
-        cmd.arg("--parallel");
-        cmd.arg(parallel.to_string());
 
         if let Some(api_key) = &self.api_key {
             cmd.arg("--api-key");

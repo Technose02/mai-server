@@ -2,11 +2,11 @@ use crate::{
     ApplicationConfig, SecurityConfig,
     application::{
         middleware::check_auth,
-        model::{LlamaCppConfig, LlamaCppProcessState},
+        model::{LlamaCppProcessStateResponse, LlamaCppRunConfigDto},
     },
 };
 use axum::{
-    extract::{Json as JsonExtract, Query, State},
+    extract::{Json as JsonExtract, State},
     http::StatusCode,
     response::Json as JsonBody,
     routing::{Router, get},
@@ -44,8 +44,8 @@ pub fn create_router(
 
 async fn get_llama_cpp_state(
     State(combined_state): State<CombinedState>,
-) -> Result<JsonBody<LlamaCppProcessState>, StatusCode> {
-    let llamacpp_process_state: LlamaCppProcessState = combined_state
+) -> Result<JsonBody<LlamaCppProcessStateResponse>, StatusCode> {
+    let llamacpp_process_state: LlamaCppProcessStateResponse = combined_state
         .config
         .modelmanager_service()
         .get_llamacpp_state()
@@ -56,15 +56,14 @@ async fn get_llama_cpp_state(
 
 async fn start_llama_cpp_process(
     State(combined_state): State<CombinedState>,
-    Query(parallel): Query<Option<u8>>,
-    JsonBody(llamacpp_config): JsonExtract<LlamaCppConfig>,
-) -> Result<JsonBody<LlamaCppProcessState>, StatusCode> {
-    let parallel = parallel.unwrap_or(1);
-    let llamacpp_config = llamacpp_config.map(Some(combined_state.security_config.get_apikey()));
-    let llamacpp_process_state: LlamaCppProcessState = combined_state
+    JsonBody(llamacpp_run_config_dto): JsonExtract<LlamaCppRunConfigDto>,
+) -> Result<JsonBody<LlamaCppProcessStateResponse>, StatusCode> {
+    let llama_cpp_run_config =
+        llamacpp_run_config_dto.map_into_domain(combined_state.security_config.get_apikey());
+    let llamacpp_process_state: LlamaCppProcessStateResponse = combined_state
         .config
         .modelmanager_service()
-        .start_llamacpp_process(&llamacpp_config, parallel)
+        .start_llamacpp_process(llama_cpp_run_config)
         .await
         .into();
     Ok(JsonBody::from(llamacpp_process_state))

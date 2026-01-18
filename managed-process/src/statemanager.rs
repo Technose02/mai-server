@@ -44,51 +44,43 @@ where
         let state = self.state.take();
 
         match state {
-            Some(ProcessState::<ProcessConfig>::Stopping(
-                _,
-                Some((next_config_handle, parallel)),
-            )) => {
+            Some(ProcessState::<ProcessConfig>::Stopping(_, Some(next_config_handle))) => {
                 let (cancel_sender, cancel_receiver) = oneshot_channel::<bool>();
                 let mut ocs = self.optional_cancel_sender.lock().unwrap();
                 *ocs = Some(cancel_sender);
                 self.backend.run_backend_process(
                     next_config_handle.clone(),
-                    parallel,
                     cancel_receiver,
                     self.controller_sender_proto.clone(),
                 );
-                self.state = Some(ProcessState::<ProcessConfig>::Starting((
-                    next_config_handle,
-                    parallel,
-                )));
+                self.state = Some(ProcessState::<ProcessConfig>::Starting(next_config_handle));
             }
             _ => self.state = Some(ProcessState::<ProcessConfig>::Stopped),
         }
     }
 
     pub fn on_process_started(&mut self) {
-        if let Some(ProcessState::<ProcessConfig>::Starting((config, parallel))) = self.state.take()
-        {
-            self.state = Some(ProcessState::<ProcessConfig>::Running((config, parallel)));
+        if let Some(ProcessState::<ProcessConfig>::Starting(config)) = self.state.take() {
+            self.state = Some(ProcessState::<ProcessConfig>::Running(config));
         } else {
             panic!("received 'ProcessStarted' but state is not 'Starting'")
         }
     }
 
-    pub fn on_start_process(&mut self, config: ProcessConfig, parallel: u8) {
+    pub fn on_start_process(&mut self, config: ProcessConfig) {
         match &self.state {
-            Some(ProcessState::<ProcessConfig>::Running((cur_config, p))) => {
-                if *cur_config == config && *p == parallel {
+            Some(ProcessState::<ProcessConfig>::Running(cur_config)) => {
+                if *cur_config == config {
                     return;
                 }
             }
-            Some(ProcessState::<ProcessConfig>::Starting((starting_config, p))) => {
-                if *starting_config == config && *p == parallel {
+            Some(ProcessState::<ProcessConfig>::Starting(starting_config)) => {
+                if *starting_config == config {
                     return;
                 }
             }
-            Some(ProcessState::<ProcessConfig>::Stopping(_, Some((next_config, p)))) => {
-                if *next_config == config && *p == parallel {
+            Some(ProcessState::<ProcessConfig>::Stopping(_, Some(next_config))) => {
+                if *next_config == config {
                     return;
                 }
             }
@@ -97,10 +89,10 @@ where
 
         let state = self.state.take();
         match state {
-            Some(ProcessState::<ProcessConfig>::Running((old_config, _))) => {
+            Some(ProcessState::<ProcessConfig>::Running(old_config)) => {
                 self.state = Some(ProcessState::<ProcessConfig>::Stopping(
                     old_config,
-                    Some((config, parallel)),
+                    Some(config),
                 ));
 
                 if let Some(cancel_sender) = self.optional_cancel_sender.lock().unwrap().take() {
@@ -109,10 +101,10 @@ where
                     eprintln!("err: expected cancel_sender to be available but was None");
                 }
             }
-            Some(ProcessState::<ProcessConfig>::Starting((old_config, _))) => {
+            Some(ProcessState::<ProcessConfig>::Starting(old_config)) => {
                 self.state = Some(ProcessState::<ProcessConfig>::Stopping(
                     old_config,
-                    Some((config, parallel)),
+                    Some(config),
                 ));
                 if let Some(cancel_sender) = self.optional_cancel_sender.lock().unwrap().take() {
                     cancel_sender.send(true).unwrap();
@@ -123,7 +115,7 @@ where
             Some(ProcessState::<ProcessConfig>::Stopping(old_config, _)) => {
                 self.state = Some(ProcessState::<ProcessConfig>::Stopping(
                     old_config,
-                    Some((config, parallel)),
+                    Some(config),
                 ));
             }
             Some(ProcessState::<ProcessConfig>::Stopped) => {
@@ -132,11 +124,10 @@ where
                 *ocs = Some(cancel_sender);
                 self.backend.run_backend_process(
                     config.clone(),
-                    parallel,
                     cancel_receiver,
                     self.controller_sender(),
                 );
-                self.state = Some(ProcessState::<ProcessConfig>::Starting((config, parallel)));
+                self.state = Some(ProcessState::<ProcessConfig>::Starting(config));
             }
             _ => unreachable!(),
         }
@@ -151,13 +142,13 @@ where
 
         match state {
             Some(ProcessState::<ProcessConfig>::Running(cfg)) => {
-                self.state = Some(ProcessState::<ProcessConfig>::Stopping(cfg.0, None));
+                self.state = Some(ProcessState::<ProcessConfig>::Stopping(cfg, None));
                 if let Some(cancel_sender) = self.optional_cancel_sender.lock().unwrap().take() {
                     cancel_sender.send(true).unwrap();
                 }
             }
             Some(ProcessState::<ProcessConfig>::Starting(cfg)) => {
-                self.state = Some(ProcessState::<ProcessConfig>::Stopping(cfg.0, None));
+                self.state = Some(ProcessState::<ProcessConfig>::Stopping(cfg, None));
                 if let Some(cancel_sender) = self.optional_cancel_sender.lock().unwrap().take() {
                     cancel_sender.send(true).unwrap();
                 }

@@ -7,10 +7,10 @@ use tokio::{
 };
 
 mod llamacppconfig;
-pub use llamacppconfig::{ContextSize, LlamaCppConfig, LlamaCppConfigArgs, OnOffValue};
+pub use llamacppconfig::{ContextSize, LlamaCppConfigArgs, LlamaCppRunConfig, OnOffValue};
 
-pub type LlamaCppProtocol = ProcessProtocol<LlamaCppConfig>;
-pub type LlamaCppBackendController = BackendController<LlamaCppConfig>;
+pub type LlamaCppProtocol = ProcessProtocol<LlamaCppRunConfig>;
+pub type LlamaCppBackendController = BackendController<LlamaCppRunConfig>;
 
 pub struct LlamaCppBackend {
     pub host: String,
@@ -20,12 +20,11 @@ pub struct LlamaCppBackend {
 }
 
 impl RunBackendProcess for LlamaCppBackend {
-    type ProcessConfig = LlamaCppConfig;
+    type ProcessConfig = LlamaCppRunConfig;
 
     fn run_backend_process(
         &self,
         process_config: Self::ProcessConfig,
-        parallel: u8,
         cancel_receiver: tokio::sync::oneshot::Receiver<bool>,
         notifier: tokio::sync::mpsc::Sender<ProcessProtocol<Self::ProcessConfig>>,
     ) {
@@ -43,7 +42,7 @@ impl RunBackendProcess for LlamaCppBackend {
         cmd.arg("--port");
         cmd.arg(self.port.to_string());
 
-        process_config.apply_args(&mut cmd, parallel);
+        process_config.apply_args(&mut cmd);
 
         // provide std-streams
         cmd.stdout(Stdio::null());

@@ -1,25 +1,28 @@
 use crate::domain::ports::{LlamaCppControllerOutPort, ModelLoaderOutPort, ModelsServiceInPort};
 use async_trait::async_trait;
-use inference_backends::ContextSize;
+use inference_backends::{ContextSize, LlamaCppRunConfig};
 use staticmodelconfig::{ContextSizeAwareAlias, ModelList};
-use std::{sync::Arc, time::Duration};
+use std::{collections::HashMap, sync::Arc, time::Duration};
 
 pub struct DefaultModelsService {
     llamacpp_controller: Arc<dyn LlamaCppControllerOutPort>,
     model_loader: Arc<dyn ModelLoaderOutPort>,
-    parallel_llamacpp_requests: u8,
+    llamacpp_parallel_processings: u8,
+    environment_args: Arc<HashMap<String, String>>,
 }
 
 impl DefaultModelsService {
     pub fn create_service(
         llamacpp_controller: Arc<dyn LlamaCppControllerOutPort>,
         model_loader: Arc<dyn ModelLoaderOutPort>,
-        parallel_llamacpp_requests: u8,
+        llamacpp_parallel_processings: u8,
+        environment_args: HashMap<String, String>,
     ) -> Arc<dyn ModelsServiceInPort> {
         Arc::new(Self {
             llamacpp_controller,
             model_loader,
-            parallel_llamacpp_requests,
+            llamacpp_parallel_processings,
+            environment_args: Arc::new(environment_args),
         })
     }
 }
@@ -55,10 +58,10 @@ impl ModelsServiceInPort for DefaultModelsService {
                 println!("starting model variant '{requested_model}' ran into timeout");
                 return Err(());
             }
-            if let inference_backends::LlamaCppProcessState::Running((s, p)) =
+            if let inference_backends::LlamaCppProcessState::Running(s) =
                 self.llamacpp_controller.get_llamacpp_state().await
             {
-                if s.args_handle.alias == requested_model && p == self.parallel_llamacpp_requests {
+                if s.args_handle.alias == requested_model {
                     return Ok(());
                 } else {
                     println!(
@@ -73,12 +76,15 @@ impl ModelsServiceInPort for DefaultModelsService {
                 .get_model_configuration(requested_model)
                 .await
             {
-                Ok(llamacpp_config) => {
+                Ok(llamacpp_config_args) => {
+                    let llamacpp_run_config = LlamaCppRunConfig {
+                        args_handle: llamacpp_config_args,
+                        env_handle: self.environment_args.clone(),
+                        parallel: self.llamacpp_parallel_processings,
+                    };
+
                     self.llamacpp_controller
-                        .start_llamacpp_process(
-                            llamacpp_config.as_ref(),
-                            self.parallel_llamacpp_requests,
-                        )
+                        .start_llamacpp_process(llamacpp_run_config)
                         .await;
                     println!(
                         "waiting for backend to serve '{requested_model}' ({}s)",

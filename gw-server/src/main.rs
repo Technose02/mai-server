@@ -1,22 +1,21 @@
-use crate::domain::{
-    ports::{ModelManagerServiceInPort, ModelsServiceInPort, OpenAiRequestForwardPServiceInPort},
-    service::{
-        DefaultModelsService, InferenceBackendModelManagerService,
-        OpenAiClientRequestForwardService,
+use crate::{
+    domain::{
+        ports::{
+            ModelManagerServiceInPort, ModelsServiceInPort, OpenAiRequestForwardPServiceInPort,
+        },
+        service::{
+            DefaultModelsService, InferenceBackendModelManagerService,
+            OpenAiClientRequestForwardService,
+        },
     },
-};
-use crate::infrastructure::adapter::{
-    LlamaCppControllerAdapter, LocalLlamaCppClientAdapter, StaticModelLoader,
+    infrastructure::adapter::{
+        LlamaCppControllerAdapter, LocalLlamaCppClientAdapter, StaticModelLoader,
+    },
 };
 use axum::routing::Router;
 use axum_server::tls_rustls::RustlsConfig;
 use rand::Rng;
-use std::{
-    borrow::Cow,
-    net::SocketAddr,
-    path::PathBuf,
-    sync::{Arc, RwLock},
-};
+use std::{borrow::Cow, collections::HashMap, net::SocketAddr, path::PathBuf, sync::Arc};
 
 mod application;
 mod domain;
@@ -34,8 +33,6 @@ struct MyAppState {
     openai_service: Arc<dyn OpenAiRequestForwardPServiceInPort>,
     modelmanager_service: Arc<dyn ModelManagerServiceInPort>,
     models_service: Arc<dyn ModelsServiceInPort>,
-    number_parallel_api_requests: RwLock<u8>,
-    max_parallel_api_requests: u8,
 }
 
 impl ApplicationConfig for MyAppState {
@@ -49,24 +46,6 @@ impl ApplicationConfig for MyAppState {
 
     fn models_service(&self) -> Arc<dyn ModelsServiceInPort> {
         self.models_service.clone()
-    }
-
-    fn decrease_increase_number_of_parallel_requests(&self) {
-        let mut guard = self.number_parallel_api_requests.write().unwrap();
-        *guard -= 1;
-        println!("number_parallel_api_requests: {}", *guard);
-    }
-
-    fn increase_number_of_parallel_requests(&self) -> bool {
-        let mut guard = self.number_parallel_api_requests.write().unwrap();
-        let ret = if *guard == self.max_parallel_api_requests {
-            false
-        } else {
-            *guard += 1;
-            true
-        };
-        println!("number_parallel_api_requests: {}", *guard);
-        ret
     }
 }
 
@@ -117,13 +96,19 @@ async fn create_app(provided_apikey: Option<String>, log_request_info: bool) -> 
     .unwrap();
 
     // init services
-    let max_parallel_api_requests = 1_u8;
-    let parallel_llamacpp_requests = max_parallel_api_requests;
+    let parallel_llamacpp_requests = 2_u8;
+    let environment_args = {
+        let mut environment_args = HashMap::new();
+        environment_args.insert("GGML_CUDA_ENABLE_UNIFIED_MEMORY".into(), "1".into());
+        environment_args
+    };
+
     let openai_service = OpenAiClientRequestForwardService::create_service(llamacpp_client);
     let models_service = DefaultModelsService::create_service(
         llamacpp_backend_controller.clone(),
         model_loader,
         parallel_llamacpp_requests,
+        environment_args,
     );
     let modelmanager_service =
         InferenceBackendModelManagerService::create_service(llamacpp_backend_controller);
@@ -133,8 +118,6 @@ async fn create_app(provided_apikey: Option<String>, log_request_info: bool) -> 
         openai_service,
         modelmanager_service,
         models_service,
-        max_parallel_api_requests,
-        number_parallel_api_requests: RwLock::new(0),
     });
 
     let router = Router::new()

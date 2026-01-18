@@ -1,6 +1,6 @@
 use inference_backends::{
-    LlamaCppBackend, LlamaCppBackendController, LlamaCppConfig, LlamaCppConfigArgs,
-    LlamaCppProcessState,
+    LlamaCppBackend, LlamaCppBackendController, LlamaCppConfigArgs, LlamaCppProcessState,
+    LlamaCppRunConfig,
 };
 use reqwest::get;
 use staticmodelconfig::{ModelConfiguration, ModelList};
@@ -66,8 +66,9 @@ async fn update_model_configuration(
     println!("processing {}", model_configuration.alias);
 
     // create llamacpp_config from model_configuration
-    let llamacpp_config = LlamaCppConfig {
+    let llamacpp_config = LlamaCppRunConfig {
         env_handle,
+        parallel: 1,
         args_handle: Arc::new(LlamaCppConfigArgs {
             alias: model_configuration.alias.clone(),
             api_key: None,
@@ -99,7 +100,7 @@ async fn update_model_configuration(
     };
 
     // start llama-server
-    llamacpp_backend_controller.start(llamacpp_config, 1).await;
+    llamacpp_backend_controller.start(llamacpp_config).await;
     loop {
         match llamacpp_backend_controller.read_state().await {
             LlamaCppProcessState::Running(s)

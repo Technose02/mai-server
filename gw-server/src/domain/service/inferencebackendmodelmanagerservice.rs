@@ -1,6 +1,6 @@
 use crate::domain::ports::{LlamaCppControllerOutPort, ModelManagerServiceInPort};
 use async_trait::async_trait;
-use inference_backends::{LlamaCppConfig, LlamaCppProcessState};
+use inference_backends::{LlamaCppProcessState, LlamaCppRunConfig};
 use std::sync::Arc;
 
 pub struct InferenceBackendModelManagerService {
@@ -29,11 +29,10 @@ impl ModelManagerServiceInPort for InferenceBackendModelManagerService {
 
     async fn start_llamacpp_process(
         &self,
-        llamacpp_config: &LlamaCppConfig,
-        parallel: u8,
+        llamacpp_run_config: LlamaCppRunConfig,
     ) -> LlamaCppProcessState {
         self.llamacpp_controller
-            .start_llamacpp_process(llamacpp_config, parallel)
+            .start_llamacpp_process(llamacpp_run_config)
             .await
     }
 }

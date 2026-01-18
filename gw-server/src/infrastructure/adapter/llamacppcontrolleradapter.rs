@@ -1,7 +1,7 @@
 use crate::domain::ports::LlamaCppControllerOutPort;
 use async_trait::async_trait;
 use inference_backends::{
-    LlamaCppBackend, LlamaCppBackendController, LlamaCppConfig, LlamaCppProcessState,
+    LlamaCppBackend, LlamaCppBackendController, LlamaCppProcessState, LlamaCppRunConfig,
 };
 use std::sync::Arc;
 
@@ -37,12 +37,9 @@ impl LlamaCppControllerOutPort for LlamaCppControllerAdapter {
 
     async fn start_llamacpp_process(
         &self,
-        llamacpp_config: &LlamaCppConfig,
-        parallel: u8,
+        llamacpp_run_config: LlamaCppRunConfig,
     ) -> LlamaCppProcessState {
-        self.llamacpp_controller
-            .start(llamacpp_config.clone(), parallel)
-            .await;
+        self.llamacpp_controller.start(llamacpp_run_config).await;
         self.llamacpp_controller.read_state().await
     }
 

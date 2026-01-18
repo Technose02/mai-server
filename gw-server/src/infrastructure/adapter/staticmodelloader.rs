@@ -1,12 +1,11 @@
 use crate::{SecurityConfig, domain::ports::ModelLoaderOutPort};
 use async_trait::async_trait;
-use inference_backends::{LlamaCppConfig, LlamaCppConfigArgs};
+use inference_backends::LlamaCppConfigArgs;
 use staticmodelconfig::{ContextSizeAwareAlias, ModelConfiguration};
-use std::{collections::HashMap, error::Error, path::Path, sync::Arc};
+use std::{error::Error, path::Path, sync::Arc};
 
 pub struct StaticModelLoader {
     static_model_configuration_list: Vec<ModelConfiguration>,
-    env_handle: Arc<HashMap<String, String>>,
     security_config: Arc<dyn SecurityConfig>,
 }
 
@@ -15,15 +14,11 @@ impl StaticModelLoader {
         configurations_dir: &Path,
         security_config: Arc<dyn SecurityConfig>,
     ) -> Result<Arc<dyn ModelLoaderOutPort>, Box<dyn Error>> {
-        let mut env = HashMap::new();
-        env.insert("GGML_CUDA_ENABLE_UNIFIED_MEMORY".into(), "1".into());
-
         Ok(Arc::new(Self {
             static_model_configuration_list: ModelConfiguration::load_from_json_files(
                 configurations_dir,
             )?
             .0,
-            env_handle: Arc::new(env),
             security_config,
         }))
     }
@@ -35,7 +30,7 @@ impl ModelLoaderOutPort for StaticModelLoader {
         self.static_model_configuration_list.clone()
     }
 
-    async fn get_model_configuration(&self, alias: &str) -> Result<Arc<LlamaCppConfig>, ()> {
+    async fn get_model_configuration(&self, alias: &str) -> Result<Arc<LlamaCppConfigArgs>, ()> {
         let alias = alias.to_owned();
         let (model_key, optional_context_size) =
             match ContextSizeAwareAlias::try_from(alias.clone()) {
@@ -48,35 +43,32 @@ impl ModelLoaderOutPort for StaticModelLoader {
             .iter()
             .find(|&config| config.alias == model_key)
         {
-            Ok(Arc::new(LlamaCppConfig {
-                env_handle: self.env_handle.clone(),
-                args_handle: Arc::new(LlamaCppConfigArgs {
-                    alias,
-                    api_key: Some(self.security_config.get_apikey().to_string()),
-                    model_path: model_configuration.model_path.clone(),
-                    mmproj_path: model_configuration.mmproj_path.clone(),
-                    prio: model_configuration.prio,
-                    threads: model_configuration.threads,
-                    n_gpu_layers: model_configuration.n_gpu_layers,
-                    jinja: model_configuration.jinja,
-                    ctx_size: optional_context_size,
-                    no_mmap: model_configuration.no_mmap,
-                    flash_attn: model_configuration.flash_attn.clone(),
-                    fit: model_configuration.fit.clone(),
-                    batch_size: model_configuration.batch_size,
-                    ubatch_size: model_configuration.ubatch_size,
-                    cache_type_k: model_configuration.cache_type_k.clone(),
-                    cache_type_v: model_configuration.cache_type_v.clone(),
-                    no_context_shift: model_configuration.no_context_shift,
-                    no_cont_batching: model_configuration.no_cont_batching,
-                    min_p: model_configuration.min_p,
-                    temp: model_configuration.temp,
-                    repeat_penalty: model_configuration.repeat_penalty,
-                    presence_penalty: model_configuration.presence_penalty,
-                    seed: model_configuration.seed,
-                    top_k: model_configuration.top_k,
-                    top_p: model_configuration.top_p,
-                }),
+            Ok(Arc::new(LlamaCppConfigArgs {
+                alias,
+                api_key: Some(self.security_config.get_apikey().to_string()),
+                model_path: model_configuration.model_path.clone(),
+                mmproj_path: model_configuration.mmproj_path.clone(),
+                prio: model_configuration.prio,
+                threads: model_configuration.threads,
+                n_gpu_layers: model_configuration.n_gpu_layers,
+                jinja: model_configuration.jinja,
+                ctx_size: optional_context_size,
+                no_mmap: model_configuration.no_mmap,
+                flash_attn: model_configuration.flash_attn.clone(),
+                fit: model_configuration.fit.clone(),
+                batch_size: model_configuration.batch_size,
+                ubatch_size: model_configuration.ubatch_size,
+                cache_type_k: model_configuration.cache_type_k.clone(),
+                cache_type_v: model_configuration.cache_type_v.clone(),
+                no_context_shift: model_configuration.no_context_shift,
+                no_cont_batching: model_configuration.no_cont_batching,
+                min_p: model_configuration.min_p,
+                temp: model_configuration.temp,
+                repeat_penalty: model_configuration.repeat_penalty,
+                presence_penalty: model_configuration.presence_penalty,
+                seed: model_configuration.seed,
+                top_k: model_configuration.top_k,
+                top_p: model_configuration.top_p,
             }))
         } else {
             eprintln!("no model-configuration found for alias '{model_key}'");

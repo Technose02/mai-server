@@ -1,7 +1,4 @@
-use crate::{
-    ApplicationConfig, SecurityConfig,
-    application::middleware::{check_auth, limit_max_parallel_requests},
-};
+use crate::{ApplicationConfig, SecurityConfig, application::middleware::check_auth};
 use async_openai::types::chat::CreateChatCompletionRequest;
 use axum::{
     Json, debug_handler,
@@ -21,29 +18,18 @@ pub fn create_router(
         .route("/api/v1/models", get(get_models))
         .route("/chat", get(chat_handler));
 
-    let secured_and_available = Router::new()
+    let secured = Router::new()
         .route("/api/v1/chat/completions", post(post_completions))
         .route("/api/v1/{*path}", any(fallback))
-        .layer(axum::middleware::from_fn_with_state(
-            config.clone(),
-            limit_max_parallel_requests,
-        ))
+        .route("/api/v2/{*path}", any(|| async { StatusCode::NOT_FOUND }))
         .layer(axum::middleware::from_fn_with_state(
             security_config.clone(),
             check_auth,
         ));
 
-    let secured_routes_but_unavailable = Router::new()
-        .route("/api/v2/{*path}", any(|| async { StatusCode::NOT_FOUND }))
-        .layer(axum::middleware::from_fn_with_state(
-            security_config,
-            check_auth,
-        ));
-
     Router::new()
         .merge(open_routes)
-        .merge(secured_and_available)
-        .merge(secured_routes_but_unavailable)
+        .merge(secured)
         .with_state(config) // injects state in open_routes and secured_routes
 }
 

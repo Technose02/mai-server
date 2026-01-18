@@ -2,7 +2,7 @@ use std::{collections::HashMap, io::stdin, sync::Arc};
 
 use inference_backends::{
     AttnSetting, ComfyUiBackend, ComfyUiBackendController, ComfyUiConfig, ComfyUiConfigArgs,
-    ContextSize, LlamaCppBackend, LlamaCppBackendController, LlamaCppConfig, LlamaCppConfigArgs,
+    ContextSize, LlamaCppBackend, LlamaCppBackendController, LlamaCppConfigArgs, LlamaCppRunConfig,
     OnOffValue, VRamSetting,
 };
 
@@ -31,8 +31,9 @@ async fn main() {
     };
     let comfyui_backend_controller = ComfyUiBackendController::init_backend(comfyui_backend).await;
 
-    let config_1 = LlamaCppConfig {
+    let config_1 = LlamaCppRunConfig {
         env_handle: shared_env.clone(),
+        parallel: 1,
         args_handle: LlamaCppConfigArgs {
             alias: "devstral-small-2-24B-instruct-2512".to_string(),
             api_key: Some("apikey1".to_string()),
@@ -50,7 +51,6 @@ async fn main() {
             ubatch_size: None,
             cache_type_v: None,
             cache_type_k: None,
-            parallel: None,
             no_context_shift: false,
             no_cont_batching: false,
             temp: None,
@@ -64,8 +64,9 @@ async fn main() {
         .into()
     };
 
-    let config_2 = LlamaCppConfig {
+    let config_2 = LlamaCppRunConfig {
         env_handle: shared_env.clone(),
+        parallel: 1,
         args_handle: LlamaCppConfigArgs {
             alias: "gpt-oss-120b-Q8_0".to_string(),
             api_key: Some("apikey2".to_string()),
@@ -84,7 +85,6 @@ async fn main() {
             ubatch_size: Some(2048),
             cache_type_v: Some("q8_0".to_string()),
             cache_type_k: Some("q8_0".to_string()),
-            parallel: Some(1),
             no_context_shift: true,
             no_cont_batching: true,
             temp: None,
