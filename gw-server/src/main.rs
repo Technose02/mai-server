@@ -101,6 +101,7 @@ async fn create_app(provided_apikey: Option<String>, log_request_info: bool) -> 
     let environment_args = {
         let mut environment_args = HashMap::new();
         environment_args.insert("GGML_CUDA_ENABLE_UNIFIED_MEMORY".into(), "1".into());
+        environment_args.insert("TORCH_ROCM_AOTRITON_ENABLE_EXPERIMENTAL".into(), "1".into());
         environment_args
     };
 
