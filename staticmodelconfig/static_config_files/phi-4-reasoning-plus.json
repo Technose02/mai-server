@@ -12,7 +12,6 @@
     "completion"
   ],
   "prio": 3,
-  "threads": 8,
   "n-gpu-layers": 99,
   "temp": 0.8,
   "min-p": 0.0,

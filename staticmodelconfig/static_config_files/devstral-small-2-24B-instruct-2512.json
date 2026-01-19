@@ -14,7 +14,6 @@
   ],
   "mmproj-path": "/model_data/huggingface/unsloth/Devstral-Small-2-24B-Instruct-2512-GGUF/mmproj-F16.gguf",
   "prio": 3,
-  "threads": 8,
   "n-gpu-layers": 99,
   "flash-attn": "on",
   "min-p": 0.01,

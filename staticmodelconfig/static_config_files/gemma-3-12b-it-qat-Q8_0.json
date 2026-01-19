@@ -14,7 +14,6 @@
   ],
   "mmproj-path": "/model_data/huggingface/unsloth/gemma-3-12b-it-qat-GGUF/mmproj-BF16.gguf",
   "prio": 2,
-  "threads": 8,
   "n-gpu-layers": 99,
   "flash-attn": "on",
   "temp": 1.0,
