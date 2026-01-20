@@ -15,7 +15,9 @@ pub trait OpenAiRequestForwardPServiceInPort: Send + Sync + 'static {
         request: CreateChatCompletionRequest,
     ) -> Result<Response, StatusCode>;
 
-    async fn forward_openai_request(&self, request: Request) -> Result<Response, StatusCode>;
+    async fn forward_api_request(&self, request: Request) -> Result<Response, StatusCode>;
+
+    async fn forward_ui_request(&self, request: Request) -> Result<Response, StatusCode>;
 
     async fn get_chat(&self) -> Result<Response, StatusCode>;
 }
@@ -51,6 +53,8 @@ pub trait ModelsServiceInPort: Send + Sync + 'static {
 
     fn get_default_model_alias(&self) -> String;
 
+    async fn get_running_model_alias(&self) -> Option<String>;
+
     fn set_parallel_backend_requests(&self, parallel_backend_requests: u8);
 }
 
@@ -62,7 +66,8 @@ pub trait OpenAiClientOutPort: Send + Sync + 'static {
         &self,
         payload: CreateChatCompletionRequest,
     ) -> Result<Response, StatusCode>;
-    async fn forward_request(&self, request: Request) -> Result<Response, StatusCode>;
+    async fn forward_api_request(&self, request: Request) -> Result<Response, StatusCode>;
+    async fn forward_ui_request(&self, request: Request) -> Result<Response, StatusCode>;
     async fn request_chat(&self) -> Result<Response, StatusCode>;
 }
 

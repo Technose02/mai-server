@@ -1,6 +1,8 @@
 use crate::domain::ports::{LlamaCppControllerOutPort, ModelLoaderOutPort, ModelsServiceInPort};
 use async_trait::async_trait;
-use inference_backends::{ContextSize, LlamaCppConfigArgs, LlamaCppRunConfig};
+use inference_backends::{
+    ContextSize, LlamaCppConfigArgs, LlamaCppProcessState, LlamaCppRunConfig,
+};
 use staticmodelconfig::{ContextSizeAwareAlias, ModelList};
 use std::{
     collections::HashMap,
@@ -39,7 +41,10 @@ impl DefaultModelsService {
         &self,
         llamacpp_config_args: Arc<LlamaCppConfigArgs>,
     ) -> LlamaCppRunConfig {
-        let llamacpp_parallel_processings = *self.llamacpp_parallel_processings.read().unwrap();
+        let llamacpp_parallel_processings = *self
+            .llamacpp_parallel_processings
+            .read()
+            .expect("reading llamacpp_parallel_processings must not fail");
         LlamaCppRunConfig {
             args_handle: llamacpp_config_args.clone(),
             env_handle: self.environment_args.clone(),
@@ -178,5 +183,15 @@ impl ModelsServiceInPort for DefaultModelsService {
     fn get_default_model_alias(&self) -> String {
         //"gpt-oss-120b-Q8_0-small".to_string()
         "gemma-3-12b-it-qat-Q8_0-moderate".to_string()
+    }
+
+    async fn get_running_model_alias(&self) -> Option<String> {
+        if let LlamaCppProcessState::Running(llamacpp_run_config) =
+            self.llamacpp_controller.get_llamacpp_state().await
+        {
+            Some(llamacpp_run_config.args_handle.alias.clone())
+        } else {
+            None
+        }
     }
 }

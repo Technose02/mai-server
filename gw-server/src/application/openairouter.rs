@@ -1,5 +1,9 @@
-use crate::{ApplicationConfig, SecurityConfig, application::middleware::check_auth};
-use async_openai::types::chat::CreateChatCompletionRequest;
+use crate::{
+    ApplicationConfig, SecurityConfig,
+    application::{
+        middleware::check_auth, model::try_map_request_body_to_create_chat_completion_request,
+    },
+};
 use axum::{
     Json,
     extract::{Path, Query, Request, State},
@@ -23,6 +27,7 @@ pub fn create_router(
         .route("/chat", get(chat_handler));
 
     let secured = Router::new()
+        .route("/chat/props", get(chat_handler_assets))
         .route(
             "/api/{n_parallel}/v1/chat/completions",
             post(post_completions_with_parallel_param),
@@ -85,28 +90,37 @@ async fn get_models_impl(
 async fn post_completions_with_parallel_param(
     State(application_config): State<Arc<dyn ApplicationConfig>>,
     Path(n_parallel): Path<u8>,
-    Json(chat_completions_request): Json<CreateChatCompletionRequest>, //request: Request,
+    request: Request,
 ) -> Result<Response, StatusCode> {
-    post_chat_completions_impl(
-        application_config,
-        Some(n_parallel),
-        chat_completions_request,
-    )
-    .await
+    post_chat_completions_impl(application_config, Some(n_parallel), request).await
 }
 
 async fn post_completions(
     State(application_config): State<Arc<dyn ApplicationConfig>>,
-    Json(chat_completions_request): Json<CreateChatCompletionRequest>,
+    request: Request,
 ) -> Result<Response, StatusCode> {
-    post_chat_completions_impl(application_config, None, chat_completions_request).await
+    post_chat_completions_impl(application_config, None, request).await
 }
 
 async fn post_chat_completions_impl(
     application_config: Arc<dyn ApplicationConfig>,
     optional_parallel_backend_requests_to_set: Option<u8>,
-    chat_completions_request: CreateChatCompletionRequest,
+    request: Request,
 ) -> Result<Response, StatusCode> {
+    let chat_completions_request = try_map_request_body_to_create_chat_completion_request(
+        request,
+        application_config
+            .models_service()
+            .get_running_model_alias()
+            .await
+            .unwrap_or(
+                application_config
+                    .models_service()
+                    .get_default_model_alias(),
+            ),
+    )
+    .await?;
+
     if let Some(parallel_backend_requests_to_set) = optional_parallel_backend_requests_to_set {
         application_config
             .models_service()
@@ -161,18 +175,30 @@ async fn api_fallback_impl(
 
     application_config
         .openai_service()
-        .forward_openai_request(request)
+        .forward_api_request(request)
         .await
 }
 
 async fn chat_handler(
-    State(service_state): State<Arc<dyn ApplicationConfig>>,
+    State(application_config): State<Arc<dyn ApplicationConfig>>,
 ) -> Result<Response, StatusCode> {
-    let default_model_alias = service_state.models_service().get_default_model_alias();
-    service_state
+    let default_model_alias = application_config
+        .models_service()
+        .get_default_model_alias();
+    application_config
         .models_service()
         .ensure_any_model_is_served(&default_model_alias, Duration::from_mins(3))
         .await
         .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
-    service_state.openai_service().get_chat().await
+    application_config.openai_service().get_chat().await
+}
+
+async fn chat_handler_assets(
+    State(application_config): State<Arc<dyn ApplicationConfig>>,
+    request: Request,
+) -> Result<Response, StatusCode> {
+    application_config
+        .openai_service()
+        .forward_ui_request(request)
+        .await
 }

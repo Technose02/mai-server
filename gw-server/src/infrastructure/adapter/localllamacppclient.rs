@@ -7,20 +7,21 @@ use axum::{
     http::{
         StatusCode, Uri, Version,
         header::{
-            ACCEPT_ENCODING, AUTHORIZATION, CONTENT_ENCODING, CONTENT_TYPE, HOST as HOST_HEADER,
-            HeaderValue,
+            ACCEPT_ENCODING, AUTHORIZATION, CONTENT_LENGTH, HOST as HOST_HEADER, HeaderValue,
         },
     },
     response::{IntoResponse, Response},
 };
-use flate2::read::GzDecoder;
+use flate2::{Compression, read::GzDecoder};
 use http_body_util::BodyExt;
-use std::sync::Arc;
-use std::{io::Read, path::PathBuf};
+use std::{
+    io::{Read, Write},
+    sync::Arc,
+};
 
 const LLAMACPP_HTTP_SCHEME: &str = "http";
 const LLAMACPP_HOST: &str = "localhost";
-const LLAMACPP_BASE_PATH: &str = "v1";
+const LLAMACPP_API_BASE_PATH: &str = "v1";
 
 use hyper_util::{
     client::legacy::{Client as LegacyClient, connect::HttpConnector},
@@ -48,24 +49,50 @@ impl LocalLlamaCppClientAdapter {
             security_config,
         })
     }
-}
 
-#[async_trait]
-impl OpenAiClientOutPort for LocalLlamaCppClientAdapter {
-    async fn forward_request(&self, mut request: Request) -> Result<Response, StatusCode> {
+    async fn forward_request(
+        &self,
+        mut request: Request,
+        strip_source_path_prefix: Option<&str>,
+        prefix_target_path: Option<&str>,
+    ) -> Result<Response, StatusCode> {
         let path_and_query = {
             let path = request.uri().path();
-            request
+            let path_and_query = request
                 .uri()
                 .path_and_query()
                 .map(|v| v.as_str())
-                .unwrap_or(path)
+                .unwrap_or(path);
+
+            if let Some(source_path_prefix_to_strip) = strip_source_path_prefix {
+                println!(
+                    "orginal path_and_query: {path_and_query}, source_path_prefix_to_strip: {source_path_prefix_to_strip}"
+                );
+                if let Some(path_and_query_stripped_prefix) =
+                    path_and_query.strip_prefix(source_path_prefix_to_strip)
+                {
+                    path_and_query_stripped_prefix
+                } else {
+                    path_and_query
+                }
+            } else {
+                path_and_query
+            }
         };
 
-        let uri_string = format!(
-            "{LLAMACPP_HTTP_SCHEME}://{LLAMACPP_HOST}:{}/{LLAMACPP_BASE_PATH}/{}",
-            self.llamacpp_port, path_and_query
-        );
+        let uri_string = if let Some(path_prefix) = prefix_target_path {
+            format!(
+                "{LLAMACPP_HTTP_SCHEME}://{LLAMACPP_HOST}:{}/{path_prefix}/{}",
+                self.llamacpp_port, path_and_query
+            )
+        } else {
+            format!(
+                "{LLAMACPP_HTTP_SCHEME}://{LLAMACPP_HOST}:{}/{}",
+                self.llamacpp_port, path_and_query
+            )
+        };
+
+        println!("forwarding request to llama-server using uri {uri_string}");
 
         *request.uri_mut() = Uri::try_from(uri_string.clone())
             .unwrap_or_else(|_| panic!("{uri_string} expected to be a valid uri"));
@@ -87,6 +114,18 @@ impl OpenAiClientOutPort for LocalLlamaCppClientAdapter {
             })?
             .into_response())
     }
+}
+
+#[async_trait]
+impl OpenAiClientOutPort for LocalLlamaCppClientAdapter {
+    async fn forward_api_request(&self, request: Request) -> Result<Response, StatusCode> {
+        self.forward_request(request, None, Some(LLAMACPP_API_BASE_PATH))
+            .await
+    }
+
+    async fn forward_ui_request(&self, request: Request) -> Result<Response, StatusCode> {
+        self.forward_request(request, Some("/chat/"), None).await
+    }
 
     async fn post_chat_completions(
         &self,
@@ -98,7 +137,7 @@ impl OpenAiClientOutPort for LocalLlamaCppClientAdapter {
         })?;
 
         let request = Request::post(format!(
-            "{LLAMACPP_HTTP_SCHEME}://{LLAMACPP_HOST}:{}/{LLAMACPP_BASE_PATH}/chat/completions",
+            "{LLAMACPP_HTTP_SCHEME}://{LLAMACPP_HOST}:{}/{LLAMACPP_API_BASE_PATH}/chat/completions",
             self.llamacpp_port
         ))
         .header(
@@ -131,6 +170,7 @@ impl OpenAiClientOutPort for LocalLlamaCppClientAdapter {
         ))
         .header(HOST_HEADER, LLAMACPP_HOST)
         .header(ACCEPT_ENCODING, "gzip")
+        //        .header(ACCEPT_ENCODING, "identity, gzip;q=0, deflate;q=0, br;q=0")
         .version(Version::HTTP_11)
         .body(Body::empty())
         .map_err(|e| {
@@ -144,7 +184,8 @@ impl OpenAiClientOutPort for LocalLlamaCppClientAdapter {
         })?;
 
         let (mut res_parts, res_body) = response.into_parts();
-        // Den gesamten Body sammeln und in Bytes umwandeln
+
+        // load whole body and unzip
         let bytes = res_body
             .collect()
             .await
@@ -161,17 +202,44 @@ impl OpenAiClientOutPort for LocalLlamaCppClientAdapter {
             eprintln!("Gzip Dekomprimierung fehlgeschlagen: {e}");
             StatusCode::INTERNAL_SERVER_ERROR
         })?;
-        _ = std::fs::write(PathBuf::from("/home/technose02/test.txt"), &decoded_text);
+
+        //println!("uncompressed body");
+
+        // process decoded text
+        decoded_text = decoded_text.replace("}/props", "}/chat/props");
+        decoded_text = decoded_text.replace("./props", "./chat/props");
+        decoded_text = decoded_text.replace("}/v1", "}/api/1/v1");
+        decoded_text = decoded_text.replace("./v1", "./api/1/v1");
+
+        //println!("processed body");
+
+        // repack body
+        let data = decoded_text.into_bytes();
+
+        let buf = Vec::with_capacity(data.len());
+        let mut enc = flate2::write::GzEncoder::new(buf, Compression::best());
+        enc.write_all(&data).map_err(|e| {
+            eprintln!("error zipping payload: {e}");
+            StatusCode::INTERNAL_SERVER_ERROR
+        })?;
+        let repacked = enc.finish().map_err(|e| {
+            eprintln!("error zipping payload: {e}");
+            StatusCode::INTERNAL_SERVER_ERROR
+        })?;
+
+        //println!("recompressed body");
 
         res_parts.headers.insert(
-            CONTENT_TYPE,
-            HeaderValue::from_str("text/html; charset=utf-8").unwrap(),
+            CONTENT_LENGTH,
+            HeaderValue::from_str(&format!("{}", repacked.len())).map_err(|e| {
+                eprintln!(
+                    "error creating HeaderValue from payload-length {}: {e}",
+                    repacked.len()
+                );
+                StatusCode::INTERNAL_SERVER_ERROR
+            })?,
         );
-        res_parts
-            .headers
-            .insert(CONTENT_ENCODING, HeaderValue::from_str("identity").unwrap());
 
-        println!("res_parts: {res_parts:#?}");
-        Ok(Response::from_parts(res_parts, decoded_text.into()))
+        Ok(Response::from_parts(res_parts, repacked.into()))
     }
 }

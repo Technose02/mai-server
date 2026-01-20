@@ -1,5 +1,11 @@
 use std::{collections::HashMap, sync::Arc};
 
+use async_openai::types::chat::CreateChatCompletionRequest;
+use axum::{
+    extract::Request,
+    http::{StatusCode, header},
+};
+use http_body_util::BodyExt;
 use inference_backends::{ContextSize, LlamaCppConfigArgs, LlamaCppRunConfig, OnOffValue};
 use serde::{Deserialize, Serialize};
 
@@ -178,4 +184,58 @@ impl From<LlamaCppRunConfig> for LlamaCppRunConfigDto {
             top_p: value.args_handle.top_p,
         }
     }
+}
+
+pub async fn try_map_request_body_to_create_chat_completion_request(
+    request: Request,
+    model_alias: impl AsRef<str>,
+) -> Result<CreateChatCompletionRequest, StatusCode> {
+    let sent_from_ui = {
+        if let Some(referer) = request.headers().get(header::REFERER) {
+            if let Ok(referer) = referer.to_str()
+                && referer.ends_with("/chat")
+            {
+                println!("request is assumed to be sent from the chat-ui");
+                true
+            } else {
+                false
+            }
+        } else {
+            false
+        }
+    };
+
+    let request_body = request
+        .into_body()
+        .into_data_stream()
+        .collect()
+        .await
+        .map_err(|e| {
+            eprintln!("error reading request-body as bytes: {e}");
+            StatusCode::INTERNAL_SERVER_ERROR
+        })?
+        .to_bytes();
+    let mut request_body = String::from_utf8_lossy(request_body.trim_ascii()).to_string();
+
+    request_body = request_body.replace(",\"max_tokens\":-1", "");
+    request_body = request_body.replace("\"max_tokens\":-1,", "");
+
+    if !request_body.contains("\"model\":") {
+        let repl = format!("\"model\":\"{}\",\"messages\":[", model_alias.as_ref());
+        request_body = request_body.replace("\"messages\":[", &repl);
+    }
+
+    serde_json::from_str::<CreateChatCompletionRequest>(&request_body)
+        .map_err(|e| {
+            eprintln!("error deserializing payload (expected as CreateChatCompletionRequest): {e}");
+            StatusCode::UNPROCESSABLE_ENTITY
+        })
+        .map(|mut create_chat_completions_request| {
+            if sent_from_ui {
+                create_chat_completions_request.model = model_alias.as_ref().to_string();
+                create_chat_completions_request
+            } else {
+                create_chat_completions_request
+            }
+        })
 }
