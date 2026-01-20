@@ -1,0 +1,22 @@
+{
+  "alias": "nanonets-ocr2-3b",
+  "model-path": "/model_data/huggingface/mradermacher/Nanonets-OCR2-3B-GGUF/Nanonets-OCR2-3B.f16.gguf",
+  "max-ctx-size": 131072,
+  "vocab-type": 2,
+  "n-vocab": 151936,
+  "n-ctx-train": 128000,
+  "n-embd": 2048,
+  "n-params": 3085938688,
+  "size": 6172360704,
+  "capabilities": [
+    "completion",
+    "multimodal"
+  ],
+  "mmproj-path": "/model_data/huggingface/mradermacher/Nanonets-OCR2-3B-GGUF/Nanonets-OCR2-3B.mmproj-f16.gguf",
+  "prio": 2,
+  "n-gpu-layers": 99,
+  "flash-attn": "on",
+  "min-p": 0.01,
+  "jinja": true,
+  "no-mmap": true
+}

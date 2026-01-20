@@ -1,0 +1,23 @@
+{
+  "alias": "chandra",
+  "model-path": "/model_data/huggingface/prithivMLmods/chandra-OCR-GGUF/chandra-BF16.gguf",
+  "max-ctx-size": 131072,
+  "vocab-type": 2,
+  "n-vocab": 151936,
+  "n-ctx-train": 262144,
+  "n-embd": 4096,
+  "n-params": 8190735360,
+  "size": 16382087168,
+  "capabilities": [
+    "completion",
+    "multimodal"
+  ],
+  "mmproj-path": "/model_data/huggingface/prithivMLmods/chandra-OCR-GGUF/chandra-mmproj-bf16.gguf",
+  "n-gpu-layers": 99,
+  "flash-attn": "on",
+  "temp": 0.0,
+  "top-k": 0,
+  "top-p": 1.0,
+  "jinja": true,
+  "no-mmap": true
+}
