@@ -1,0 +1,17 @@
+{
+  "alias": "iquest-coder-v1-40b-instruct-q8",
+  "model-path": "/model_data/huggingface/AaryanK/IQuest-Coder-V1-40B-Instruct-GGUF/IQuest-Coder-V1-40B-Instruct.q8_0.gguf",
+  "max-ctx-size": 262144,
+  "vocab-type": 0,
+  "n-vocab": 0,
+  "n-ctx-train": 0,
+  "n-embd": 0,
+  "n-params": 0,
+  "size": 0,
+  "capabilities": [
+    "completion"
+  ],
+  "n-gpu-layers": 99,
+  "flash-attn": "on",
+  "jinja": true
+}
