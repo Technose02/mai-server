@@ -1,7 +1,7 @@
 {
-  "alias": "phi-4-reasoning-plus",
-  "model-path": "/model_data/huggingface/unsloth/Phi-4-reasoning-plus-GGUF/Phi-4-reasoning-plus-Q8_0.gguf",
-  "max-ctx-size": 32768,
+  "alias": "qwenlong-l1.5-30b-a3b.q8_0",
+  "model-path": "/model_data/huggingface/mradermacher/QwenLong-L1.5-30B-A3B-GGUF/QwenLong-L1.5-30B-A3B.Q8_0.gguf",
+  "max-ctx-size": 262144,
   "vocab-type": 2,
   "n-vocab": 131072,
   "n-ctx-train": 393216,
@@ -12,10 +12,7 @@
     "completion",
     "multimodal"
   ],
-  "prio": 3,
   "n-gpu-layers": 99,
-  "temp": 0.8,
-  "min-p": 0.0,
-  "top-p": 0.95,
+  "flash-attn": "on",
   "jinja": true
 }

@@ -2,12 +2,12 @@
   "alias": "iquest-coder-v1-40b-instruct-q8",
   "model-path": "/model_data/huggingface/AaryanK/IQuest-Coder-V1-40B-Instruct-GGUF/IQuest-Coder-V1-40B-Instruct.q8_0.gguf",
   "max-ctx-size": 262144,
-  "vocab-type": 0,
-  "n-vocab": 0,
-  "n-ctx-train": 0,
-  "n-embd": 0,
-  "n-params": 0,
-  "size": 0,
+  "vocab-type": 1,
+  "n-vocab": 76800,
+  "n-ctx-train": 131072,
+  "n-embd": 5120,
+  "n-params": 39794283520,
+  "size": 42283847680,
   "capabilities": [
     "completion"
   ],

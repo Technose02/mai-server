@@ -3,13 +3,14 @@
   "model-path": "/model_data/huggingface/unsloth/gpt-oss-120b-GGUF/Q8_0/gpt-oss-120b-Q8_0-00001-of-00002.gguf",
   "max-ctx-size": 32768,
   "vocab-type": 2,
-  "n-vocab": 201088,
-  "n-ctx-train": 131072,
-  "n-embd": 2880,
-  "n-params": 116829156672,
-  "size": 63374323968,
+  "n-vocab": 131072,
+  "n-ctx-train": 393216,
+  "n-embd": 5120,
+  "n-params": 23572403200,
+  "size": 28983971840,
   "capabilities": [
-    "completion"
+    "completion",
+    "multimodal"
   ],
   "n-gpu-layers": 99,
   "flash-attn": "on",

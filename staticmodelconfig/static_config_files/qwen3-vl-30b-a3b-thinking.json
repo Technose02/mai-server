@@ -3,11 +3,11 @@
   "model-path": "/model_data/huggingface/unsloth/Qwen3-VL-30B-A3B-Thinking-GGUF/BF16/Qwen3-VL-30B-A3B-Thinking-BF16-00001-of-00002.gguf",
   "max-ctx-size": 131072,
   "vocab-type": 2,
-  "n-vocab": 151936,
-  "n-ctx-train": 262144,
-  "n-embd": 2048,
-  "n-params": 30532122624,
-  "size": 61089832960,
+  "n-vocab": 131072,
+  "n-ctx-train": 393216,
+  "n-embd": 5120,
+  "n-params": 23572403200,
+  "size": 28983971840,
   "capabilities": [
     "completion",
     "multimodal"
