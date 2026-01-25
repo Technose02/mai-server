@@ -3,11 +3,11 @@
   "model-path": "/model_data/huggingface/unsloth/GLM-4.6V-Flash-GGUF/GLM-4.6V-Flash-BF16.gguf",
   "max-ctx-size": 16384,
   "vocab-type": 2,
-  "n-vocab": 131072,
-  "n-ctx-train": 393216,
-  "n-embd": 5120,
-  "n-params": 23572403200,
-  "size": 28983971840,
+  "n-vocab": 151552,
+  "n-ctx-train": 131072,
+  "n-embd": 4096,
+  "n-params": 9400279040,
+  "size": 18802245632,
   "capabilities": [
     "completion",
     "multimodal"

@@ -1,0 +1,22 @@
+{
+  "alias": "glm-4.7-flash-ud-q8_k_xl",
+  "model-path": "/model_data/huggingface/unsloth/GLM-4.7-Flash-GGUF/GLM-4.7-Flash-UD-Q8_K_XL.gguf",
+  "max-ctx-size": 262144,
+  "vocab-type": 2,
+  "n-vocab": 154880,
+  "n-ctx-train": 202752,
+  "n-embd": 2048,
+  "n-params": 29943393920,
+  "size": 35108198912,
+  "capabilities": [
+    "completion"
+  ],
+  "n-gpu-layers": 99,
+  "flash-attn": "on",
+  "temp": 0.7,
+  "min-p": 0.01,
+  "top-p": 1.0,
+  "jinja": true,
+  "fit": "on",
+  "no-mmap": true
+}

@@ -3,14 +3,13 @@
   "model-path": "/model_data/huggingface/unsloth/Qwen3-Next-80B-A3B-Instruct-GGUF/Q8_0/Qwen3-Next-80B-A3B-Instruct-Q8_0-00001-of-00002.gguf",
   "max-ctx-size": 262144,
   "vocab-type": 2,
-  "n-vocab": 131072,
-  "n-ctx-train": 393216,
-  "n-embd": 5120,
-  "n-params": 23572403200,
-  "size": 28983971840,
+  "n-vocab": 151936,
+  "n-ctx-train": 262144,
+  "n-embd": 2048,
+  "n-params": 79674391296,
+  "size": 84806069248,
   "capabilities": [
-    "completion",
-    "multimodal"
+    "completion"
   ],
   "n-gpu-layers": 99,
   "flash-attn": "on",

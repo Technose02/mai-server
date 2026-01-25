@@ -3,14 +3,13 @@
   "model-path": "/model_data/huggingface/mradermacher/QwenLong-L1.5-30B-A3B-GGUF/QwenLong-L1.5-30B-A3B.Q8_0.gguf",
   "max-ctx-size": 262144,
   "vocab-type": 2,
-  "n-vocab": 131072,
-  "n-ctx-train": 393216,
-  "n-embd": 5120,
-  "n-params": 23572403200,
-  "size": 28983971840,
+  "n-vocab": 151936,
+  "n-ctx-train": 262144,
+  "n-embd": 2048,
+  "n-params": 30532122624,
+  "size": 32477962240,
   "capabilities": [
-    "completion",
-    "multimodal"
+    "completion"
   ],
   "n-gpu-layers": 99,
   "flash-attn": "on",
