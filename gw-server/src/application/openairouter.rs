@@ -4,6 +4,7 @@ use crate::{
         middleware::check_auth, model::try_map_request_body_to_create_chat_completion_request,
     },
 };
+use tracing::{trace,error,warn};
 use axum::{
     Json,
     extract::{Path, Query, Request, State},
@@ -55,7 +56,7 @@ async fn get_models_with_parallel_param(
     Path(n_parallel): Path<u8>,
     Query(query_map): Query<HashMap<String, String>>,
 ) -> Result<Response, StatusCode> {
-    println!("info: models-endpoint called for parallel={n_parallel}");
+    trace!("info: models-endpoint called for parallel={n_parallel}");
     get_models_impl(application_config, query_map).await
 }
 
@@ -132,7 +133,7 @@ async fn post_chat_completions_impl(
         .ensure_requested_model_is_served(&chat_completions_request.model, Duration::from_mins(3))
         .await
         .map_err(|_| {
-            eprintln!("error serving requested model");
+            error!("error serving requested model");
             StatusCode::INTERNAL_SERVER_ERROR
         })?;
 
@@ -165,7 +166,7 @@ async fn api_fallback_impl(
     api_path: String,
     request: Request,
 ) -> Result<Response, StatusCode> {
-    println!("unexpected {}-request to {api_path}", request.method());
+    warn!("unexpected {}-request to {api_path}", request.method());
 
     if let Some(parallel_backend_requests_to_set) = optional_parallel_backend_requests_to_set {
         application_config

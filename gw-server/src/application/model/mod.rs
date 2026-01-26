@@ -5,6 +5,7 @@ use axum::{
     extract::Request,
     http::{StatusCode, header},
 };
+use tracing::{trace,error};
 use http_body_util::BodyExt;
 use inference_backends::{ContextSize, LlamaCppConfigArgs, LlamaCppRunConfig, OnOffValue};
 use serde::{Deserialize, Serialize};
@@ -195,7 +196,7 @@ pub async fn try_map_request_body_to_create_chat_completion_request(
             if let Ok(referer) = referer.to_str()
                 && referer.ends_with("/chat")
             {
-                println!("request is assumed to be sent from the chat-ui");
+                trace!("request is assumed to be sent from the chat-ui");
                 true
             } else {
                 false
@@ -211,7 +212,7 @@ pub async fn try_map_request_body_to_create_chat_completion_request(
         .collect()
         .await
         .map_err(|e| {
-            eprintln!("error reading request-body as bytes: {e}");
+            error!("error reading request-body as bytes: {e}");
             StatusCode::INTERNAL_SERVER_ERROR
         })?
         .to_bytes();
@@ -227,7 +228,7 @@ pub async fn try_map_request_body_to_create_chat_completion_request(
 
     serde_json::from_str::<CreateChatCompletionRequest>(&request_body)
         .map_err(|e| {
-            eprintln!("error deserializing payload (expected as CreateChatCompletionRequest): {e}");
+            error!("error deserializing payload (expected as CreateChatCompletionRequest): {e}");
             StatusCode::UNPROCESSABLE_ENTITY
         })
         .map(|mut create_chat_completions_request| {

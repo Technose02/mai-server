@@ -16,6 +16,7 @@ use axum::routing::Router;
 use axum_server::tls_rustls::RustlsConfig;
 use rand::Rng;
 use std::{borrow::Cow, collections::HashMap, net::SocketAddr, path::PathBuf, sync::Arc};
+use tracing::{info};
 
 mod application;
 mod domain;
@@ -72,7 +73,8 @@ async fn create_app(provided_apikey: Option<String>, log_request_info: bool) -> 
             })
             .collect();
 
-        println!("your current api-key is '{apikey}'");
+        
+        info!("your current api-key is '{apikey}'");
 
         apikey
     });
@@ -141,6 +143,9 @@ async fn create_app(provided_apikey: Option<String>, log_request_info: bool) -> 
 
 #[tokio::main]
 async fn main() {
+
+    tracing_subscriber::fmt::init();
+
     rustls::crypto::ring::default_provider()
         .install_default()
         .expect("Failed to install rustls crypto provider");
@@ -199,10 +204,10 @@ async fn main() {
 
     let addr = SocketAddr::from(([0, 0, 0, 0], provided_port.unwrap_or(8443)));
 
-    println!("server started on {addr}");
+    info!("server started on {addr}");
     axum_server::bind_rustls(addr, config)
         .serve(app.into_make_service())
         .await
         .unwrap_or_else(|_| panic!("error serving via tls on {addr}"));
-    println!("server shutdown");
+    info!("server shutdown");
 }

@@ -9,6 +9,7 @@ use std::{
     sync::{Arc, OnceLock, RwLock},
     time::Duration,
 };
+use tracing::{info,trace,debug,error};
 
 pub struct DefaultModelsService {
     llamacpp_controller: Arc<dyn LlamaCppControllerOutPort>,
@@ -79,7 +80,7 @@ impl ModelsServiceInPort for DefaultModelsService {
             *_guard
         };
         if parallel_backend_requests != old {
-            println!("switching parallel_backend_requests to {parallel_backend_requests}");
+            info!("switching parallel_backend_requests to {parallel_backend_requests}");
             let mut _guard = self.llamacpp_parallel_processings.write().unwrap();
             *_guard = parallel_backend_requests;
         }
@@ -95,7 +96,7 @@ impl ModelsServiceInPort for DefaultModelsService {
         let mut waiting_notified = false;
         loop {
             if start_time.elapsed() >= timeout {
-                println!("starting model variant '{requested_model}' ran into timeout");
+                trace!("starting model variant '{requested_model}' ran into timeout");
                 return Err(());
             }
             if let inference_backends::LlamaCppProcessState::Running(running_config) =
@@ -108,12 +109,12 @@ impl ModelsServiceInPort for DefaultModelsService {
                     if runconfig_as_requested == running_config {
                         return Ok(());
                     } else {
-                        println!(
+                        debug!(
                             "problem: requested-model is '{requested_model}' is running but the process was started with different run-params"
                         );
                     }
                 } else {
-                    println!(
+                    trace!(
                         "problem: requested-model is '{requested_model}' but a model '{}' is still running",
                         running_config.args_handle.alias
                     )
@@ -133,13 +134,13 @@ impl ModelsServiceInPort for DefaultModelsService {
                         .start_llamacpp_process(llamacpp_run_config)
                         .await;
                     if !waiting_notified {
-                        println!("waiting for backend to serve '{requested_model}'...)");
+                        debug!("waiting for backend to serve '{requested_model}'...)");
                     }
                     waiting_notified = true;
                     tokio::time::sleep(Duration::from_millis(500)).await
                 }
                 Err(()) => {
-                    eprintln!("could not retrieve a configuration for model '{requested_model}'");
+                    error!("could not retrieve a configuration for model '{requested_model}'");
                     return Err(());
                 }
             }
@@ -166,7 +167,7 @@ impl ModelsServiceInPort for DefaultModelsService {
                     let mut base_configuration = base_configuration.clone();
                     let caa = ContextSizeAwareAlias::from((base_configuration.alias, ctx_size));
                     base_configuration.alias = caa.alias();
-                    println!("adding model '{}' to list", base_configuration.alias);
+                    trace!("adding model '{}' to list", base_configuration.alias);
                     model_list.add_model_configuration(&base_configuration);
                 }
             }

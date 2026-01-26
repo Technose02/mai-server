@@ -4,6 +4,7 @@ use inference_backends::{
     LlamaCppBackend, LlamaCppBackendController, LlamaCppProcessState, LlamaCppRunConfig,
 };
 use std::sync::Arc;
+use tracing::trace;
 
 pub struct LlamaCppControllerAdapter {
     llamacpp_controller: LlamaCppBackendController,
@@ -39,7 +40,7 @@ impl LlamaCppControllerOutPort for LlamaCppControllerAdapter {
         &self,
         llamacpp_run_config: LlamaCppRunConfig,
     ) -> LlamaCppProcessState {
-        println!(
+        trace!(
             "starting llamacpp-backend process (using 'parallel' of {}, 'threads' of {})",
             llamacpp_run_config.parallel, llamacpp_run_config.threads
         );

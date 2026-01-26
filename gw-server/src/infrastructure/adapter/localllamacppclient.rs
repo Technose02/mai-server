@@ -18,6 +18,7 @@ use std::{
     io::{Read, Write},
     sync::Arc,
 };
+use tracing::{trace,error,debug};
 
 const LLAMACPP_HTTP_SCHEME: &str = "http";
 const LLAMACPP_HOST: &str = "localhost";
@@ -65,7 +66,7 @@ impl LocalLlamaCppClientAdapter {
                 .unwrap_or(path);
 
             if let Some(source_path_prefix_to_strip) = strip_source_path_prefix {
-                println!(
+                trace!(
                     "orginal path_and_query: {path_and_query}, source_path_prefix_to_strip: {source_path_prefix_to_strip}"
                 );
                 if let Some(path_and_query_stripped_prefix) =
@@ -92,7 +93,7 @@ impl LocalLlamaCppClientAdapter {
             )
         };
 
-        println!("forwarding request to llama-server using uri {uri_string}");
+        trace!("forwarding request to llama-server using uri {uri_string}");
 
         *request.uri_mut() = Uri::try_from(uri_string.clone())
             .unwrap_or_else(|_| panic!("{uri_string} expected to be a valid uri"));
@@ -109,7 +110,7 @@ impl LocalLlamaCppClientAdapter {
             .request(request)
             .await
             .map_err(|e| {
-                eprintln!("error forwarding request to llama.cpp: {e}");
+                error!("error forwarding request to llama.cpp: {e}");
                 StatusCode::INTERNAL_SERVER_ERROR
             })?
             .into_response())
@@ -132,7 +133,7 @@ impl OpenAiClientOutPort for LocalLlamaCppClientAdapter {
         payload: CreateChatCompletionRequest,
     ) -> Result<Response, StatusCode> {
         let json_string = serde_json::to_string(&payload).map_err(|e| {
-            eprintln!("error converting payload to json-string: {e}");
+            error!("error converting payload to json-string: {e}");
             StatusCode::INTERNAL_SERVER_ERROR
         })?;
 
@@ -148,7 +149,7 @@ impl OpenAiClientOutPort for LocalLlamaCppClientAdapter {
         .version(Version::HTTP_11)
         .body(Body::from(json_string))
         .map_err(|e| {
-            eprintln!("error building llama.cpp-request: {e}");
+            error!("error building llama.cpp-request: {e}");
             StatusCode::INTERNAL_SERVER_ERROR
         })?;
 
@@ -157,7 +158,7 @@ impl OpenAiClientOutPort for LocalLlamaCppClientAdapter {
             .request(request)
             .await
             .map_err(|e| {
-                eprintln!("error posting chat completions to llama.cpp: {e}");
+                error!("error posting chat completions to llama.cpp: {e}");
                 StatusCode::INTERNAL_SERVER_ERROR
             })?
             .into_response())
@@ -174,12 +175,12 @@ impl OpenAiClientOutPort for LocalLlamaCppClientAdapter {
         .version(Version::HTTP_11)
         .body(Body::empty())
         .map_err(|e| {
-            eprintln!("error building llama.cpp-request: {e}");
+            error!("error building llama.cpp-request: {e}");
             StatusCode::INTERNAL_SERVER_ERROR
         })?;
 
         let response = self.client.request(request).await.map_err(|e| {
-            eprintln!("error loading llama-server's chat: {e}");
+            error!("error loading llama-server's chat: {e}");
             StatusCode::INTERNAL_SERVER_ERROR
         })?;
 
@@ -190,20 +191,20 @@ impl OpenAiClientOutPort for LocalLlamaCppClientAdapter {
             .collect()
             .await
             .map_err(|e| {
-                eprintln!("Fehler beim Sammeln des Body: {e}");
+                error!("Fehler beim Sammeln des Body: {e}");
                 StatusCode::INTERNAL_SERVER_ERROR
             })?
             .to_bytes();
 
-        println!("received {} bytes", bytes.len());
+        debug!("received {} bytes", bytes.len());
         let mut decoder = GzDecoder::new(&bytes[..]);
         let mut decoded_text = String::new();
         decoder.read_to_string(&mut decoded_text).map_err(|e| {
-            eprintln!("Gzip Dekomprimierung fehlgeschlagen: {e}");
+            error!("Gzip Dekomprimierung fehlgeschlagen: {e}");
             StatusCode::INTERNAL_SERVER_ERROR
         })?;
 
-        //println!("uncompressed body");
+        debug!("uncompressed body");
 
         // process decoded text
         decoded_text = decoded_text.replace("}/props", "}/chat/props");
@@ -211,7 +212,7 @@ impl OpenAiClientOutPort for LocalLlamaCppClientAdapter {
         decoded_text = decoded_text.replace("}/v1", "}/api/1/v1");
         decoded_text = decoded_text.replace("./v1", "./api/1/v1");
 
-        //println!("processed body");
+        debug!("processed body");
 
         // repack body
         let data = decoded_text.into_bytes();
@@ -219,20 +220,20 @@ impl OpenAiClientOutPort for LocalLlamaCppClientAdapter {
         let buf = Vec::with_capacity(data.len());
         let mut enc = flate2::write::GzEncoder::new(buf, Compression::best());
         enc.write_all(&data).map_err(|e| {
-            eprintln!("error zipping payload: {e}");
+            error!("error zipping payload: {e}");
             StatusCode::INTERNAL_SERVER_ERROR
         })?;
         let repacked = enc.finish().map_err(|e| {
-            eprintln!("error zipping payload: {e}");
+            error!("error zipping payload: {e}");
             StatusCode::INTERNAL_SERVER_ERROR
         })?;
 
-        //println!("recompressed body");
+        debug!("recompressed body");
 
         res_parts.headers.insert(
             CONTENT_LENGTH,
             HeaderValue::from_str(&format!("{}", repacked.len())).map_err(|e| {
-                eprintln!(
+                error!(
                     "error creating HeaderValue from payload-length {}: {e}",
                     repacked.len()
                 );

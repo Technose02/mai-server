@@ -3,6 +3,7 @@ use async_trait::async_trait;
 use inference_backends::LlamaCppConfigArgs;
 use staticmodelconfig::{ContextSizeAwareAlias, ModelConfiguration};
 use std::{error::Error, path::Path, sync::Arc};
+use tracing::error;
 
 pub struct StaticModelLoader {
     static_model_configuration_list: Vec<ModelConfiguration>,
@@ -70,7 +71,7 @@ impl ModelLoaderOutPort for StaticModelLoader {
                 top_p: model_configuration.top_p,
             }))
         } else {
-            eprintln!("no model-configuration found for alias '{model_key}'");
+            error!("no model-configuration found for alias '{model_key}'");
             Err(())
         }
     }
