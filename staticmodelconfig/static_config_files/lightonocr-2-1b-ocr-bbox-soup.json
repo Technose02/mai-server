@@ -1,0 +1,22 @@
+{
+  "alias": "lightonocr-2-1b-bbox-soup",
+  "model-path": "/model_data/huggingface/noctrex/LightOnOCR-2-1B-bbox-soup-GGUF/LightOnOCR-2-1B-bbox-soup-BF16.gguf",
+  "max-ctx-size": 262144,
+  "vocab-type": 2,
+  "n-vocab": 151936,
+  "n-ctx-train": 16384,
+  "n-embd": 1024,
+  "n-params": 596049920,
+  "size": 1192230912,
+  "capabilities": [
+    "completion",
+    "multimodal"
+  ],
+  "mmproj-path": "/model_data/huggingface/noctrex/LightOnOCR-2-1B-bbox-soup-GGUF/mmproj-F32.gguf",
+  "n-gpu-layers": 99,
+  "flash-attn": "on",
+  "temp": 0.2,
+  "top-p": 0.9,
+  "jinja": true,
+  "no-mmap": true
+}

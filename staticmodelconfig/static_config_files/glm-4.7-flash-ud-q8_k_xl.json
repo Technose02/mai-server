@@ -13,10 +13,10 @@
   ],
   "n-gpu-layers": 99,
   "flash-attn": "on",
+  "fit": "on",
   "temp": 0.7,
   "min-p": 0.01,
   "top-p": 1.0,
   "jinja": true,
-  "fit": "on",
   "no-mmap": true
 }
