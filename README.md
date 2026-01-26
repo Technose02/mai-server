@@ -1,5 +1,24 @@
 # mai-server
 
+re-import static model configurations
+
+```shell
+cargo run -p staticmodelconfig --example update_static_config_files
+```
+
+run with request-logger-middleware (will generate, use and log new random apikey)
+
+```shell
+cargo run --release -- -l
+```
+
+run with pre-defined apikey and request-logger-middleware
+
+```shell
+cargo run --release -- -k <apikey> -l
+```
+
+
 A Rust-based server for generative AI inference with multiple model backends.
 
 TODO:
