@@ -17,15 +17,20 @@ impl ContextSizeAwareAlias {
         self.1
     }
     pub fn alias(&self) -> String {
-        let suffix = match self.context_size() {
-            ContextSize::T262144 => CTX_SIZE_HINT_T262144,
-            ContextSize::T131072 => CTX_SIZE_HINT_T131072,
-            ContextSize::T65536 => CTX_SIZE_HINT_T65536,
-            ContextSize::T32768 => CTX_SIZE_HINT_T32768,
-            ContextSize::T16384 => CTX_SIZE_HINT_T16384,
-            ContextSize::T8192 => CTX_SIZE_HINT_T8192,
-        };
-        format!("{}-{suffix}", self.0)
+        if let ContextSize::Custom(c) = self.context_size() {
+            format!("{}-{c}", self.0)
+        } else {
+            let suffix = match self.context_size() {
+                ContextSize::T262144 => CTX_SIZE_HINT_T262144,
+                ContextSize::T131072 => CTX_SIZE_HINT_T131072,
+                ContextSize::T65536 => CTX_SIZE_HINT_T65536,
+                ContextSize::T32768 => CTX_SIZE_HINT_T32768,
+                ContextSize::T16384 => CTX_SIZE_HINT_T16384,
+                ContextSize::T8192 => CTX_SIZE_HINT_T8192,
+                ContextSize::Custom(_) => unreachable!("this is handled in the then-branch of the surrounding conditional; we're in the else-branch")
+            };
+            format!("{}-{suffix}", self.0)
+        }
     }
 }
 
@@ -47,11 +52,10 @@ impl TryFrom<String> for ContextSizeAwareAlias {
                 CTX_SIZE_HINT_T32768 => ContextSize::T32768,
                 CTX_SIZE_HINT_T16384 => ContextSize::T16384,
                 CTX_SIZE_HINT_T8192 => ContextSize::T8192,
-                _ => {
-                    return Err(format!(
+                custom_value => {let val = u64::from_str_radix(custom_value, 10).map_err(|_| format!(
                         "value '{value}' contains invalid content-size-hint '{context_size_hint}'"
-                    ));
-                }
+                    ))?;
+                ContextSize::Custom(val)}
             };
             Ok(ContextSizeAwareAlias(alias.into(), context_size))
         } else {

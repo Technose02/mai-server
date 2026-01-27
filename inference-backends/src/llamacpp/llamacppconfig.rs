@@ -28,6 +28,7 @@ impl LlamaCppRunConfig {
 
 #[derive(Debug, Clone, Copy)]
 pub enum ContextSize {
+    Custom(u64),
     T8192,
     T16384,
     T32768,
@@ -39,6 +40,7 @@ pub enum ContextSize {
 impl AsRef<u64> for ContextSize {
     fn as_ref(&self) -> &u64 {
         match self {
+            ContextSize::Custom(c) => c,
             ContextSize::T8192 => &8192,
             ContextSize::T16384 => &16384,
             ContextSize::T32768 => &32768,
@@ -57,12 +59,12 @@ impl From<&ContextSize> for u64 {
 impl From<u64> for ContextSize {
     fn from(value: u64) -> Self {
         match value {
-            0..12288 => Self::T8192,
-            12288..24576 => Self::T16384,
-            24576..49152 => Self::T32768,
-            49152..98304 => Self::T65536,
-            98304..196608 => Self::T131072,
-            _ => Self::T262144,
+            8192 => Self::T8192,
+            16384 => Self::T16384,
+            32768 => Self::T32768,
+            65536 => Self::T65536,
+            131072 => Self::T131072,
+            other => Self::Custom(other),
         }
     }
 }
@@ -155,7 +157,7 @@ impl PartialEq for OnOffValue {
     }
 }
 
-struct OnOffValueVisitor();
+struct OnOffValueVisitor;
 
 impl<'de> Visitor<'de> for OnOffValueVisitor {
     type Value = OnOffValue;
@@ -184,7 +186,7 @@ impl<'de> Deserialize<'de> for OnOffValue {
     where
         D: serde::Deserializer<'de>,
     {
-        deserializer.deserialize_string(OnOffValueVisitor())
+        deserializer.deserialize_string(OnOffValueVisitor)
     }
 }
 
@@ -197,7 +199,7 @@ impl Serialize for OnOffValue {
     }
 }
 
-struct ContextSizeVisitor();
+struct ContextSizeVisitor;
 impl<'de> Visitor<'de> for ContextSizeVisitor {
     type Value = ContextSize;
     fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
@@ -216,7 +218,7 @@ impl<'de> Deserialize<'de> for ContextSize {
     where
         D: serde::Deserializer<'de>,
     {
-        deserializer.deserialize_u64(ContextSizeVisitor())
+        deserializer.deserialize_u64(ContextSizeVisitor)
     }
 }
 
