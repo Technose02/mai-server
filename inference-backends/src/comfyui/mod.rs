@@ -5,6 +5,7 @@ use tokio::{
     process::Command,
     spawn,
 };
+use tracing::{info,error};
 
 mod comfyuiconfig;
 pub use comfyuiconfig::{AttnSetting, ComfyUiConfig, ComfyUiConfigArgs, VRamSetting};
@@ -83,15 +84,15 @@ impl RunBackendProcess for ComfyUiBackend {
                 s = proc_handle.wait() => {
                     let exit_status = s.unwrap();
                     if exit_status.success() {
-                        println!("comfyui-process ended successfully");
+                        info!("comfyui-process ended successfully");
                         notifier.send(ComfyUiProtocol::ProcessFinished(None)).await.unwrap();
                     } else {
-                        eprintln!("comfyui-process ended unsuccessfully with error exit_status {exit_status}");
+                        error!("comfyui-process ended unsuccessfully with error exit_status {exit_status}");
                         notifier.send(ComfyUiProtocol::ProcessFinished(Some(exit_status))).await.unwrap();
                     }
                 },
                 _ = cancel_receiver => {
-                    println!("killing comfyui-process");
+                    info!("killing comfyui-process");
                     proc_handle.kill().await.unwrap();
                     notifier.send(ComfyUiProtocol::ProcessFinished(None)).await.unwrap();
                 }

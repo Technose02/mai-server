@@ -12,3 +12,4 @@ license = "MIT"
 tokio = { version = "1.48.0", features = ["full"] }
 serde = { version = "1.0.228", features = ["serde_derive"] }
 tracing = { version = "0.1.44" }
+tracing-subscriber = "0.3.22"

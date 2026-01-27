@@ -5,6 +5,7 @@ use tokio::{
     process::Command,
     spawn,
 };
+use tracing::{info,error};
 
 mod llamacppconfig;
 pub use llamacppconfig::{ContextSize, LlamaCppConfigArgs, LlamaCppRunConfig, OnOffValue};
@@ -75,15 +76,15 @@ impl RunBackendProcess for LlamaCppBackend {
                 s = proc_handle.wait() => {
                     let exit_status = s.unwrap();
                     if exit_status.success() {
-                        println!("llama-cpp-process ended successfully");
+                        info!("llama-cpp-process ended successfully");
                         notifier.send(LlamaCppProtocol::ProcessFinished(None)).await.unwrap();
                     } else {
-                        eprintln!("llama-cpp-process ended unsuccessfully with error exit_status {exit_status}");
+                        error!("llama-cpp-process ended unsuccessfully with error exit_status {exit_status}");
                         notifier.send(LlamaCppProtocol::ProcessFinished(Some(exit_status))).await.unwrap();
                     }
                 },
                 _ = cancel_receiver => {
-                    println!("killing llama-cpp-process");
+                    info!("killing llama-cpp-process");
                     proc_handle.kill().await.unwrap();
                     notifier.send(LlamaCppProtocol::ProcessFinished(None)).await.unwrap();
                 }

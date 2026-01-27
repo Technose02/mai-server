@@ -8,6 +8,7 @@ use tokio::sync::{
     mpsc::Sender as MpscSender,
     oneshot::{Sender as OneShotSender, channel as oneshot_channel},
 };
+use tracing::error;
 
 pub struct ProcessStateManager<Backend, ProcessConfig>
 where
@@ -98,7 +99,7 @@ where
                 if let Some(cancel_sender) = self.optional_cancel_sender.lock().unwrap().take() {
                     cancel_sender.send(true).unwrap();
                 } else {
-                    eprintln!("err: expected cancel_sender to be available but was None");
+                    error!("err: expected cancel_sender to be available but was None");
                 }
             }
             Some(ProcessState::<ProcessConfig>::Starting(old_config)) => {
@@ -109,7 +110,7 @@ where
                 if let Some(cancel_sender) = self.optional_cancel_sender.lock().unwrap().take() {
                     cancel_sender.send(true).unwrap();
                 } else {
-                    eprintln!("err: expected cancel_sender to be available but was None");
+                    error!("err: expected cancel_sender to be available but was None");
                 }
             }
             Some(ProcessState::<ProcessConfig>::Stopping(old_config, _)) => {

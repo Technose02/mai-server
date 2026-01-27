@@ -5,6 +5,7 @@ use inference_backends::{
 use reqwest::get;
 use staticmodelconfig::{ModelConfiguration, ModelList};
 use std::{collections::HashMap, path::PathBuf, sync::Arc};
+use tracing::info;
 
 const LLAMA_SERVER_HOST: &str = "localhost";
 const LLAMA_SERVER_PORT: u16 = 11440;
@@ -14,6 +15,9 @@ const ENV_VALUE_GGML_CUDA_ENABLE_UNIFIED_MEMORY: &str = "1";
 
 #[tokio::main]
 async fn main() {
+
+    tracing_subscriber::fmt::init();
+
     let llamacpp_controller = LlamaCppBackendController::init_backend(LlamaCppBackend {
         host: LLAMA_SERVER_HOST.to_owned(),
         port: LLAMA_SERVER_PORT,
@@ -63,7 +67,7 @@ async fn update_model_configuration(
     llamacpp_backend_controller: &LlamaCppBackendController,
     env_handle: Arc<HashMap<String, String>>,
 ) {
-    println!("processing {}", model_configuration.alias);
+    info!("processing {}", model_configuration.alias);
 
     // create llamacpp_config from model_configuration
     let llamacpp_config = LlamaCppRunConfig {
@@ -114,7 +118,7 @@ async fn update_model_configuration(
             _ => continue,
         }
     }
-    println!("llama-server now running '{}'", model_configuration.alias);
+    info!("llama-server now running '{}'", model_configuration.alias);
 
     // get models-endpoint as json
     let models: ModelList = get(format!(

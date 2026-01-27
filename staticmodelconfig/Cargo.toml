@@ -14,3 +14,4 @@ tracing = { workspace = true }
 [dev-dependencies]
 tokio = { workspace = true }
 reqwest = { version = "0.13", features = ["json"] }
+tracing-subscriber = { workspace = true }
