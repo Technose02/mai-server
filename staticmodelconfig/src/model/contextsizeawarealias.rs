@@ -52,7 +52,7 @@ impl TryFrom<String> for ContextSizeAwareAlias {
                 CTX_SIZE_HINT_T32768 => ContextSize::T32768,
                 CTX_SIZE_HINT_T16384 => ContextSize::T16384,
                 CTX_SIZE_HINT_T8192 => ContextSize::T8192,
-                custom_value => {let val = u64::from_str_radix(custom_value, 10).map_err(|_| format!(
+                custom_value => {let val = custom_value.parse::<u64>().map_err(|_| format!(
                         "value '{value}' contains invalid content-size-hint '{context_size_hint}'"
                     ))?;
                 ContextSize::Custom(val)}
