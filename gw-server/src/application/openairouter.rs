@@ -122,6 +122,8 @@ async fn post_chat_completions_impl(
     )
     .await?;
 
+    trace!("request: {:#?}", chat_completions_request);
+
     if let Some(parallel_backend_requests_to_set) = optional_parallel_backend_requests_to_set {
         application_config
             .models_service()
