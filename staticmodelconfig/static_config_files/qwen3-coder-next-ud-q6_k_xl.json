@@ -1,0 +1,22 @@
+{
+  "alias": "qwen3-coder-next-ud-q6_k_xl",
+  "model-path": "/model_data/huggingface/unsloth/Qwen3-Coder-Next-GGUF/UD-Q6_K_XL/Qwen3-Coder-Next-UD-Q6_K_XL-00001-of-00003.gguf",
+  "max-ctx-size": 262144,
+  "vocab-type": 2,
+  "n-vocab": 154880,
+  "n-ctx-train": 202752,
+  "n-embd": 2048,
+  "n-params": 29943393920,
+  "size": 35108198912,
+  "capabilities": [
+    "completion"
+  ],
+  "n-gpu-layers": 99,
+  "flash-attn": "on",
+  "temp": 1.0,
+  "min-p": 0.01,
+  "top-p": 0.95,
+  "top-k": 40,
+  "jinja": true,
+  "no-mmap": true
+}
