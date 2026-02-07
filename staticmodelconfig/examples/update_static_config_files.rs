@@ -15,7 +15,6 @@ const ENV_VALUE_GGML_CUDA_ENABLE_UNIFIED_MEMORY: &str = "1";
 
 #[tokio::main]
 async fn main() {
-
     tracing_subscriber::fmt::init();
 
     let llamacpp_controller = LlamaCppBackendController::init_backend(LlamaCppBackend {

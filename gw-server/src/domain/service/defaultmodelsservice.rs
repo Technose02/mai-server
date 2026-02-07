@@ -9,7 +9,7 @@ use std::{
     sync::{Arc, OnceLock, RwLock},
     time::Duration,
 };
-use tracing::{info,trace,debug,error};
+use tracing::{debug, error, info, trace};
 
 pub struct DefaultModelsService {
     llamacpp_controller: Arc<dyn LlamaCppControllerOutPort>,

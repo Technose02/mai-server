@@ -5,10 +5,10 @@ use axum::{
     extract::Request,
     http::{StatusCode, header},
 };
-use tracing::{trace,error};
 use http_body_util::BodyExt;
 use inference_backends::{ContextSize, LlamaCppConfigArgs, LlamaCppRunConfig, OnOffValue};
 use serde::{Deserialize, Serialize};
+use tracing::{error, trace};
 
 const DEFAULT_PARALLEL: u8 = 1;
 

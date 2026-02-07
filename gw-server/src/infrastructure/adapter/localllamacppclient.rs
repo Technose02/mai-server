@@ -18,7 +18,7 @@ use std::{
     io::{Read, Write},
     sync::Arc,
 };
-use tracing::{trace,error,debug};
+use tracing::{debug, error, trace};
 
 const LLAMACPP_HTTP_SCHEME: &str = "http";
 const LLAMACPP_HOST: &str = "localhost";

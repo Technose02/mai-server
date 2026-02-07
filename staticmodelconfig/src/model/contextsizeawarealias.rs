@@ -27,7 +27,9 @@ impl ContextSizeAwareAlias {
                 ContextSize::T32768 => CTX_SIZE_HINT_T32768,
                 ContextSize::T16384 => CTX_SIZE_HINT_T16384,
                 ContextSize::T8192 => CTX_SIZE_HINT_T8192,
-                ContextSize::Custom(_) => unreachable!("this is handled in the then-branch of the surrounding conditional; we're in the else-branch")
+                ContextSize::Custom(_) => unreachable!(
+                    "this is handled in the then-branch of the surrounding conditional; we're in the else-branch"
+                ),
             };
             format!("{}-{suffix}", self.0)
         }
@@ -52,10 +54,12 @@ impl TryFrom<String> for ContextSizeAwareAlias {
                 CTX_SIZE_HINT_T32768 => ContextSize::T32768,
                 CTX_SIZE_HINT_T16384 => ContextSize::T16384,
                 CTX_SIZE_HINT_T8192 => ContextSize::T8192,
-                custom_value => {let val = custom_value.parse::<u64>().map_err(|_| format!(
+                custom_value => {
+                    let val = custom_value.parse::<u64>().map_err(|_| format!(
                         "value '{value}' contains invalid content-size-hint '{context_size_hint}'"
                     ))?;
-                ContextSize::Custom(val)}
+                    ContextSize::Custom(val)
+                }
             };
             Ok(ContextSizeAwareAlias(alias.into(), context_size))
         } else {

@@ -5,7 +5,7 @@ use tokio::{
     process::Command,
     spawn,
 };
-use tracing::{info,error};
+use tracing::{error, info};
 
 mod comfyuiconfig;
 pub use comfyuiconfig::{AttnSetting, ComfyUiConfig, ComfyUiConfigArgs, VRamSetting};

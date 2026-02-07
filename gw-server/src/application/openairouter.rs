@@ -4,7 +4,10 @@ use crate::{
         middleware::check_auth, model::try_map_request_body_to_create_chat_completion_request,
     },
 };
-use tracing::{trace,error,warn};
+use async_openai::types::chat::{
+    ChatCompletionRequestMessage, ChatCompletionRequestUserMessage,
+    ChatCompletionRequestUserMessageContent, CreateChatCompletionRequest,
+};
 use axum::{
     Json,
     extract::{Path, Query, Request, State},
@@ -14,6 +17,7 @@ use axum::{
 };
 use staticmodelconfig::ModelList;
 use std::{collections::HashMap, sync::Arc, time::Duration};
+use tracing::{error, info, trace, warn};
 
 pub fn create_router(
     config: Arc<dyn ApplicationConfig>,
@@ -124,6 +128,9 @@ async fn post_chat_completions_impl(
 
     trace!("request: {:#?}", chat_completions_request);
 
+    let requested_model = extract_model_override_from_last_user_text(&chat_completions_request)
+        .unwrap_or(chat_completions_request.model.clone());
+
     if let Some(parallel_backend_requests_to_set) = optional_parallel_backend_requests_to_set {
         application_config
             .models_service()
@@ -132,7 +139,7 @@ async fn post_chat_completions_impl(
 
     application_config
         .models_service()
-        .ensure_requested_model_is_served(&chat_completions_request.model, Duration::from_mins(3))
+        .ensure_requested_model_is_served(&requested_model, Duration::from_mins(3))
         .await
         .map_err(|_| {
             error!("error serving requested model");
@@ -204,4 +211,34 @@ async fn chat_handler_assets(
         .openai_service()
         .forward_ui_request(request)
         .await
+}
+
+fn extract_model_override_from_last_user_text(
+    chat_completions_request: &CreateChatCompletionRequest,
+) -> Option<String> {
+    chat_completions_request
+        .messages
+        .iter()
+        .filter_map(|m| {
+            if let ChatCompletionRequestMessage::User(ChatCompletionRequestUserMessage {
+                name: _,
+                content: ChatCompletionRequestUserMessageContent::Text(text),
+            }) = m
+            {
+                Some(text)
+            } else {
+                None
+            }
+        })
+        .next_back()
+        .and_then(|text| {
+            text.strip_prefix("/model ").and_then(|rest| {
+                rest.split_whitespace().next().map(|s| {
+                    info!(
+                        "detected /model command in user-text - will set requested model to '{s}'"
+                    );
+                    String::from(s)
+                })
+            })
+        })
 }

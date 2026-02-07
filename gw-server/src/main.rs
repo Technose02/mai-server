@@ -16,7 +16,7 @@ use axum::routing::Router;
 use axum_server::tls_rustls::RustlsConfig;
 use rand::Rng;
 use std::{borrow::Cow, collections::HashMap, net::SocketAddr, path::PathBuf, sync::Arc};
-use tracing::{info, Level};
+use tracing::{Level, info};
 
 mod application;
 mod domain;
@@ -73,7 +73,6 @@ async fn create_app(provided_apikey: Option<String>, log_request_info: bool) -> 
             })
             .collect();
 
-        
         info!("your current api-key is '{apikey}'");
 
         apikey
@@ -143,7 +142,6 @@ async fn create_app(provided_apikey: Option<String>, log_request_info: bool) -> 
 
 #[tokio::main]
 async fn main() {
-
     tracing_subscriber::fmt().with_max_level(Level::INFO).init();
 
     rustls::crypto::ring::default_provider()
