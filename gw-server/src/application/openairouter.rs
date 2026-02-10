@@ -112,7 +112,7 @@ async fn post_chat_completions_impl(
     optional_parallel_backend_requests_to_set: Option<u8>,
     request: Request,
 ) -> Result<Response, StatusCode> {
-    let chat_completions_request = try_map_request_body_to_create_chat_completion_request(
+    let mut chat_completions_request = try_map_request_body_to_create_chat_completion_request(
         request,
         application_config
             .models_service()
@@ -128,7 +128,7 @@ async fn post_chat_completions_impl(
 
     trace!("request: {:#?}", chat_completions_request);
 
-    let requested_model = extract_model_override_from_last_user_text(&chat_completions_request)
+    let requested_model = extract_model_override_from_last_user_text(&mut chat_completions_request)
         .unwrap_or(chat_completions_request.model.clone());
 
     if let Some(parallel_backend_requests_to_set) = optional_parallel_backend_requests_to_set {
@@ -214,11 +214,11 @@ async fn chat_handler_assets(
 }
 
 fn extract_model_override_from_last_user_text(
-    chat_completions_request: &CreateChatCompletionRequest,
+    chat_completions_request: &mut CreateChatCompletionRequest,
 ) -> Option<String> {
     chat_completions_request
         .messages
-        .iter()
+        .iter_mut()
         .filter_map(|m| {
             if let ChatCompletionRequestMessage::User(ChatCompletionRequestUserMessage {
                 name: _,
@@ -232,13 +232,26 @@ fn extract_model_override_from_last_user_text(
         })
         .next_back()
         .and_then(|text| {
-            text.strip_prefix("/model ").and_then(|rest| {
+            const MODEL_COMMAND_PREFIX: &str = "/model ";
+            let detected = text.strip_prefix(MODEL_COMMAND_PREFIX).and_then(|rest| {
                 rest.split_whitespace().next().map(|s| {
                     info!(
                         "detected /model command in user-text - will set requested model to '{s}'"
                     );
                     String::from(s)
                 })
-            })
+            });
+            if let Some(detected_model) = &detected {
+                *text = text
+                    .strip_prefix(MODEL_COMMAND_PREFIX)
+                    .unwrap()
+                    .strip_prefix(detected_model)
+                    .unwrap()
+                    .trim_start()
+                    .to_owned();
+            }
+            info!("removed extracted model-command from user-prompt.");
+            info!("cleaned user-prompt: '{text}'");
+            detected
         })
 }
