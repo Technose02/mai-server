@@ -13,7 +13,6 @@
   ],
   "n-gpu-layers": 99,
   "flash-attn": "on",
-  "fit": "on",
   "temp": 1.0,
   "top-p": 1.0,
   "jinja": true

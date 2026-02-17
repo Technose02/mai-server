@@ -1,0 +1,23 @@
+{
+  "alias": "qwen3-30b-a3b-thinking-2507",
+  "model-path": "/model_data/huggingface/unsloth/Qwen3-30B-A3B-Thinking-2507-GGUF/BF16/Qwen3-30B-A3B-Thinking-2507-BF16-00001-of-00002.gguf",
+  "max-ctx-size": 262144,
+  "vocab-type": 2,
+  "n-vocab": 151936,
+  "n-ctx-train": 262144,
+  "n-embd": 2048,
+  "n-params": 30532122624,
+  "size": 61089832960,
+  "capabilities": [
+    "completion"
+  ],
+  "n-gpu-layers": 99,
+  "flash-attn": "on",
+  "temp": 0.7,
+  "presence-penalty": 0.0,
+  "min-p": 0.0,
+  "top-k": 20,
+  "top-p": 0.8,
+  "jinja": true,
+  "no-mmap": true
+}
