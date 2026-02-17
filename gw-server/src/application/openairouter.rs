@@ -249,9 +249,9 @@ fn extract_model_override_from_last_user_text(
                     .unwrap()
                     .trim_start()
                     .to_owned();
+                info!("removed extracted model-command from user-prompt.");
+                info!("cleaned user-prompt: '{text}'");
             }
-            info!("removed extracted model-command from user-prompt.");
-            info!("cleaned user-prompt: '{text}'");
             detected
         })
 }
