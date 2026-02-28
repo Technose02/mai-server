@@ -263,6 +263,7 @@ pub struct LlamaCppConfigArgs {
     pub seed: Option<u64>,
     pub top_k: Option<u16>,
     pub top_p: Option<f32>,
+    pub chat_template_kwargs: Option<String>,
 }
 
 impl LlamaCppConfigArgs {
@@ -379,6 +380,11 @@ impl LlamaCppConfigArgs {
         if let Some(top_p) = self.top_p {
             cmd.arg("--top-p");
             cmd.arg(format!("{top_p:.2}"));
+        }
+
+        if let Some(chat_template_kwargs) = &self.chat_template_kwargs {
+            cmd.arg("--chat-template-kwargs");
+            cmd.arg(chat_template_kwargs);
         }
     }
 }

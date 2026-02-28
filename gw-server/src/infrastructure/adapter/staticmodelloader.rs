@@ -69,6 +69,7 @@ impl ModelLoaderOutPort for StaticModelLoader {
                 seed: model_configuration.seed,
                 top_k: model_configuration.top_k,
                 top_p: model_configuration.top_p,
+                chat_template_kwargs: model_configuration.chat_template_kwargs.clone(),
             }))
         } else {
             error!("no model-configuration found for alias '{model_key}'");

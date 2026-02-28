@@ -76,6 +76,9 @@ pub struct ModelConfiguration {
         default = "default_to_false"
     )]
     pub no_cont_batching: bool,
+
+    #[serde(skip_serializing_if = "Option::is_none", default = "Option::default")]
+    pub chat_template_kwargs: Option<String>,
 }
 
 fn default_to_false() -> bool {

@@ -116,6 +116,9 @@ pub struct LlamaCppRunConfigDto {
         default = "default_to_false"
     )]
     pub no_cont_batching: bool,
+
+    #[serde(skip_serializing_if = "Option::is_none", default = "Option::default")]
+    pub chat_template_kwargs: Option<String>,
 }
 
 impl LlamaCppRunConfigDto {
@@ -149,6 +152,7 @@ impl LlamaCppRunConfigDto {
                 seed: self.seed,
                 top_k: self.top_k,
                 top_p: self.top_p,
+                chat_template_kwargs: self.chat_template_kwargs.clone(),
             }),
         }
     }
@@ -183,6 +187,7 @@ impl From<LlamaCppRunConfig> for LlamaCppRunConfigDto {
             seed: value.args_handle.seed,
             top_k: value.args_handle.top_k,
             top_p: value.args_handle.top_p,
+            chat_template_kwargs: value.args_handle.chat_template_kwargs.clone(),
         }
     }
 }

@@ -60,6 +60,7 @@ async fn main() {
             top_p: None,
             fit: None,
             presence_penalty: None,
+            chat_template_kwargs: None,
         }
         .into()
     };
@@ -94,6 +95,7 @@ async fn main() {
             top_p: None,
             fit: None,
             presence_penalty: None,
+            chat_template_kwargs: None,
         }
         .into(),
     };
