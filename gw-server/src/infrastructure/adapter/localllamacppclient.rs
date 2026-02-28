@@ -211,6 +211,7 @@ impl OpenAiClientOutPort for LocalLlamaCppClientAdapter {
         decoded_text = decoded_text.replace("./props", "./chat/props");
         decoded_text = decoded_text.replace("}/v1", "}/api/1/v1");
         decoded_text = decoded_text.replace("./v1", "./api/1/v1");
+        decoded_text = decoded_text.replace("/v1/models", "/api/1/v1/models");
 
         debug!("processed body");
 
