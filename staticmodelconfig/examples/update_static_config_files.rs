@@ -13,6 +13,9 @@ const LLAMA_SERVER_PORT: u16 = 11440;
 const ENV_VAR_GGML_CUDA_ENABLE_UNIFIED_MEMORY: &str = "GGML_CUDA_ENABLE_UNIFIED_MEMORY";
 const ENV_VALUE_GGML_CUDA_ENABLE_UNIFIED_MEMORY: &str = "1";
 
+const FILTER_MODEL_KEY: Option<&str> = Some("qwen3.5-27b");
+//const FILTER_MODEL_KEY: Option<&str> = None;
+
 #[tokio::main]
 async fn main() {
     tracing_subscriber::fmt::init();
@@ -43,6 +46,12 @@ async fn main() {
     for (mut model_configuration, json_file) in
         model_configurations.iter_mut().zip(json_files.iter())
     {
+        if let Some(alias_must_contain) = FILTER_MODEL_KEY {
+            if !(model_configuration.alias.contains(alias_must_contain)) {
+                println!("skipping jsonfile {}: model-alias '{}' does not contain '{}'",json_file.file_name().unwrap().display(), model_configuration.alias, alias_must_contain);
+                continue;
+            }
+        }
         update_model_configuration(
             &mut model_configuration,
             &llamacpp_controller,
@@ -99,6 +108,7 @@ async fn update_model_configuration(
             seed: model_configuration.seed,
             top_k: model_configuration.top_k,
             top_p: model_configuration.top_p,
+            chat_template_kwargs: model_configuration.chat_template_kwargs.clone(),
         }),
     };
 
