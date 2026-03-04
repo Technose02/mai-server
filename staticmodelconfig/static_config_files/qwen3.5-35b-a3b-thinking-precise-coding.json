@@ -1,13 +1,13 @@
 {
   "alias": "qwen3.5-35b-a3b-thinking-precise-coding",
-  "model-path": "/model_data/huggingface/unsloth/Qwen3.5-35B-A3B-GGUF/Qwen3.5-35B-A3B-UD-Q8_K_XL.gguf",
+  "model-path": "/model_data/huggingface/unsloth/Qwen3.5-35B-A3B-GGUF/BF16/Qwen3.5-35B-A3B-BF16-00001-of-00002.gguf",
   "max-ctx-size": 262144,
   "vocab-type": 2,
   "n-vocab": 248320,
   "n-ctx-train": 262144,
   "n-embd": 2048,
   "n-params": 34660610688,
-  "size": 38689884672,
+  "size": 69365647872,
   "capabilities": [
     "completion",
     "multimodal"

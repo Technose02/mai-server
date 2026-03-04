@@ -1,6 +1,6 @@
 {
-  "alias": "qwen3.5-35b-a3b-instruct-general",
-  "model-path": "/model_data/huggingface/unsloth/Qwen3.5-35B-A3B-GGUF/Qwen3.5-35B-A3B-UD-Q8_K_XL.gguf",
+  "alias": "qwen3.5-9b-non-thinking-general",
+  "model-path": "/model_data/huggingface/unsloth/Qwen3.5-9B-GGUF/Qwen3.5-9B-BF16.gguf",
   "max-ctx-size": 262144,
   "vocab-type": 2,
   "n-vocab": 248320,
@@ -12,13 +12,12 @@
     "completion",
     "multimodal"
   ],
-  "mmproj-path": "/model_data/huggingface/unsloth/Qwen3.5-35B-A3B-GGUF/mmproj-BF16.gguf",
+  "mmproj-path": "/model_data/huggingface/unsloth/Qwen3.5-9B-GGUF/mmproj-BF16.gguf",
   "n-gpu-layers": 99,
   "flash-attn": "on",
   "temp": 0.7,
   "min-p": 0.0,
   "top-k": 20,
   "top-p": 0.8,
-  "jinja": true,
-  "chat-template-kwargs": "{\"enable_thinking\": false}"
+  "jinja": true
 }
