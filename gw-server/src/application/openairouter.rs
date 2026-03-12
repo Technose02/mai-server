@@ -1,7 +1,11 @@
 use crate::{
     ApplicationConfig, SecurityConfig,
     application::{
-        middleware::check_auth, model::try_map_request_body_to_create_chat_completion_request,
+        middleware::check_auth,
+        model::{
+            try_map_request_body_to_create_chat_completion_request,
+            try_map_request_body_to_create_embedding_request,
+        },
     },
 };
 use async_openai::types::chat::{
@@ -34,12 +38,22 @@ pub fn create_router(
         .route("/chat", get(chat_handler));
 
     let secured = Router::new()
+        // CHAT
         .route("/chat/props", get(chat_handler_assets))
+        // API
+        //   CHAT-COMPLETIONS
         .route(
             "/api/{n_parallel}/v1/chat/completions",
             post(post_completions_with_parallel_param),
         )
         .route("/api/v1/chat/completions", post(post_completions))
+        //   EMBEDDINGS
+        .route(
+            "/api/{n_parallel}/v1/embeddings",
+            post(post_embeddings_with_parallel_param),
+        )
+        .route("/api/v1/embeddings", post(post_embeddings))
+        // FALLBACK
         .route(
             "/api/{n_parallel}/v1/{*path}",
             any(api_fallback_with_parallel_param),
@@ -57,6 +71,7 @@ pub fn create_router(
         .with_state(config) // injects state in open_routes and secured_routes
 }
 
+// MODELS
 async fn get_models_with_parallel_param(
     State(application_config): State<Arc<dyn ApplicationConfig>>,
     Path(n_parallel): Path<u8>,
@@ -94,6 +109,7 @@ async fn get_models_impl(
     }
 }
 
+// CHAT COMPLETIONS
 async fn post_completions_with_parallel_param(
     State(application_config): State<Arc<dyn ApplicationConfig>>,
     Path(n_parallel): Path<u8>,
@@ -118,12 +134,12 @@ async fn post_chat_completions_impl(
         request,
         application_config
             .models_service()
-            .get_running_model_alias()
+            .get_running_languagemodel_alias()
             .await
             .unwrap_or(
                 application_config
                     .models_service()
-                    .get_default_model_alias(),
+                    .get_default_languagemodel_alias(),
             ),
     )
     .await?;
@@ -138,7 +154,7 @@ async fn post_chat_completions_impl(
         use axum::response::sse::{Event, Sse};
         use std::convert::Infallible;
         application_config
-            .modelmanager_service()
+            .languagemodelmanager_service()
             .stop_llamacpp_process()
             .await;
         let response_json = serde_json::to_string(&CreateChatCompletionStreamResponse {
@@ -174,8 +190,10 @@ async fn post_chat_completions_impl(
         return Ok(Sse::new(stream).into_response());
     }
 
-    let requested_model = extract_model_override_from_last_user_text(&mut chat_completions_request)
-        .unwrap_or(chat_completions_request.model.clone());
+    let requested_model = extract_model_override_from_last_user_text_in_chat_completions_request(
+        &mut chat_completions_request,
+    )
+    .unwrap_or(chat_completions_request.model.clone());
 
     if let Some(parallel_backend_requests_to_set) = optional_parallel_backend_requests_to_set {
         application_config
@@ -185,7 +203,7 @@ async fn post_chat_completions_impl(
 
     application_config
         .models_service()
-        .ensure_requested_model_is_served(&requested_model, Duration::from_mins(3))
+        .ensure_requested_languagemodel_is_served(&requested_model, Duration::from_mins(3))
         .await
         .map_err(|_| {
             error!("error serving requested model");
@@ -193,11 +211,58 @@ async fn post_chat_completions_impl(
         })?;
 
     application_config
-        .openai_service()
+        .openai_chat_completions_service()
         .process_chat_completions_request(chat_completions_request)
         .await
 }
 
+// EMBEDDINGS
+async fn post_embeddings_with_parallel_param(
+    State(application_config): State<Arc<dyn ApplicationConfig>>,
+    Path(n_parallel): Path<u8>,
+    request: Request,
+) -> Result<Response<Body>, StatusCode> {
+    post_embeddings_impl(application_config, Some(n_parallel), request).await
+}
+
+async fn post_embeddings(
+    State(application_config): State<Arc<dyn ApplicationConfig>>,
+    request: Request,
+) -> Result<Response<Body>, StatusCode> {
+    post_embeddings_impl(application_config, None, request).await
+}
+
+async fn post_embeddings_impl(
+    application_config: Arc<dyn ApplicationConfig>,
+    optional_parallel_backend_requests_to_set: Option<u8>,
+    request: Request,
+) -> Result<Response<Body>, StatusCode> {
+    let embedding_request = try_map_request_body_to_create_embedding_request(request).await?;
+
+    let requested_model = embedding_request.model.clone();
+
+    if let Some(parallel_backend_requests_to_set) = optional_parallel_backend_requests_to_set {
+        application_config
+            .models_service()
+            .set_parallel_backend_requests(parallel_backend_requests_to_set);
+    }
+
+    application_config
+        .models_service()
+        .ensure_requested_embeddingmodel_is_served(&requested_model, Duration::from_mins(3))
+        .await
+        .map_err(|_| {
+            error!("error serving requested embedding model");
+            StatusCode::INTERNAL_SERVER_ERROR
+        })?;
+
+    application_config
+        .openai_embeddings_service()
+        .process_embedding_request(embedding_request)
+        .await
+}
+
+// FALLBACK
 async fn api_fallback_with_parallel_param(
     State(application_config): State<Arc<dyn ApplicationConfig>>,
     Path(n_parallel): Path<u8>,
@@ -230,7 +295,7 @@ async fn api_fallback_impl(
     }
 
     application_config
-        .openai_service()
+        .openai_chat_completions_service()
         .forward_api_request(request)
         .await
 }
@@ -240,13 +305,16 @@ async fn chat_handler(
 ) -> Result<Response<Body>, StatusCode> {
     let default_model_alias = application_config
         .models_service()
-        .get_default_model_alias();
+        .get_default_languagemodel_alias();
     application_config
         .models_service()
-        .ensure_any_model_is_served(&default_model_alias, Duration::from_mins(3))
+        .ensure_any_languagemodel_is_served(&default_model_alias, Duration::from_mins(3))
         .await
         .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
-    application_config.openai_service().get_chat().await
+    application_config
+        .openai_chat_completions_service()
+        .get_chat()
+        .await
 }
 
 async fn chat_handler_assets(
@@ -254,12 +322,12 @@ async fn chat_handler_assets(
     request: Request,
 ) -> Result<Response<Body>, StatusCode> {
     application_config
-        .openai_service()
+        .openai_chat_completions_service()
         .forward_ui_request(request)
         .await
 }
 
-fn process_last_user_prompt(
+fn process_last_user_prompt_in_chat_completions(
     chat_completions_request: &mut CreateChatCompletionRequest,
     proc: impl Fn(&mut String) -> Option<String>,
 ) -> Option<String> {
@@ -281,10 +349,10 @@ fn process_last_user_prompt(
         .and_then(proc)
 }
 
-fn extract_model_override_from_last_user_text(
+fn extract_model_override_from_last_user_text_in_chat_completions_request(
     chat_completions_request: &mut CreateChatCompletionRequest,
 ) -> Option<String> {
-    process_last_user_prompt(chat_completions_request, |text| {
+    process_last_user_prompt_in_chat_completions(chat_completions_request, |text| {
         const MODEL_COMMAND_PREFIX: &str = "/model ";
         let detected = text.strip_prefix(MODEL_COMMAND_PREFIX).and_then(|rest| {
             rest.split_whitespace().next().map(|s| {
@@ -311,13 +379,15 @@ fn check_user_prompt_for_stop_llamacpp(
     chat_completions_request: &mut CreateChatCompletionRequest,
 ) -> bool {
     const STOP_COMMAND: &str = "/stop";
-    if let Some(text) = process_last_user_prompt(chat_completions_request, |text| {
-        if text.trim() == STOP_COMMAND {
-            Some(String::new())
-        } else {
-            text.strip_prefix(STOP_COMMAND).map(str::to_owned)
-        }
-    }) {
+    if let Some(text) =
+        process_last_user_prompt_in_chat_completions(chat_completions_request, |text| {
+            if text.trim() == STOP_COMMAND {
+                Some(String::new())
+            } else {
+                text.strip_prefix(STOP_COMMAND).map(str::to_owned)
+            }
+        })
+    {
         info!("detected {STOP_COMMAND} command in user-text - will set stop llama.cpp-processes");
         info!("removed extracted stop-command from user-prompt.");
         info!("cleaned user-prompt: '{text}'");

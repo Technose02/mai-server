@@ -12,7 +12,8 @@ use std::{
 use tracing::{debug, error, info, trace};
 
 pub struct DefaultModelsService {
-    llamacpp_controller: Arc<dyn LlamaCppControllerOutPort>,
+    llamacpp_languagemodel_controller: Arc<dyn LlamaCppControllerOutPort>,
+    llamacpp_embeddingmodel_controller: Arc<dyn LlamaCppControllerOutPort>,
     model_loader: Arc<dyn ModelLoaderOutPort>,
     llamacpp_parallel_processings: RwLock<u8>,
     threads: i8,
@@ -22,14 +23,16 @@ pub struct DefaultModelsService {
 
 impl DefaultModelsService {
     pub fn create_service(
-        llamacpp_controller: Arc<dyn LlamaCppControllerOutPort>,
+        llamacpp_languagemodel_controller: Arc<dyn LlamaCppControllerOutPort>,
+        llamacpp_embeddingmodel_controller: Arc<dyn LlamaCppControllerOutPort>,
         model_loader: Arc<dyn ModelLoaderOutPort>,
         llamacpp_parallel_processings: u8,
         threads: i8,
         environment_args: HashMap<String, String>,
     ) -> Arc<dyn ModelsServiceInPort> {
         Arc::new(Self {
-            llamacpp_controller,
+            llamacpp_languagemodel_controller,
+            llamacpp_embeddingmodel_controller,
             model_loader,
             llamacpp_parallel_processings: RwLock::new(llamacpp_parallel_processings),
             threads,
@@ -57,23 +60,6 @@ impl DefaultModelsService {
 
 #[async_trait]
 impl ModelsServiceInPort for DefaultModelsService {
-    async fn ensure_any_model_is_served(
-        &self,
-        default_model_alias: &str,
-        timeout: Duration,
-    ) -> Result<(), ()> {
-        let current_state = self.llamacpp_controller.get_llamacpp_state().await;
-        if matches!(
-            current_state,
-            inference_backends::LlamaCppProcessState::Running(_)
-        ) {
-            Ok(())
-        } else {
-            self.ensure_requested_model_is_served(default_model_alias, timeout)
-                .await
-        }
-    }
-
     fn set_parallel_backend_requests(&self, parallel_backend_requests: u8) {
         let old = {
             let _guard = self.llamacpp_parallel_processings.read().unwrap();
@@ -86,7 +72,27 @@ impl ModelsServiceInPort for DefaultModelsService {
         }
     }
 
-    async fn ensure_requested_model_is_served(
+    async fn ensure_any_languagemodel_is_served(
+        &self,
+        default_model_alias: &str,
+        timeout: Duration,
+    ) -> Result<(), ()> {
+        let current_state = self
+            .llamacpp_languagemodel_controller
+            .get_llamacpp_state()
+            .await;
+        if matches!(
+            current_state,
+            inference_backends::LlamaCppProcessState::Running(_)
+        ) {
+            Ok(())
+        } else {
+            self.ensure_requested_languagemodel_is_served(default_model_alias, timeout)
+                .await
+        }
+    }
+
+    async fn ensure_requested_languagemodel_is_served(
         &self,
         requested_model: &str,
         timeout: Duration,
@@ -96,11 +102,13 @@ impl ModelsServiceInPort for DefaultModelsService {
         let mut waiting_notified = false;
         loop {
             if start_time.elapsed() >= timeout {
-                trace!("starting model variant '{requested_model}' ran into timeout");
+                trace!("starting languagemodel variant '{requested_model}' ran into timeout");
                 return Err(());
             }
-            if let inference_backends::LlamaCppProcessState::Running(running_config) =
-                self.llamacpp_controller.get_llamacpp_state().await
+            if let inference_backends::LlamaCppProcessState::Running(running_config) = self
+                .llamacpp_languagemodel_controller
+                .get_llamacpp_state()
+                .await
             {
                 let running_config_args_handle = running_config.args_handle.clone();
                 if requested_model == running_config_args_handle.alias {
@@ -110,12 +118,12 @@ impl ModelsServiceInPort for DefaultModelsService {
                         return Ok(());
                     } else {
                         debug!(
-                            "problem: requested-model is '{requested_model}' is running but the process was started with different run-params"
+                            "problem: requested languagemodel is '{requested_model}' is running but the process was started with different run-params"
                         );
                     }
                 } else {
                     trace!(
-                        "problem: requested-model is '{requested_model}' but a model '{}' is still running",
+                        "problem: requested languagemodel is '{requested_model}' but a model '{}' is still running",
                         running_config.args_handle.alias
                     )
                 }
@@ -130,7 +138,7 @@ impl ModelsServiceInPort for DefaultModelsService {
                     let llamacpp_run_config =
                         self.create_run_config_from_args_and_current_state(llamacpp_config_args);
 
-                    self.llamacpp_controller
+                    self.llamacpp_languagemodel_controller
                         .start_llamacpp_process(llamacpp_run_config)
                         .await;
                     if !waiting_notified {
@@ -145,6 +153,89 @@ impl ModelsServiceInPort for DefaultModelsService {
                 }
             }
         }
+    }
+
+    async fn get_running_languagemodel_alias(&self) -> Option<String> {
+        if let LlamaCppProcessState::Running(llamacpp_run_config) = self
+            .llamacpp_languagemodel_controller
+            .get_llamacpp_state()
+            .await
+        {
+            Some(llamacpp_run_config.args_handle.alias.clone())
+        } else {
+            None
+        }
+    }
+
+    fn get_default_languagemodel_alias(&self) -> String {
+        "gemma-3-12b-it-qat-Q8_0-moderate".to_string()
+    }
+
+    async fn ensure_requested_embeddingmodel_is_served(
+        &self,
+        requested_model: &str,
+        timeout: Duration,
+    ) -> Result<(), ()> {
+        let start_time = std::time::Instant::now();
+
+        let mut waiting_notified = false;
+        loop {
+            if start_time.elapsed() >= timeout {
+                trace!("starting embeddingmodel variant '{requested_model}' ran into timeout");
+                return Err(());
+            }
+            if let inference_backends::LlamaCppProcessState::Running(running_config) = self
+                .llamacpp_embeddingmodel_controller
+                .get_llamacpp_state()
+                .await
+            {
+                let running_config_args_handle = running_config.args_handle.clone();
+                if requested_model == running_config_args_handle.alias {
+                    let runconfig_as_requested = self
+                        .create_run_config_from_args_and_current_state(running_config_args_handle);
+                    if runconfig_as_requested == running_config {
+                        return Ok(());
+                    } else {
+                        debug!(
+                            "problem: requested embeddingmodel is '{requested_model}' is running but the process was started with different run-params"
+                        );
+                    }
+                } else {
+                    trace!(
+                        "problem: requested embeddingmodel is '{requested_model}' but a model '{}' is still running",
+                        running_config.args_handle.alias
+                    )
+                }
+            }
+
+            match self
+                .model_loader
+                .get_model_configuration(requested_model)
+                .await
+            {
+                Ok(llamacpp_config_args) => {
+                    let llamacpp_run_config =
+                        self.create_run_config_from_args_and_current_state(llamacpp_config_args);
+
+                    self.llamacpp_embeddingmodel_controller
+                        .start_llamacpp_process(llamacpp_run_config)
+                        .await;
+                    if !waiting_notified {
+                        debug!("waiting for backend to serve '{requested_model}'...)");
+                    }
+                    waiting_notified = true;
+                    tokio::time::sleep(Duration::from_millis(500)).await
+                }
+                Err(()) => {
+                    error!("could not retrieve a configuration for model '{requested_model}'");
+                    return Err(());
+                }
+            }
+        }
+    }
+
+    fn get_default_embeddingmodel_alias(&self) -> String {
+        "bge-m3".to_string()
     }
 
     fn get_models(&self) -> Arc<ModelList> {
@@ -179,20 +270,5 @@ impl ModelsServiceInPort for DefaultModelsService {
 
     fn get_model_names(&self) -> String {
         self.get_models().names()
-    }
-
-    fn get_default_model_alias(&self) -> String {
-        //"gpt-oss-120b-Q8_0-small".to_string()
-        "gemma-3-12b-it-qat-Q8_0-moderate".to_string()
-    }
-
-    async fn get_running_model_alias(&self) -> Option<String> {
-        if let LlamaCppProcessState::Running(llamacpp_run_config) =
-            self.llamacpp_controller.get_llamacpp_state().await
-        {
-            Some(llamacpp_run_config.args_handle.alias.clone())
-        } else {
-            None
-        }
     }
 }

@@ -54,6 +54,7 @@ impl ModelLoaderOutPort for StaticModelLoader {
                 jinja: model_configuration.jinja,
                 ctx_size: optional_context_size,
                 no_mmap: model_configuration.no_mmap,
+                no_warmup: model_configuration.no_warmup,
                 flash_attn: model_configuration.flash_attn.clone(),
                 fit: model_configuration.fit.clone(),
                 batch_size: model_configuration.batch_size,
@@ -70,6 +71,7 @@ impl ModelLoaderOutPort for StaticModelLoader {
                 top_k: model_configuration.top_k,
                 top_p: model_configuration.top_p,
                 chat_template_kwargs: model_configuration.chat_template_kwargs.clone(),
+                embeddings: model_configuration.embeddings,
             }))
         } else {
             error!("no model-configuration found for alias '{model_key}'");

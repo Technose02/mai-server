@@ -1,4 +1,4 @@
-use async_openai::types::chat::CreateChatCompletionRequest;
+use async_openai::types::{chat::CreateChatCompletionRequest, embeddings::CreateEmbeddingRequest};
 use async_trait::async_trait;
 use axum::{extract::Request, http::StatusCode, response::Response};
 use inference_backends::{LlamaCppConfigArgs, LlamaCppProcessState, LlamaCppRunConfig};
@@ -13,6 +13,11 @@ pub trait OpenAiRequestForwardPServiceInPort: Send + Sync + 'static {
     async fn process_chat_completions_request(
         &self,
         request: CreateChatCompletionRequest,
+    ) -> Result<Response, StatusCode>;
+
+    async fn process_embedding_request(
+        &self,
+        request: CreateEmbeddingRequest,
     ) -> Result<Response, StatusCode>;
 
     async fn forward_api_request(&self, request: Request) -> Result<Response, StatusCode>;
@@ -34,12 +39,17 @@ pub trait ModelManagerServiceInPort: Send + Sync + 'static {
 
 #[async_trait]
 pub trait ModelsServiceInPort: Send + Sync + 'static {
-    async fn ensure_any_model_is_served(
+    async fn ensure_any_languagemodel_is_served(
         &self,
         default_model_alias: &str,
         timeout: Duration,
     ) -> Result<(), ()>;
-    async fn ensure_requested_model_is_served(
+    async fn ensure_requested_languagemodel_is_served(
+        &self,
+        requested_model_variant: &str,
+        timeout: Duration,
+    ) -> Result<(), ()>;
+    async fn ensure_requested_embeddingmodel_is_served(
         &self,
         requested_model_variant: &str,
         timeout: Duration,
@@ -51,9 +61,11 @@ pub trait ModelsServiceInPort: Send + Sync + 'static {
     /// returns a comma separated list of the aliases of the models available
     fn get_model_names(&self) -> String;
 
-    fn get_default_model_alias(&self) -> String;
+    fn get_default_languagemodel_alias(&self) -> String;
 
-    async fn get_running_model_alias(&self) -> Option<String>;
+    fn get_default_embeddingmodel_alias(&self) -> String;
+
+    async fn get_running_languagemodel_alias(&self) -> Option<String>;
 
     fn set_parallel_backend_requests(&self, parallel_backend_requests: u8);
 }
@@ -66,6 +78,8 @@ pub trait OpenAiClientOutPort: Send + Sync + 'static {
         &self,
         payload: CreateChatCompletionRequest,
     ) -> Result<Response, StatusCode>;
+    async fn post_embedding(&self, payload: CreateEmbeddingRequest)
+    -> Result<Response, StatusCode>;
     async fn forward_api_request(&self, request: Request) -> Result<Response, StatusCode>;
     async fn forward_ui_request(&self, request: Request) -> Result<Response, StatusCode>;
     async fn request_chat(&self) -> Result<Response, StatusCode>;

@@ -1,5 +1,5 @@
 use crate::domain::ports::{OpenAiClientOutPort, OpenAiRequestForwardPServiceInPort};
-use async_openai::types::chat::CreateChatCompletionRequest;
+use async_openai::types::{chat::CreateChatCompletionRequest, embeddings::CreateEmbeddingRequest};
 use async_trait::async_trait;
 use axum::{extract::Request, http::StatusCode, response::Response};
 use std::sync::Arc;
@@ -23,6 +23,13 @@ impl OpenAiRequestForwardPServiceInPort for OpenAiClientRequestForwardService {
         request: CreateChatCompletionRequest,
     ) -> Result<Response, StatusCode> {
         self.llamacpp_client.post_chat_completions(request).await
+    }
+
+    async fn process_embedding_request(
+        &self,
+        request: CreateEmbeddingRequest,
+    ) -> Result<Response, StatusCode> {
+        self.llamacpp_client.post_embedding(request).await
     }
 
     async fn forward_api_request(&self, request: Request) -> Result<Response, StatusCode> {

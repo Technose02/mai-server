@@ -236,10 +236,8 @@ pub struct LlamaCppConfigArgs {
     pub alias: String,
     pub api_key: Option<String>,
 
-    //pub model_path: PathBuf,
     pub model_path: String,
 
-    //pub mmproj_path: Option<PathBuf>,
     pub mmproj_path: Option<String>,
 
     pub prio: Option<u8>,
@@ -247,6 +245,7 @@ pub struct LlamaCppConfigArgs {
     pub jinja: bool,
     pub ctx_size: Option<ContextSize>,
     pub no_mmap: bool,
+    pub no_warmup: bool,
 
     pub flash_attn: Option<OnOffValue>,
     pub fit: Option<OnOffValue>,
@@ -264,6 +263,7 @@ pub struct LlamaCppConfigArgs {
     pub top_k: Option<u16>,
     pub top_p: Option<f32>,
     pub chat_template_kwargs: Option<String>,
+    pub embeddings: bool,
 }
 
 impl LlamaCppConfigArgs {
@@ -302,6 +302,14 @@ impl LlamaCppConfigArgs {
 
         if self.no_mmap {
             cmd.arg("--no-mmap");
+        }
+
+        if self.no_warmup {
+            cmd.arg("--no-warmup");
+        }
+
+        if self.embeddings {
+            cmd.arg("--embeddings");
         }
 
         if let Some(ctx_size) = self.ctx_size {
