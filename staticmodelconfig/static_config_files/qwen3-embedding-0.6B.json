@@ -1,0 +1,17 @@
+{
+  "alias": "qwen3-embedding-0.6B",
+  "model-path": "/model_data/huggingface/Qwen/Qwen3-Embedding-0.6B-GGUF/Qwen3-Embedding-0.6B-f16.gguf",
+  "max-ctx-size": 131072,
+  "vocab-type": 2,
+  "n-vocab": 151669,
+  "n-ctx-train": 32768,
+  "n-embd": 1024,
+  "n-params": 595776512,
+  "size": 1191684096,
+  "capabilities": [
+    "completion"
+  ],
+  "no-warmup": true,
+  "no-mmap": true,
+  "embeddings": true
+}

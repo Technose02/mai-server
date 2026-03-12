@@ -23,5 +23,6 @@
   "top-k": 64,
   "top-p": 0.95,
   "jinja": true,
+  "no-warmup": true,
   "no-mmap": true
 }

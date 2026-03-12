@@ -1,0 +1,17 @@
+{
+  "alias": "qwen3-embedding-8B",
+  "model-path": "/model_data/huggingface/Qwen/Qwen3-Embedding-8B-GGUF/Qwen3-Embedding-8B-f16.gguf",
+  "max-ctx-size": 40960,
+  "vocab-type": 2,
+  "n-vocab": 151665,
+  "n-ctx-train": 40960,
+  "n-embd": 4096,
+  "n-params": 7567295488,
+  "size": 15135207424,
+  "capabilities": [
+    "completion"
+  ],
+  "no-warmup": true,
+  "no-mmap": true,
+  "embeddings": true
+}

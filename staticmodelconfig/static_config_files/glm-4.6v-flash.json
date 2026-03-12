@@ -20,5 +20,7 @@
   "repeat-penalty": 1.1,
   "top-k": 2,
   "top-p": 0.6,
+  "no-warmup": true,
+  "no-mmap": true,
   "jinja": true
 }
