@@ -18,5 +18,6 @@
   "jinja": true,
   "no-mmap": true,
   "no-context-shift": true,
+  "no-warmup": true,
   "no-cont-batching": true
 }

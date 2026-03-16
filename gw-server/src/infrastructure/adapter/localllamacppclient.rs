@@ -1,5 +1,5 @@
 use crate::{SecurityConfig, domain::ports::OpenAiClientOutPort};
-use async_openai::types::chat::CreateChatCompletionRequest;
+use async_openai::types::{chat::CreateChatCompletionRequest, embeddings::CreateEmbeddingRequest};
 use async_trait::async_trait;
 use axum::{
     body::Body,
@@ -164,6 +164,42 @@ impl OpenAiClientOutPort for LocalLlamaCppClientAdapter {
             .into_response())
     }
 
+    async fn post_embedding(
+        &self,
+        payload: CreateEmbeddingRequest,
+    ) -> Result<Response, StatusCode> {
+        let json_string = serde_json::to_string(&payload).map_err(|e| {
+            error!("error converting payload to json-string: {e}");
+            StatusCode::INTERNAL_SERVER_ERROR
+        })?;
+
+        let request = Request::post(format!(
+            "{LLAMACPP_HTTP_SCHEME}://{LLAMACPP_HOST}:{}/{LLAMACPP_API_BASE_PATH}/embeddings",
+            self.llamacpp_port
+        ))
+        .header(
+            AUTHORIZATION,
+            format!("Bearer {}", self.security_config.get_apikey()),
+        )
+        .header(HOST_HEADER, LLAMACPP_HOST)
+        .version(Version::HTTP_11)
+        .body(Body::from(json_string))
+        .map_err(|e| {
+            error!("error building llama.cpp-request: {e}");
+            StatusCode::INTERNAL_SERVER_ERROR
+        })?;
+
+        Ok(self
+            .client
+            .request(request)
+            .await
+            .map_err(|e| {
+                error!("error posting embeddings to llama.cpp: {e}");
+                StatusCode::INTERNAL_SERVER_ERROR
+            })?
+            .into_response())
+    }
+
     async fn request_chat(&self) -> Result<Response, StatusCode> {
         let request = Request::get(format!(
             "{LLAMACPP_HTTP_SCHEME}://{LLAMACPP_HOST}:{}",
@@ -171,7 +207,6 @@ impl OpenAiClientOutPort for LocalLlamaCppClientAdapter {
         ))
         .header(HOST_HEADER, LLAMACPP_HOST)
         .header(ACCEPT_ENCODING, "gzip")
-        //        .header(ACCEPT_ENCODING, "identity, gzip;q=0, deflate;q=0, br;q=0")
         .version(Version::HTTP_11)
         .body(Body::empty())
         .map_err(|e| {

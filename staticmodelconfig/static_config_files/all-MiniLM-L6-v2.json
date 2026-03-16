@@ -1,0 +1,17 @@
+{
+  "alias": "all-MiniLM-L6-v2",
+  "model-path": "/model_data/huggingface/second-state/All-MiniLM-L6-v2-Embedding-GGUF/all-MiniLM-L6-v2-ggml-model-f16.gguf",
+  "max-ctx-size": 512,
+  "vocab-type": 3,
+  "n-vocab": 30522,
+  "n-ctx-train": 512,
+  "n-embd": 384,
+  "n-params": 22565376,
+  "size": 45193728,
+  "capabilities": [
+    "completion"
+  ],
+  "no-warmup": true,
+  "no-mmap": true,
+  "embeddings": true  
+}

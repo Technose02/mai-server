@@ -46,6 +46,7 @@ async fn main() {
             jinja: true,
             ctx_size: Some(ContextSize::T262144),
             no_mmap: true,
+            no_warmup: true,
             flash_attn: Some(OnOffValue::On),
             batch_size: None,
             ubatch_size: None,
@@ -61,6 +62,7 @@ async fn main() {
             fit: None,
             presence_penalty: None,
             chat_template_kwargs: None,
+            embeddings: false,
         }
         .into()
     };
@@ -81,6 +83,7 @@ async fn main() {
             jinja: true,
             ctx_size: Some(ContextSize::T32768),
             no_mmap: true,
+            no_warmup: true,
             flash_attn: Some(OnOffValue::On),
             batch_size: Some(2048),
             ubatch_size: Some(2048),
@@ -96,6 +99,7 @@ async fn main() {
             fit: None,
             presence_penalty: None,
             chat_template_kwargs: None,
+            embeddings: false,
         }
         .into(),
     };

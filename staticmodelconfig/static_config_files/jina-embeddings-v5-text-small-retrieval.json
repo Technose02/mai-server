@@ -1,0 +1,17 @@
+{
+  "alias": "jina-embeddings-v5-text-small-retrieval",
+  "model-path": "/model_data/huggingface/jinaai/jina-embeddings-v5-text-small-retrieval-GGUF/v5-small-retrieval-F16.gguf",
+  "max-ctx-size": 512,
+  "vocab-type": 2,
+  "n-vocab": 151936,
+  "n-ctx-train": 40960,
+  "n-embd": 1024,
+  "n-params": 596049920,
+  "size": 1192230912,
+  "capabilities": [
+    "completion"
+  ],
+  "no-warmup": true,
+  "no-mmap": true,
+  "embeddings": true
+}

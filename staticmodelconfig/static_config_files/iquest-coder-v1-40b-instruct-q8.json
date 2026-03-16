@@ -13,5 +13,7 @@
   ],
   "n-gpu-layers": 99,
   "flash-attn": "on",
+  "no-warmup": true,
+  "no-mmap": true,
   "jinja": true
 }

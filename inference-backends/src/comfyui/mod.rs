@@ -35,10 +35,6 @@ impl RunBackendProcess for ComfyUiBackend {
         cmd.current_dir(&self.comfyui_execdir);
         cmd.spawn().unwrap().wait().unwrap();
 
-        // prepare comfyui-command:
-        //let mut cmd = Command::new("uv");
-        //cmd.arg("run");
-
         let mut cmd = Command::new(".venv/bin/python3");
         cmd.current_dir(&self.comfyui_execdir);
         cmd.arg(self.comfyui_main_py.as_str());

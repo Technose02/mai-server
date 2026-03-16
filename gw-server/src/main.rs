@@ -15,7 +15,10 @@ use crate::{
 use axum::routing::Router;
 use axum_server::tls_rustls::RustlsConfig;
 use rand::Rng;
-use std::{borrow::Cow, collections::HashMap, net::SocketAddr, path::PathBuf, sync::Arc};
+use rustls::pki_types::{IpAddr, Ipv4Addr};
+use std::{
+    borrow::Cow, collections::HashMap, net::SocketAddr, path::PathBuf, sync::Arc, time::Duration,
+};
 use tracing::{Level, info};
 
 mod application;
@@ -26,23 +29,34 @@ mod model;
 pub(crate) use model::{ApplicationConfig, SecurityConfig};
 
 const RANDOM_APIKEY_LEN: u8 = 25;
-const LLAMACPP_PORT: u16 = 11440;
+const LLAMACPP_LLM_PORT: u16 = 11440;
+const LLAMACPP_EMBEDDINGS_PORT: u16 = 11441;
 const LLAMACPP_COMMAND: &str = "./build/bin/llama-server";
 const LLAMACPP_EXECDIR: &str = "/data0/inference/llama.cpp/";
 
 struct MyAppState {
-    openai_service: Arc<dyn OpenAiRequestForwardPServiceInPort>,
-    modelmanager_service: Arc<dyn ModelManagerServiceInPort>,
+    openai_chat_completions_service: Arc<dyn OpenAiRequestForwardPServiceInPort>,
+    openai_embeddings_service: Arc<dyn OpenAiRequestForwardPServiceInPort>,
+    languagemodelmanager_service: Arc<dyn ModelManagerServiceInPort>,
+    embeddingmodelmanager_service: Arc<dyn ModelManagerServiceInPort>,
     models_service: Arc<dyn ModelsServiceInPort>,
 }
 
 impl ApplicationConfig for MyAppState {
-    fn openai_service(&self) -> Arc<dyn OpenAiRequestForwardPServiceInPort> {
-        self.openai_service.clone()
+    fn openai_chat_completions_service(&self) -> Arc<dyn OpenAiRequestForwardPServiceInPort> {
+        self.openai_chat_completions_service.clone()
     }
 
-    fn modelmanager_service(&self) -> Arc<dyn ModelManagerServiceInPort> {
-        self.modelmanager_service.clone()
+    fn openai_embeddings_service(&self) -> Arc<dyn OpenAiRequestForwardPServiceInPort> {
+        self.openai_embeddings_service.clone()
+    }
+
+    fn languagemodelmanager_service(&self) -> Arc<dyn ModelManagerServiceInPort> {
+        self.languagemodelmanager_service.clone()
+    }
+
+    fn embeddingmodelmanager_service(&self) -> Arc<dyn ModelManagerServiceInPort> {
+        self.embeddingmodelmanager_service.clone()
     }
 
     fn models_service(&self) -> Arc<dyn ModelsServiceInPort> {
@@ -81,10 +95,20 @@ async fn create_app(provided_apikey: Option<String>, log_request_info: bool) -> 
     let security_config = Arc::new(MySecurityConfig { apikey });
 
     // init adapters
-    let llamacpp_client =
-        LocalLlamaCppClientAdapter::create_adapter(LLAMACPP_PORT, security_config.clone());
-    let llamacpp_backend_controller = LlamaCppControllerAdapter::create_adapter(
-        LLAMACPP_PORT,
+    let llamacpp_llm_client =
+        LocalLlamaCppClientAdapter::create_adapter(LLAMACPP_LLM_PORT, security_config.clone());
+    let llamacpp_embeddings_client = LocalLlamaCppClientAdapter::create_adapter(
+        LLAMACPP_EMBEDDINGS_PORT,
+        security_config.clone(),
+    );
+    let llamacpp_llm_backend_controller = LlamaCppControllerAdapter::create_adapter(
+        LLAMACPP_LLM_PORT,
+        LLAMACPP_COMMAND,
+        LLAMACPP_EXECDIR,
+    )
+    .await;
+    let llamacpp_embeddings_backend_controller = LlamaCppControllerAdapter::create_adapter(
+        LLAMACPP_EMBEDDINGS_PORT,
         LLAMACPP_COMMAND,
         LLAMACPP_EXECDIR,
     )
@@ -106,21 +130,41 @@ async fn create_app(provided_apikey: Option<String>, log_request_info: bool) -> 
         environment_args
     };
 
-    let openai_service = OpenAiClientRequestForwardService::create_service(llamacpp_client);
+    let openai_chat_completions_service =
+        OpenAiClientRequestForwardService::create_service(llamacpp_llm_client);
+    let openai_embeddings_service =
+        OpenAiClientRequestForwardService::create_service(llamacpp_embeddings_client);
     let models_service = DefaultModelsService::create_service(
-        llamacpp_backend_controller.clone(),
+        llamacpp_llm_backend_controller.clone(),
+        llamacpp_embeddings_backend_controller.clone(),
         model_loader,
         parallel_llamacpp_requests,
         number_of_llamacpp_threads,
         environment_args,
     );
-    let modelmanager_service =
-        InferenceBackendModelManagerService::create_service(llamacpp_backend_controller);
+
+    {
+        // start default embeddings-model
+        let default_model = models_service.get_default_embeddingmodel_alias();
+        models_service
+            .ensure_requested_embeddingmodel_is_served(&default_model, Duration::from_millis(60000))
+            .await
+            .unwrap_or_else(|_| {
+                panic!("error starting default embedding-model ('{default_model}')")
+            });
+    }
+
+    let languagemodelmanager_service =
+        InferenceBackendModelManagerService::create_service(llamacpp_llm_backend_controller);
+    let embeddingmodelmanager_service =
+        InferenceBackendModelManagerService::create_service(llamacpp_embeddings_backend_controller);
 
     // build configuration(s)
     let config = Arc::new(MyAppState {
-        openai_service,
-        modelmanager_service,
+        openai_chat_completions_service,
+        openai_embeddings_service,
+        languagemodelmanager_service,
+        embeddingmodelmanager_service,
         models_service,
     });
 
@@ -144,16 +188,14 @@ async fn create_app(provided_apikey: Option<String>, log_request_info: bool) -> 
 async fn main() {
     tracing_subscriber::fmt().with_max_level(Level::INFO).init();
 
-    rustls::crypto::ring::default_provider()
-        .install_default()
-        .expect("Failed to install rustls crypto provider");
-
     let mut args = std::env::args();
-    let (provided_port, provided_api_key, provided_log_request_info, _provided_llama_cpp_chatui) = {
+    let (host, port, tls, provided_api_key, provided_log_request_info, _provided_llama_cpp_chatui) = {
         let mut port = None;
         let mut api_key = None;
         let mut log_request_info = false;
         let mut llama_cpp_chatui = false;
+        let mut no_https = false;
+        let mut override_host = None;
         while let Some(a) = args.next() {
             if port.is_none() && (a == "--port" || a == "-p") {
                 if let Some(port_value) = args.next() {
@@ -165,6 +207,8 @@ async fn main() {
                 } else {
                     panic!("no value for \"-p\" (\"--port\") provided")
                 }
+            } else if a == "--port" || a == "-p" {
+                panic!("you must not provide \"-p\" (\"--port\") more than once")
             }
 
             if api_key.is_none() && a == "--api-key" || a == "-k" {
@@ -173,6 +217,23 @@ async fn main() {
                 } else {
                     panic!("no value for \"-k\" (\"--api-key\") provided")
                 }
+            } else if a == "--api-key" || a == "-k" {
+                panic!("you must not provide \"-k\" (\"--api-key\") more than once")
+            }
+
+            if override_host.is_none() && a == "--override-host-ip" || a == "-H" {
+                if let Some(override_host_val) = args.next() {
+                    override_host = match IpAddr::try_from(override_host_val.as_str()) {
+                        Ok(addr) => Some(addr),
+                        Err(_) => {
+                            panic!("invalid value for \"-H\" (\"-override-host-ip\") provided")
+                        }
+                    };
+                } else {
+                    panic!("no value for \"-H\" (\"-override-host-ip\") provided")
+                }
+            } else if a == "--override-host-ip" || a == "-H" {
+                panic!("you must not provide \"-H\" (\"-override-host-ip\") more than once")
             }
 
             if a == "--log-request-info" || a == "-l" {
@@ -182,30 +243,65 @@ async fn main() {
             if a == "--chatui" {
                 llama_cpp_chatui = true;
             }
+
+            if a == "--no-https" {
+                no_https = true;
+            }
         }
-        (port, api_key, log_request_info, llama_cpp_chatui)
+        let port = match port {
+            Some(p) => p,
+            None if no_https => 8080,
+            None => 8443,
+        };
+        let host = override_host.unwrap_or(IpAddr::V4(Ipv4Addr::from([0, 0, 0, 0])));
+        (
+            host,
+            port,
+            !no_https,
+            api_key,
+            log_request_info,
+            llama_cpp_chatui,
+        )
     };
 
     let app = create_app(provided_api_key, provided_log_request_info).await;
+    let addr = SocketAddr::from((host, port));
+    let app_service = app.into_make_service();
 
-    // configure certificate and private key used by https
-    let config = RustlsConfig::from_pem_file(
-        PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-            .join("letsencrypt/mai-server.ipv64.net")
-            .join("fullchain.pem"),
-        PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-            .join("letsencrypt/mai-server.ipv64.net")
-            .join("privkey.pem"),
-    )
-    .await
-    .unwrap();
+    let tls_config = if tls {
+        rustls::crypto::ring::default_provider()
+            .install_default()
+            .expect("Failed to install rustls crypto provider");
 
-    let addr = SocketAddr::from(([0, 0, 0, 0], provided_port.unwrap_or(8443)));
+        // configure certificate and private key used by https
+        let config = RustlsConfig::from_pem_file(
+            PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+                .join("letsencrypt/mai-server.ipv64.net")
+                .join("fullchain.pem"),
+            PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+                .join("letsencrypt/mai-server.ipv64.net")
+                .join("privkey.pem"),
+        )
+        .await
+        .unwrap();
+        Some(config)
+    } else {
+        None
+    };
 
     info!("server started on {addr}");
-    axum_server::bind_rustls(addr, config)
-        .serve(app.into_make_service())
-        .await
-        .unwrap_or_else(|_| panic!("error serving via tls on {addr}"));
+
+    if let Some(tls_config) = tls_config {
+        axum_server::bind_rustls(addr, tls_config)
+            .serve(app_service)
+            .await
+            .unwrap_or_else(|_| panic!("error serving via tls on {addr}"));
+    } else {
+        axum_server::bind(addr)
+            .serve(app_service)
+            .await
+            .unwrap_or_else(|_| panic!("error serving without tls on {addr}"));
+    }
+
     info!("server shutdown");
 }

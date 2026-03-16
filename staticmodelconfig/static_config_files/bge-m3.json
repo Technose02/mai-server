@@ -1,0 +1,17 @@
+{
+  "alias": "bge-m3",
+  "model-path": "/model_data/huggingface/lm-kit/bge-m3-gguf/bge-m3-F16.gguf",
+  "max-ctx-size": 8192,
+  "vocab-type": 4,
+  "n-vocab": 250002,
+  "n-ctx-train": 8192,
+  "n-embd": 1024,
+  "n-params": 566703104,
+  "size": 1150828544,
+  "capabilities": [
+    "completion"
+  ],
+  "no-warmup": true,
+  "no-mmap": true,
+  "embeddings": true
+}

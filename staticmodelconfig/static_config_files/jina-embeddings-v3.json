@@ -1,0 +1,17 @@
+{
+  "alias": "jina-embeddings-v3",
+  "model-path": "/model_data/huggingface/gaianet/jina-embeddings-v3-GGUF/jina-embeddings-v3-f16.gguf",
+  "max-ctx-size": 8192,
+  "vocab-type": 4,
+  "n-vocab": 250002,
+  "n-ctx-train": 8192,
+  "n-embd": 1024,
+  "n-params": 558314496,
+  "size": 1117274112,
+  "capabilities": [
+    "completion"
+  ],
+  "no-warmup": true,
+  "no-mmap": true,
+  "embeddings": true
+}

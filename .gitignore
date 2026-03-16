@@ -4,3 +4,5 @@
 /**/letsencrypt
 /.vscode/settings.json
 *.secret*
+
+.env

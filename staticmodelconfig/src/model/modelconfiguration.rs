@@ -25,8 +25,6 @@ pub struct ModelConfiguration {
 
     #[serde(skip_serializing_if = "Option::is_none", default = "Option::default")]
     pub prio: Option<u8>,
-    //#[serde(skip_serializing_if = "Option::is_none", default = "Option::default")]
-    //pub threads: Option<i8>,
     #[serde(skip_serializing_if = "Option::is_none", default = "Option::default")]
     pub n_gpu_layers: Option<u8>,
     #[serde(skip_serializing_if = "Option::is_none", default = "Option::default")]
@@ -70,6 +68,11 @@ pub struct ModelConfiguration {
         skip_serializing_if = "std::ops::Not::not",
         default = "default_to_false"
     )]
+    pub no_warmup: bool,
+    #[serde(
+        skip_serializing_if = "std::ops::Not::not",
+        default = "default_to_false"
+    )]
     pub no_context_shift: bool,
     #[serde(
         skip_serializing_if = "std::ops::Not::not",
@@ -79,6 +82,12 @@ pub struct ModelConfiguration {
 
     #[serde(skip_serializing_if = "Option::is_none", default = "Option::default")]
     pub chat_template_kwargs: Option<String>,
+
+    #[serde(
+        skip_serializing_if = "std::ops::Not::not",
+        default = "default_to_false"
+    )]
+    pub embeddings: bool,
 }
 
 fn default_to_false() -> bool {

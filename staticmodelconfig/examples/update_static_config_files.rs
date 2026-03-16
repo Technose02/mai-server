@@ -13,7 +13,7 @@ const LLAMA_SERVER_PORT: u16 = 11440;
 const ENV_VAR_GGML_CUDA_ENABLE_UNIFIED_MEMORY: &str = "GGML_CUDA_ENABLE_UNIFIED_MEMORY";
 const ENV_VALUE_GGML_CUDA_ENABLE_UNIFIED_MEMORY: &str = "1";
 
-//const FILTER_MODEL_KEY: Option<&str> = Some("qwen3.5-35b");
+//const FILTER_MODEL_KEY: Option<&str> = Some("mxbai");
 const FILTER_MODEL_KEY: Option<&str> = None;
 
 #[tokio::main]
@@ -48,7 +48,12 @@ async fn main() {
     {
         if let Some(alias_must_contain) = FILTER_MODEL_KEY {
             if !(model_configuration.alias.contains(alias_must_contain)) {
-                println!("skipping jsonfile {}: model-alias '{}' does not contain '{}'",json_file.file_name().unwrap().display(), model_configuration.alias, alias_must_contain);
+                println!(
+                    "skipping jsonfile {}: model-alias '{}' does not contain '{}'",
+                    json_file.file_name().unwrap().display(),
+                    model_configuration.alias,
+                    alias_must_contain
+                );
                 continue;
             }
         }
@@ -92,6 +97,7 @@ async fn update_model_configuration(
             jinja: model_configuration.jinja,
             ctx_size: Some(inference_backends::ContextSize::T8192),
             no_mmap: model_configuration.no_mmap,
+            no_warmup: model_configuration.no_warmup,
             flash_attn: model_configuration.flash_attn.clone(),
             fit: model_configuration.fit.clone(),
             batch_size: model_configuration.batch_size,
@@ -109,6 +115,7 @@ async fn update_model_configuration(
             top_k: model_configuration.top_k,
             top_p: model_configuration.top_p,
             chat_template_kwargs: model_configuration.chat_template_kwargs.clone(),
+            embeddings: model_configuration.embeddings,
         }),
     };
 

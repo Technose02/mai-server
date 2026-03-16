@@ -1,6 +1,6 @@
 use std::{collections::HashMap, sync::Arc};
 
-use async_openai::types::chat::CreateChatCompletionRequest;
+use async_openai::types::{chat::CreateChatCompletionRequest, embeddings::CreateEmbeddingRequest};
 use axum::{
     extract::Request,
     http::{StatusCode, header},
@@ -110,6 +110,11 @@ pub struct LlamaCppRunConfigDto {
         skip_serializing_if = "std::ops::Not::not",
         default = "default_to_false"
     )]
+    pub no_warmup: bool,
+    #[serde(
+        skip_serializing_if = "std::ops::Not::not",
+        default = "default_to_false"
+    )]
     pub no_context_shift: bool,
     #[serde(
         skip_serializing_if = "std::ops::Not::not",
@@ -119,6 +124,12 @@ pub struct LlamaCppRunConfigDto {
 
     #[serde(skip_serializing_if = "Option::is_none", default = "Option::default")]
     pub chat_template_kwargs: Option<String>,
+
+    #[serde(
+        skip_serializing_if = "std::ops::Not::not",
+        default = "default_to_false"
+    )]
+    pub embeddings: bool,
 }
 
 impl LlamaCppRunConfigDto {
@@ -141,6 +152,7 @@ impl LlamaCppRunConfigDto {
                 n_gpu_layers: self.n_gpu_layers,
                 jinja: self.jinja,
                 no_mmap: self.no_mmap,
+                no_warmup: self.no_warmup,
                 flash_attn: self.flash_attn.clone(),
                 fit: self.fit.clone(),
                 ubatch_size: self.ubatch_size,
@@ -153,6 +165,7 @@ impl LlamaCppRunConfigDto {
                 top_k: self.top_k,
                 top_p: self.top_p,
                 chat_template_kwargs: self.chat_template_kwargs.clone(),
+                embeddings: self.embeddings,
             }),
         }
     }
@@ -176,6 +189,7 @@ impl From<LlamaCppRunConfig> for LlamaCppRunConfigDto {
             cache_type_k: value.args_handle.cache_type_k.clone(),
             cache_type_v: value.args_handle.cache_type_v.clone(),
             no_mmap: value.args_handle.no_mmap,
+            no_warmup: value.args_handle.no_warmup,
             flash_attn: value.args_handle.flash_attn.clone(),
             fit: value.args_handle.fit.clone(),
             ubatch_size: value.args_handle.ubatch_size,
@@ -188,6 +202,7 @@ impl From<LlamaCppRunConfig> for LlamaCppRunConfigDto {
             top_k: value.args_handle.top_k,
             top_p: value.args_handle.top_p,
             chat_template_kwargs: value.args_handle.chat_template_kwargs.clone(),
+            embeddings: value.args_handle.embeddings,
         }
     }
 }
@@ -244,4 +259,27 @@ pub async fn try_map_request_body_to_create_chat_completion_request(
                 create_chat_completions_request
             }
         })
+}
+
+pub async fn try_map_request_body_to_create_embedding_request(
+    request: Request,
+) -> Result<CreateEmbeddingRequest, StatusCode> {
+    let request_body = request
+        .into_body()
+        .into_data_stream()
+        .collect()
+        .await
+        .map_err(|e| {
+            error!("error reading request-body as bytes: {e}");
+            StatusCode::INTERNAL_SERVER_ERROR
+        })?
+        .to_bytes();
+
+    serde_json::from_str::<CreateEmbeddingRequest>(
+        String::from_utf8_lossy(request_body.trim_ascii()).as_ref(),
+    )
+    .map_err(|e| {
+        error!("error deserializing payload (expected as CreateChatCompletionRequest): {e}");
+        StatusCode::UNPROCESSABLE_ENTITY
+    })
 }
