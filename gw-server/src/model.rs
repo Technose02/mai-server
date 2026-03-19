@@ -4,7 +4,7 @@ use crate::domain::ports::{
 use std::{borrow::Cow, sync::Arc};
 
 pub trait SecurityConfig: Send + Sync + 'static {
-    fn get_apikey(&self) -> Cow<'_, str>;
+    fn get_apikey(&self) -> Option<Cow<'_, str>>;
 }
 
 pub(crate) trait ApplicationConfig: Send + Sync + 'static {

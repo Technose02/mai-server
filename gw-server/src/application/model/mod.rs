@@ -133,14 +133,14 @@ pub struct LlamaCppRunConfigDto {
 }
 
 impl LlamaCppRunConfigDto {
-    pub fn map_into_domain(self, api_key: impl Into<String>) -> LlamaCppRunConfig {
+    pub fn map_into_domain(self, api_key: Option<impl Into<String>>) -> LlamaCppRunConfig {
         LlamaCppRunConfig {
             env_handle: Arc::new(self.env),
             parallel: self.parallel.unwrap_or(DEFAULT_PARALLEL),
             threads: self.threads.unwrap_or(-1),
             args_handle: Arc::new(LlamaCppConfigArgs {
                 alias: self.alias.clone(),
-                api_key: Some(api_key.into()),
+                api_key: api_key.map(Into::<String>::into),
                 batch_size: self.batch_size,
                 cache_type_k: self.cache_type_k.clone(),
                 cache_type_v: self.cache_type_v.clone(),

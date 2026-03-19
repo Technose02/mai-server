@@ -19,11 +19,16 @@ pub async fn check_auth(
         .to_str()
         .map_err(|_| StatusCode::UNAUTHORIZED)?;
 
-    if let Some(bearer_token) = auth_header.strip_prefix("Bearer ")
-        && security_config.get_apikey() == bearer_token
-    {
-        Ok(next.run(req).await)
+    if let Some(security_apikey) = security_config.get_apikey() {
+        if let Some(bearer_token) = auth_header.strip_prefix("Bearer ")
+            && security_apikey == bearer_token
+        {
+            Ok(next.run(req).await)
+        } else {
+            Err(StatusCode::UNAUTHORIZED)
+        }
     } else {
-        Err(StatusCode::UNAUTHORIZED)
+            Ok(next.run(req).await)
     }
+
 }

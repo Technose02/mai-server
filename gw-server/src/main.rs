@@ -65,34 +65,57 @@ impl ApplicationConfig for MyAppState {
 }
 
 struct MySecurityConfig {
-    apikey: String,
+    apikey: Option<String>,
 }
 
 impl SecurityConfig for MySecurityConfig {
-    fn get_apikey(&self) -> std::borrow::Cow<'_, str> {
-        Cow::Borrowed(&self.apikey)
+    fn get_apikey(&self) -> Option<std::borrow::Cow<'_, str>> {
+        if let Some(api_key) = &self.apikey {
+            Some(Cow::Owned(api_key.clone()))
+        } else {
+            None
+        }
     }
 }
 
-async fn create_app(provided_apikey: Option<String>, log_request_info: bool) -> Router {
-    let apikey = provided_apikey.unwrap_or_else(|| {
-        const CHARSET: &[u8] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+async fn create_app(provided_apikey: Option<String>, localhost: bool, log_request_info: bool) -> Router {
+    let security_config = match provided_apikey {
 
-        let mut rng = rand::rng();
-
-        let apikey = (0..RANDOM_APIKEY_LEN)
+        None if localhost => Arc::new(MySecurityConfig { apikey: None }),
+        Some(apikey) => Arc::new(MySecurityConfig { apikey: Some(apikey) }),
+        None => {
+            const CHARSET: &[u8] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+            let mut rng = rand::rng();
+        
+            let apikey = (0..RANDOM_APIKEY_LEN)
             .map(|_| {
                 let idx = rng.random_range(0..CHARSET.len());
                 CHARSET[idx] as char
             })
             .collect();
+        
+            info!("your current api-key is '{apikey}'");
+            Arc::new(MySecurityConfig { apikey: Some(apikey) })
+        }
+    };
+    //let apikey = provided_apikey.unwrap_or_else(|| {
+    //    const CHARSET: &[u8] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
 
-        info!("your current api-key is '{apikey}'");
+    //    let mut rng = rand::rng();
 
-        apikey
-    });
+    //    let apikey = (0..RANDOM_APIKEY_LEN)
+    //        .map(|_| {
+    //            let idx = rng.random_range(0..CHARSET.len());
+    //            CHARSET[idx] as char
+    //        })
+    //        .collect();
 
-    let security_config = Arc::new(MySecurityConfig { apikey });
+    //    info!("your current api-key is '{apikey}'");
+
+    //    apikey
+    //});
+
+    //let security_config = Arc::new(MySecurityConfig { apikey });
 
     // init adapters
     let llamacpp_llm_client =
@@ -264,7 +287,7 @@ async fn main() {
         )
     };
 
-    let app = create_app(provided_api_key, provided_log_request_info).await;
+    let app = create_app(provided_api_key, host==IpAddr::V4(Ipv4Addr::from([127, 0, 0, 1])), provided_log_request_info).await;
     let addr = SocketAddr::from((host, port));
     let app_service = app.into_make_service();
 

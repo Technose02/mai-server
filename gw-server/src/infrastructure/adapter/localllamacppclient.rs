@@ -137,14 +137,18 @@ impl OpenAiClientOutPort for LocalLlamaCppClientAdapter {
             StatusCode::INTERNAL_SERVER_ERROR
         })?;
 
-        let request = Request::post(format!(
+        let mut request_builder = Request::post(format!(
             "{LLAMACPP_HTTP_SCHEME}://{LLAMACPP_HOST}:{}/{LLAMACPP_API_BASE_PATH}/chat/completions",
             self.llamacpp_port
-        ))
-        .header(
+        ));
+
+        if let Some(security_apikey) = self.security_config.get_apikey() {
+            request_builder = request_builder.header(
             AUTHORIZATION,
-            format!("Bearer {}", self.security_config.get_apikey()),
-        )
+            format!("Bearer {}", security_apikey));
+        }
+        
+        let request = request_builder
         .header(HOST_HEADER, LLAMACPP_HOST)
         .version(Version::HTTP_11)
         .body(Body::from(json_string))
@@ -173,14 +177,18 @@ impl OpenAiClientOutPort for LocalLlamaCppClientAdapter {
             StatusCode::INTERNAL_SERVER_ERROR
         })?;
 
-        let request = Request::post(format!(
+        let mut request_builder = Request::post(format!(
             "{LLAMACPP_HTTP_SCHEME}://{LLAMACPP_HOST}:{}/{LLAMACPP_API_BASE_PATH}/embeddings",
             self.llamacpp_port
-        ))
-        .header(
+        ));
+
+        if let Some(security_apikey) = self.security_config.get_apikey() {
+            request_builder = request_builder.header(
             AUTHORIZATION,
-            format!("Bearer {}", self.security_config.get_apikey()),
-        )
+            format!("Bearer {}", security_apikey));
+        }
+
+        let request = request_builder
         .header(HOST_HEADER, LLAMACPP_HOST)
         .version(Version::HTTP_11)
         .body(Body::from(json_string))
