@@ -12,8 +12,8 @@ use serde_json::json;
 use tracing::info;
 
 const MAI_SERVER_APIKEY: &str = "MAI_SERVER_APIKEY";
-const SCANNED_PAGES_DIR: &str = "/data1/dev/laurins-geheimnis-md/data/images";
-const OUT_DIR: &str = "/home/technose02/Documents/laurin_ocr_out";
+const SCANNED_PAGES_DIR: &str = "/data0/dev/python/laurins-geheimnis-md/data/images";
+const OUT_DIR: &str = "/home/technose02/Documents/laurin_ocr_out/take2";
 const SEED: u64 = 2;
 
 #[tokio::main]
@@ -66,7 +66,8 @@ Antworte ausschließlich mit dem generierten Text."#,
     loop {
         if let Some((image, path)) = load_image(idx as usize) {
             info!("analyzing image {path:#?}...");
-            if let Ok(res) = agent.prompt(image).await {
+            match agent.prompt(image).await {
+                Ok(res) => {
                 info!("\twriting output to {path:#?}...");
                 tokio::fs::write(laurin_ocr_out.join(&format!("page_{:03}.md", idx)), res)
                     .await
@@ -74,7 +75,12 @@ Antworte ausschließlich mit dem generierten Text."#,
                 idx += 1;
                 info!("\tdone");
                 continue;
+                },
+                Err(e) => {
+                    panic!("{e}")
+                }
             }
+
         }
         break;
     }
