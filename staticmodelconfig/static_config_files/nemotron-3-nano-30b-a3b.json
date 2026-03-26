@@ -15,7 +15,7 @@
   "flash-attn": "on",
   "temp": 1.0,
   "top-p": 1.0,
-  "no-warmup": true,
+  "jinja": true,
   "no-mmap": true,
-  "jinja": true
+  "no-warmup": true
 }

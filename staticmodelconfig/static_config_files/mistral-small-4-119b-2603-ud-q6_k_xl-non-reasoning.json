@@ -1,0 +1,26 @@
+{
+  "alias": "mistral-small-4-119b-a6b-ud-q6_k_xl-non-reasoning",
+  "model-path": "/model_data/huggingface/unsloth/Mistral-Small-4-119B-2603-GGUF/UD-Q6_K_XL/Mistral-Small-4-119B-2603-UD-Q6_K_XL-00001-of-00004.gguf",
+  "max-ctx-size": 262144,
+  "vocab-type": 2,
+  "n-vocab": 131072,
+  "n-ctx-train": 1048576,
+  "n-embd": 4096,
+  "n-params": 118972826624,
+  "size": 110811500544,
+  "capabilities": [
+    "completion",
+    "multimodal"
+  ],
+  "mmproj-path": "/model_data/huggingface/unsloth/Mistral-Small-4-119B-2603-GGUF/mmproj-BF16.gguf",
+  "n-gpu-layers": 99,
+  "flash-attn": "on",
+  "temp": 0.7,
+  "min-p": 0.1,
+  "top-k": 40,
+  "top-p": 0.95,
+  "jinja": true,
+  "no-mmap": true,
+  "no-warmup": true,
+  "chat-template-kwargs": "{\"reasoning_effort\":\"none\"}"
+}
