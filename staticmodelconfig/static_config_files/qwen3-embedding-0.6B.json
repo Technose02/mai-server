@@ -11,7 +11,7 @@
   "capabilities": [
     "completion"
   ],
-  "no-warmup": true,
   "no-mmap": true,
+  "no-warmup": true,
   "embeddings": true
 }

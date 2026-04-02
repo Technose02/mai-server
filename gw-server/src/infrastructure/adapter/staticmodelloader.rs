@@ -46,7 +46,10 @@ impl ModelLoaderOutPort for StaticModelLoader {
         {
             Ok(Arc::new(LlamaCppConfigArgs {
                 alias,
-                api_key: self.security_config.get_apikey().map(|apikey| apikey.to_string()),
+                api_key: self
+                    .security_config
+                    .get_apikey()
+                    .map(|apikey| apikey.to_string()),
                 model_path: model_configuration.model_path.clone(),
                 mmproj_path: model_configuration.mmproj_path.clone(),
                 prio: model_configuration.prio,

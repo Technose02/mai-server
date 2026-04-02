@@ -68,19 +68,18 @@ Antworte ausschließlich mit dem generierten Text."#,
             info!("analyzing image {path:#?}...");
             match agent.prompt(image).await {
                 Ok(res) => {
-                info!("\twriting output to {path:#?}...");
-                tokio::fs::write(laurin_ocr_out.join(&format!("page_{:03}.md", idx)), res)
-                    .await
-                    .unwrap_or_else(|e| panic!("error writing output as md-file: {e}"));
-                idx += 1;
-                info!("\tdone");
-                continue;
-                },
+                    info!("\twriting output to {path:#?}...");
+                    tokio::fs::write(laurin_ocr_out.join(&format!("page_{:03}.md", idx)), res)
+                        .await
+                        .unwrap_or_else(|e| panic!("error writing output as md-file: {e}"));
+                    idx += 1;
+                    info!("\tdone");
+                    continue;
+                }
                 Err(e) => {
                     panic!("{e}")
                 }
             }
-
         }
         break;
     }
