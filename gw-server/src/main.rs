@@ -70,11 +70,9 @@ struct MySecurityConfig {
 
 impl SecurityConfig for MySecurityConfig {
     fn get_apikey(&self) -> Option<std::borrow::Cow<'_, str>> {
-        if let Some(api_key) = &self.apikey {
-            Some(Cow::Owned(api_key.clone()))
-        } else {
-            None
-        }
+        self.apikey
+            .as_ref()
+            .map(|apikey| Cow::Owned(apikey.clone()))
     }
 }
 

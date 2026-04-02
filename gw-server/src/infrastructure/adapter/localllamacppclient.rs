@@ -19,7 +19,7 @@ use std::{
     io::{Read, Write},
     sync::Arc,
 };
-use tracing::{debug, error, info, trace, warn};
+use tracing::{debug, error, trace, warn};
 
 const LLAMACPP_HTTP_SCHEME: &str = "http";
 const LLAMACPP_HOST: &str = "localhost";
@@ -59,12 +59,11 @@ impl LocalLlamaCppClientAdapter {
     ) -> Result<Response, StatusCode> {
         let path_and_query = {
             let path = request.uri().path();
-            let path_and_query = request
+            request
                 .uri()
                 .path_and_query()
                 .map(|v| v.as_str())
-                .unwrap_or(path);
-            path_and_query
+                .unwrap_or(path)
         };
 
         let uri_string = if let Some(path_prefix) = prefix_target_path {
