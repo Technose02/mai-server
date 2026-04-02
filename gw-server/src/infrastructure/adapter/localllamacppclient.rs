@@ -334,7 +334,7 @@ impl OpenAiClientOutPort for LocalLlamaCppClientAdapter {
             "{LLAMACPP_HTTP_SCHEME}://{LLAMACPP_HOST}:{}",
             self.llamacpp_port
         );
-        info!("requesting '{url}'");
+        trace!("requesting '{url}'");
         let request = Request::get(url)
             .header(HOST_HEADER, LLAMACPP_HOST)
             .header(ACCEPT_ENCODING, "gzip")
