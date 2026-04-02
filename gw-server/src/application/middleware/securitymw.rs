@@ -28,7 +28,6 @@ pub async fn check_auth(
             Err(StatusCode::UNAUTHORIZED)
         }
     } else {
-            Ok(next.run(req).await)
+        Ok(next.run(req).await)
     }
-
 }

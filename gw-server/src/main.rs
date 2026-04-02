@@ -78,24 +78,32 @@ impl SecurityConfig for MySecurityConfig {
     }
 }
 
-async fn create_app(provided_apikey: Option<String>, localhost: bool, log_request_info: bool) -> Router {
+async fn create_app(
+    provided_apikey: Option<String>,
+    localhost: bool,
+    log_request_info: bool,
+) -> Router {
     let security_config = match provided_apikey {
-
         None if localhost => Arc::new(MySecurityConfig { apikey: None }),
-        Some(apikey) => Arc::new(MySecurityConfig { apikey: Some(apikey) }),
+        Some(apikey) => Arc::new(MySecurityConfig {
+            apikey: Some(apikey),
+        }),
         None => {
-            const CHARSET: &[u8] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+            const CHARSET: &[u8] =
+                b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
             let mut rng = rand::rng();
-        
+
             let apikey = (0..RANDOM_APIKEY_LEN)
-            .map(|_| {
-                let idx = rng.random_range(0..CHARSET.len());
-                CHARSET[idx] as char
-            })
-            .collect();
-        
+                .map(|_| {
+                    let idx = rng.random_range(0..CHARSET.len());
+                    CHARSET[idx] as char
+                })
+                .collect();
+
             info!("your current api-key is '{apikey}'");
-            Arc::new(MySecurityConfig { apikey: Some(apikey) })
+            Arc::new(MySecurityConfig {
+                apikey: Some(apikey),
+            })
         }
     };
     //let apikey = provided_apikey.unwrap_or_else(|| {
@@ -287,7 +295,12 @@ async fn main() {
         )
     };
 
-    let app = create_app(provided_api_key, host==IpAddr::V4(Ipv4Addr::from([127, 0, 0, 1])), provided_log_request_info).await;
+    let app = create_app(
+        provided_api_key,
+        host == IpAddr::V4(Ipv4Addr::from([127, 0, 0, 1])),
+        provided_log_request_info,
+    )
+    .await;
     let addr = SocketAddr::from((host, port));
     let app_service = app.into_make_service();
 

@@ -35,7 +35,9 @@ pub fn create_router(
             get(get_models_with_parallel_param),
         )
         .route("/api/v1/models", get(get_models))
-        .route("/chat", get(chat_handler));
+        .route("/chat", get(chat_handler))
+        .route("/chat/bundle.css", get(chat_handler_assets))
+        .route("/chat/bundle.js", get(chat_handler_assets));
 
     let secured = Router::new()
         // CHAT
