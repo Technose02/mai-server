@@ -4,7 +4,7 @@ use inference_backends::{
 };
 use reqwest::get;
 use staticmodelconfig::{ModelConfiguration, ModelList};
-use std::{collections::HashMap, path::PathBuf, sync::Arc};
+use std::{collections::HashMap, path::PathBuf, sync::Arc, path::Path};
 use tracing::info;
 
 const LLAMA_SERVER_HOST: &str = "localhost";
@@ -13,7 +13,7 @@ const LLAMA_SERVER_PORT: u16 = 11440;
 const ENV_VAR_GGML_CUDA_ENABLE_UNIFIED_MEMORY: &str = "GGML_CUDA_ENABLE_UNIFIED_MEMORY";
 const ENV_VALUE_GGML_CUDA_ENABLE_UNIFIED_MEMORY: &str = "1";
 
-//const FILTER_MODEL_KEY: Option<&str> = Some("mxbai");
+//const FILTER_MODEL_KEY: Option<&str> = Some("gemma-4");
 const FILTER_MODEL_KEY: Option<&str> = None;
 
 #[tokio::main]
@@ -57,6 +57,27 @@ async fn main() {
                 continue;
             }
         }
+
+        // check if paths exist locally and ignore configuration if not
+        let model_path = AsRef::<Path>::as_ref(&model_configuration.model_path);
+        let mmproj_path = model_configuration.mmproj_path.as_deref().map(AsRef::<Path>::as_ref);
+        if !model_path.is_file() {
+            println!(
+                "skipping jsonfile {}: file '{}' not found locally",
+                json_file.file_name().unwrap().display(),
+                model_configuration.model_path
+            );
+            continue;
+        }
+        if !mmproj_path.map_or(true, Path::is_file) {
+            println!(
+                "skipping jsonfile {}: file '{}' not found locally",
+                json_file.file_name().unwrap().display(),
+                model_configuration.mmproj_path.as_deref().unwrap()
+            );
+            continue;
+        }
+
         update_model_configuration(
             &mut model_configuration,
             &llamacpp_controller,
