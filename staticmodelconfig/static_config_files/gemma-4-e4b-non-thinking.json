@@ -1,0 +1,25 @@
+{
+  "alias": "gemma-4-e4b-non-thinking",
+  "model-path": "/model_data/huggingface/unsloth/gemma-4-E4B-it-GGUF/gemma-4-E4B-it-BF16.gguf",
+  "max-ctx-size": 131072,
+  "vocab-type": 2,
+  "n-vocab": 262144,
+  "n-ctx-train": 131072,
+  "n-embd": 2560,
+  "n-params": 7518069290,
+  "size": 15037270184,
+  "capabilities": [
+    "completion",
+    "multimodal"
+  ],
+  "mmproj-path": "/model_data/huggingface/unsloth/gemma-4-E4B-it-GGUF/mmproj-BF16.gguf",
+  "n-gpu-layers": 99,
+  "flash-attn": "on",
+  "temp": 1.0,
+  "top-k": 64,
+  "top-p": 0.95,
+  "jinja": true,
+  "no-mmap": true,
+  "no-warmup": true,
+  "chat-template-kwargs": "{\"enable_thinking\": false}"
+}
