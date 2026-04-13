@@ -6,4 +6,3 @@
 *.secret*
 
 .env
-run.sh
