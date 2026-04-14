@@ -28,6 +28,7 @@ mod infrastructure;
 mod model;
 pub(crate) use model::{ApplicationConfig, SecurityConfig};
 
+const MAISERVER_LOG_KEY: &str = "MAISERVER_LOG";
 const RANDOM_APIKEY_LEN: u8 = 25;
 const LLAMACPP_LLM_PORT: u16 = 11440;
 const LLAMACPP_EMBEDDINGS_PORT: u16 = 11441;
@@ -197,13 +198,13 @@ async fn create_app(
 
 #[tokio::main]
 async fn main() {
-    if let Ok(max_log_level) = std::env::var("MAISERVER_MAX_LOGLEVEL") {
-        let max_level = match max_log_level.as_str() {
-            "INFO" => Level::INFO,
-            "TRACE" => Level::TRACE,
-            "DEBUG" => Level::DEBUG,
-            "ERROR" => Level::ERROR,
-            "WARN" => Level::WARN,
+    if let Ok(max_log_level) = std::env::var(MAISERVER_LOG_KEY) {
+        let max_level = match max_log_level.to_lowercase().as_str() {
+            "info" => Level::INFO,
+            "trace" => Level::TRACE,
+            "debug" => Level::DEBUG,
+            "error" => Level::ERROR,
+            "warn" => Level::WARN,
             _ => Level::ERROR,
         };
         tracing_subscriber::fmt().with_max_level(max_level).init();
