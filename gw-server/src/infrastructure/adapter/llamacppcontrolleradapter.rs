@@ -13,12 +13,14 @@ pub struct LlamaCppControllerAdapter {
 impl LlamaCppControllerAdapter {
     pub async fn create_adapter(
         port: u16,
+        timeout: Option<u16>,
         llama_cpp_command: impl Into<String>,
         llama_cpp_execdir: impl Into<String>,
     ) -> Arc<dyn LlamaCppControllerOutPort> {
         let llamacpp_controller = LlamaCppBackendController::init_backend(LlamaCppBackend {
             host: "localhost".to_owned(),
             port,
+            timeout,
             llama_cpp_command: llama_cpp_command.into(),
             llama_cpp_execdir: llama_cpp_execdir.into(),
         })

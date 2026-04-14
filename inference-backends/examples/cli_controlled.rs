@@ -15,6 +15,7 @@ async fn main() {
     let llamacpp_backend = LlamaCppBackend {
         host: "0.0.0.0".to_owned(),
         port: 11440,
+        timeout: None,
         llama_cpp_command: "./build/bin/llama-server".to_owned(),
         llama_cpp_execdir: "/data0/inference/llama.cpp/".to_owned(),
     };

@@ -16,6 +16,7 @@ pub type LlamaCppBackendController = BackendController<LlamaCppRunConfig>;
 pub struct LlamaCppBackend {
     pub host: String,
     pub port: u16,
+    pub timeout: Option<u16>,
     pub llama_cpp_command: String,
     pub llama_cpp_execdir: String,
 }
@@ -42,6 +43,11 @@ impl RunBackendProcess for LlamaCppBackend {
 
         cmd.arg("--port");
         cmd.arg(self.port.to_string());
+
+        if let Some(timeout) = self.timeout {
+            cmd.arg("--timeout");
+            cmd.arg(timeout.to_string());
+        }
 
         process_config.apply_args(&mut cmd);
 

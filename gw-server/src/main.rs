@@ -31,6 +31,7 @@ pub(crate) use model::{ApplicationConfig, SecurityConfig};
 const MAISERVER_LOG_KEY: &str = "MAISERVER_LOG";
 const RANDOM_APIKEY_LEN: u8 = 25;
 const LLAMACPP_LLM_PORT: u16 = 11440;
+const LLAMACPP_LLM_TIMEOUT_SECS: u16 = 60000;
 const LLAMACPP_EMBEDDINGS_PORT: u16 = 11441;
 const LLAMACPP_COMMAND: &str = "./build/bin/llama-server";
 const LLAMACPP_EXECDIR: &str = "/data0/inference/llama.cpp/";
@@ -115,12 +116,14 @@ async fn create_app(
     );
     let llamacpp_llm_backend_controller = LlamaCppControllerAdapter::create_adapter(
         LLAMACPP_LLM_PORT,
+        Some(LLAMACPP_LLM_TIMEOUT_SECS),
         LLAMACPP_COMMAND,
         LLAMACPP_EXECDIR,
     )
     .await;
     let llamacpp_embeddings_backend_controller = LlamaCppControllerAdapter::create_adapter(
         LLAMACPP_EMBEDDINGS_PORT,
+        None,
         LLAMACPP_COMMAND,
         LLAMACPP_EXECDIR,
     )

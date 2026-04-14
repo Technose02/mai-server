@@ -23,6 +23,7 @@ async fn main() {
     let llamacpp_controller = LlamaCppBackendController::init_backend(LlamaCppBackend {
         host: LLAMA_SERVER_HOST.to_owned(),
         port: LLAMA_SERVER_PORT,
+        timeout: None,
         llama_cpp_command: "./build/bin/llama-server".into(),
         llama_cpp_execdir: "/data0/inference/llama.cpp/".into(),
     })
