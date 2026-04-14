@@ -7,8 +7,8 @@ use axum::{
     http::{
         StatusCode, Uri, Version,
         header::{
-            ACCEPT_ENCODING, AUTHORIZATION, CONTENT_ENCODING, CONTENT_LENGTH, CONTENT_TYPE,
-            HOST as HOST_HEADER, HeaderValue,
+            ACCEPT_ENCODING, AUTHORIZATION, CACHE_CONTROL, CONNECTION, CONTENT_ENCODING,
+            CONTENT_LENGTH, CONTENT_TYPE, HOST as HOST_HEADER, HeaderValue,
         },
     },
     response::{IntoResponse, Response},
@@ -17,14 +17,14 @@ use flate2::{Compression, read::GzDecoder};
 use futures::StreamExt;
 use http_body_util::BodyExt;
 use std::{
-    io::{Error as IoError, Read, Write},
+    io::{Read, Write},
     sync::Arc,
 };
 use tokio_util::{
     codec::{FramedRead, LinesCodec},
     io::StreamReader,
 };
-use tracing::{debug, error, info, trace, warn};
+use tracing::{debug, error, trace, warn};
 
 const LLAMACPP_HTTP_SCHEME: &str = "http";
 const LLAMACPP_HOST: &str = "localhost";
@@ -259,7 +259,8 @@ impl OpenAiClientOutPort for LocalLlamaCppClientAdapter {
         &self,
         payload: CreateChatCompletionRequest,
     ) -> Result<Response, StatusCode> {
-        info!("entered post_chat_completions");
+        trace!("entered post_chat_completions");
+
         let json_string = serde_json::to_string(&payload).map_err(|e| {
             error!("error converting payload to json-string: {e}");
             StatusCode::INTERNAL_SERVER_ERROR
@@ -288,74 +289,119 @@ impl OpenAiClientOutPort for LocalLlamaCppClientAdapter {
             .headers_mut()
             .insert(ACCEPT_ENCODING, HeaderValue::from_static("identity"));
 
-        info!("request built: {request:#?} -> forwarding to llama-server");
+        let client = self.client.clone();
 
-        let response = self
-            .client
-            .request(request)
-            .await
-            .map_err(|e| {
-                error!("error posting chat completions to llama.cpp: {e}");
-                StatusCode::INTERNAL_SERVER_ERROR
-            })?
-            .into_response();
-
-        info!("now streaming response");
-
-        let (mut parts, body) = response.into_parts();
-
-        info!("received response with parts: {parts:#?}");
-
-        let stream_reader = StreamReader::new(
-            body.into_data_stream()
-                .map(|res| res.map_err(IoError::other)),
-        );
-
-        let mut lines = FramedRead::new(stream_reader, LinesCodec::new());
-
-        info!("receiving lines from stream");
         let sanitized_stream = async_stream::stream! {
-            let next = lines.next().await;
-            info!("read '{next:#?}'");
-            while let Some(Ok(line)) = lines.next().await {
-                if line.is_empty() { continue; }
+            let mut heartbeat_interval = tokio::time::interval(std::time::Duration::from_secs(10));
+            // WICHTIG: Das erste .tick() feuert sofort, was gewünscht ist (Sofort-Heartbeat)
 
-                // FIX 1: "content":null -> "content":""
-                if line.find("\"content\":null").is_some() {
-                    warn!(r#"santizer found '"content":null' ; replacing with '"content":""'"#);
+            let mut connect_future = Box::pin(client.request(request));
+            let response_result;
+
+            // PHASE A: Warten auf Verbindung
+            loop {
+                tokio::select! {
+                    _ = heartbeat_interval.tick() => {
+                        trace!("sending a heartbeat while still waiting for response from llama-server");
+                        yield Ok::<Bytes, std::io::Error>(Bytes::from(": heartbeat\n\n"));
+                    }
+                    res = &mut connect_future => {
+                        response_result = res;
+                        break;
+                    }
                 }
-                let mut sanitized = line.replace("\"content\":null", "\"content\":\"\"");
-
-                // FIX 2: Sicherstellen, dass nach 'data:' ein Leerzeichen kommt (Rig/OpenAI Standard)
-                if sanitized.starts_with("data:") && !sanitized.starts_with("data: ") {
-                    warn!(r#"santizer found '"data:"' ; replacing with '"data: "'"#);
-                    sanitized = sanitized.replacen("data:", "data: ", 1);
-                }
-
-                // FIX 3: SSE-Formatierung wahren (\n\n am Ende jedes Events)
-                let sanitized = format!("{}\n\n", sanitized);
-                info!(r#"now yielding '{sanitized}'"#);
-                yield Ok::<Bytes, std::io::Error>(Bytes::from(sanitized));
             }
 
-            // FIX 4: Sicherstellen, dass der Stream sauber terminiert
-            let epilogue = "data: [DONE]\n\n";
-            info!(r#"finalizing stream with '{epilogue}'"#);
-            yield Ok::<Bytes, std::io::Error>(Bytes::from(epilogue));
+            let response = match response_result {
+                Ok(r) => r,
+                Err(e) => {
+                    error!("error posting chat completions to llama.cpp: {e}");
+                    return;
+                }
+            };
+
+            // PHASE B: Daten streamen
+            let body = response.into_body();
+            let stream_reader = StreamReader::new(
+                body.into_data_stream().map(|res| res.map_err(std::io::Error::other)),
+            );
+            let mut lines = FramedRead::new(stream_reader, LinesCodec::new());
+            let mut sent_done = false;
+
+            loop {
+                tokio::select! {
+                    // Heartbeat-Timer
+                    _ = heartbeat_interval.tick() => {
+                        trace!("sending a heartbeat while still waiting for more data");
+                        yield Ok::<Bytes, std::io::Error>(Bytes::from(": heartbeat\n\n"));
+                    }
+                    // Echte Daten
+                    next_line = lines.next() => {
+                        // Timer sofort zurücksetzen, wenn Daten fließen
+                        heartbeat_interval.reset();
+
+                        match next_line {
+                            Some(Ok(line)) => {
+                                let trimmed = line.trim();
+                                if trimmed.is_empty() { continue; }
+
+                                // Wenn es ein Kommentar (Heartbeat) ist, direkt durchreichen
+                                if trimmed.starts_with(':') {
+                                    warn!("unexpected heartbeat received -> forwarding");
+                                    yield Ok::<Bytes, std::io::Error>(Bytes::from(format!("{}\n\n", trimmed)));
+                                    continue;
+                                }
+
+                                // Falls die Zeile kein "data: " Präfix hat, ist es kein gültiges SSE Event
+                                if !trimmed.starts_with("data:") {
+                                    warn!("skipping non-data sse-event from llama-server: '{trimmed}' -> skipping");
+                                    continue;
+                                }
+
+                                // RADIKALER FIX: Ersetze alle vorkommenden :null durch :"" oder entferne sie.
+                                // Da wir im JSON-Kontext sind, ist das Ersetzen von :null durch :""
+                                // für die meisten Parser der sicherste Weg, um Optionals zu heilen.
+                                let mut sanitized = trimmed.replace(":null", ":\"\"");
+
+                                // Standard "data: " Formatierung
+                                if sanitized.starts_with("data:") && !sanitized.starts_with("data: ") {
+                                    sanitized = sanitized.replacen("data:", "data: ", 1);
+                                }
+
+                                if sanitized.contains("[DONE]") {
+                                    sent_done = true;
+                                }
+
+                                let formatted = format!("{}\n\n", sanitized);
+                                trace!("yielding sanitized: {}", sanitized);
+                                yield Ok::<Bytes, std::io::Error>(Bytes::from(formatted));
+
+                                if sent_done { break; }
+                            }
+                            Some(Err(e)) => {
+                                error!("stream error: {e}");
+                                break;
+                            }
+                            None => break,
+                        }
+                    }
+                }
+            }
+
+            // Finalisierung nur, wenn noch kein [DONE] gesendet wurde
+            if !sent_done {
+                let epilog = "data: [DONE]\n\n";
+                yield Ok::<Bytes, std::io::Error>(Bytes::from(epilog));
+            }
         };
 
-        // 3. Neue Response mit dem transformierten Stream zurückgeben
-        let new_body = Body::from_stream(sanitized_stream);
-
-        // Entferne diese Header zwingend, da dein Sanitizer-Stream nun "reiner" Text ist
-        parts.headers.remove(CONTENT_ENCODING);
-        parts.headers.remove(CONTENT_LENGTH);
-
-        // Optional: Erzwinge den richtigen Content-Type für SSE
-        parts
-            .headers
-            .insert(CONTENT_TYPE, HeaderValue::from_static("text/event-stream"));
-        Ok(Response::from_parts(parts, new_body))
+        Response::builder()
+            .status(StatusCode::OK)
+            .header(CONTENT_TYPE, "text/event-stream")
+            .header(CACHE_CONTROL, "no-cache")
+            .header(CONNECTION, "keep-alive")
+            .body(Body::from_stream(sanitized_stream))
+            .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)
     }
 
     async fn post_embedding(
