@@ -331,46 +331,39 @@ impl OpenAiClientOutPort for LocalLlamaCppClientAdapter {
             loop {
                 match lines.next().await {
                     Some(Ok(line)) => {
-                                let trimmed = line.trim();
-                                if trimmed.is_empty() { continue; }
-
-                                // Wenn es ein Kommentar (Heartbeat) ist, direkt durchreichen
-                                if trimmed.starts_with(':') {
-                                    warn!("unexpected heartbeat received -> forwarding");
-                                    yield Ok::<Bytes, std::io::Error>(Bytes::from(format!("{}\n\n", trimmed)));
-                                    continue;
-                                }
-
-                                // Falls die Zeile kein "data: " Präfix hat, ist es kein gültiges SSE Event
-                                if !trimmed.starts_with("data:") {
-                                    warn!("skipping non-data sse-event from llama-server: '{trimmed}' -> skipping");
-                                    continue;
-                                }
-
-                                // Ersetze alle vorkommenden :null durch :"" oder entferne sie.
-                                // FIXME: UNSAUBER!!! BESSER:JSON PARSEN
-                                let mut sanitized = trimmed.replace(":null", ":\"\"");
-
-                                // Standard "data: " Formatierung
-                                if sanitized.starts_with("data:") && !sanitized.starts_with("data: ") {
-                                    sanitized = sanitized.replacen("data:", "data: ", 1);
-                                }
-
-                                if sanitized.contains("[DONE]") {
-                                    sent_done = true;
-                                }
-
-                                let formatted = format!("{}\n\n", sanitized.trim_end());
-                                trace!("yielding sanitized: {}", sanitized);
-                                yield Ok::<Bytes, std::io::Error>(Bytes::from(formatted));
-
-                                if sent_done { break; }
-                            }
-                            Some(Err(e)) => {
-                                error!("stream error: {e}");
-                                break;
-                            }
-                            None => break,
+                        let trimmed = line.trim();
+                        if trimmed.is_empty() { continue; }
+                        // Wenn es ein Kommentar (Heartbeat) ist, direkt durchreichen
+                        if trimmed.starts_with(':') {
+                            warn!("unexpected heartbeat received -> forwarding");
+                            yield Ok::<Bytes, std::io::Error>(Bytes::from(format!("{}\n\n", trimmed)));
+                            continue;
+                        }
+                        // Falls die Zeile kein "data: " Präfix hat, ist es kein gültiges SSE Event
+                        if !trimmed.starts_with("data:") {
+                            warn!("skipping non-data sse-event from llama-server: '{trimmed}' -> skipping");
+                            continue;
+                        }
+                        // Ersetze alle vorkommenden :null durch :"" oder entferne sie.
+                        // FIXME: UNSAUBER!!! BESSER:JSON PARSEN
+                        let mut sanitized = trimmed.replace(":null", ":\"\"");
+                        // Standard "data: " Formatierung
+                        if sanitized.starts_with("data:") && !sanitized.starts_with("data: ") {
+                            sanitized = sanitized.replacen("data:", "data: ", 1);
+                        }
+                        if sanitized.contains("[DONE]") {
+                            sent_done = true;
+                        }
+                        let formatted = format!("{}\n\n", sanitized.trim_end());
+                        trace!("yielding sanitized: {}", sanitized);
+                        yield Ok::<Bytes, std::io::Error>(Bytes::from(formatted));
+                        if sent_done { break; }
+                    }
+                    Some(Err(e)) => {
+                        error!("stream error: {e}");
+                        break;
+                    }
+                    None => break,
                 }
             }
 
