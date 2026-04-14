@@ -104,24 +104,6 @@ async fn create_app(
             })
         }
     };
-    //let apikey = provided_apikey.unwrap_or_else(|| {
-    //    const CHARSET: &[u8] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-
-    //    let mut rng = rand::rng();
-
-    //    let apikey = (0..RANDOM_APIKEY_LEN)
-    //        .map(|_| {
-    //            let idx = rng.random_range(0..CHARSET.len());
-    //            CHARSET[idx] as char
-    //        })
-    //        .collect();
-
-    //    info!("your current api-key is '{apikey}'");
-
-    //    apikey
-    //});
-
-    //let security_config = Arc::new(MySecurityConfig { apikey });
 
     // init adapters
     let llamacpp_llm_client =
@@ -215,7 +197,19 @@ async fn create_app(
 
 #[tokio::main]
 async fn main() {
-    tracing_subscriber::fmt().with_max_level(Level::INFO).init();
+    if let Ok(max_log_level) = std::env::var("MAISERVER_MAX_LOGLEVEL") {
+        let max_level = match max_log_level.as_str() {
+            "INFO" => Level::INFO,
+            "TRACE" => Level::TRACE,
+            "DEBUG" => Level::DEBUG,
+            "ERROR" => Level::ERROR,
+            "WARN" => Level::WARN,
+            _ => Level::ERROR,
+        };
+        tracing_subscriber::fmt().with_max_level(max_level).init();
+    } else {
+        tracing_subscriber::fmt().init();
+    }
 
     let mut args = std::env::args();
     let (host, port, tls, provided_api_key, provided_log_request_info, _provided_llama_cpp_chatui) = {
