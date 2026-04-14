@@ -2,7 +2,7 @@ use crate::{SecurityConfig, domain::ports::OpenAiClientOutPort};
 use async_openai::types::{chat::CreateChatCompletionRequest, embeddings::CreateEmbeddingRequest};
 use async_trait::async_trait;
 use axum::{
-    body::Body,
+    body::{Body, Bytes},
     extract::Request,
     http::{
         StatusCode, Uri, Version,
@@ -14,12 +14,17 @@ use axum::{
     response::{IntoResponse, Response},
 };
 use flate2::{Compression, read::GzDecoder};
+use futures::StreamExt;
 use http_body_util::BodyExt;
 use std::{
-    io::{Read, Write},
+    io::{Error as IoError, Read, Write},
     sync::Arc,
 };
-use tracing::{debug, error, trace, warn};
+use tokio_util::{
+    codec::{FramedRead, LinesCodec},
+    io::StreamReader,
+};
+use tracing::{debug, error, info, trace, warn};
 
 const LLAMACPP_HTTP_SCHEME: &str = "http";
 const LLAMACPP_HOST: &str = "localhost";
@@ -254,6 +259,7 @@ impl OpenAiClientOutPort for LocalLlamaCppClientAdapter {
         &self,
         payload: CreateChatCompletionRequest,
     ) -> Result<Response, StatusCode> {
+        info!("entered post_chat_completions");
         let json_string = serde_json::to_string(&payload).map_err(|e| {
             error!("error converting payload to json-string: {e}");
             StatusCode::INTERNAL_SERVER_ERROR
@@ -269,7 +275,7 @@ impl OpenAiClientOutPort for LocalLlamaCppClientAdapter {
                 request_builder.header(AUTHORIZATION, format!("Bearer {}", security_apikey));
         }
 
-        let request = request_builder
+        let mut request = request_builder
             .header(HOST_HEADER, LLAMACPP_HOST)
             .version(Version::HTTP_11)
             .body(Body::from(json_string))
@@ -278,7 +284,13 @@ impl OpenAiClientOutPort for LocalLlamaCppClientAdapter {
                 StatusCode::INTERNAL_SERVER_ERROR
             })?;
 
-        Ok(self
+        request
+            .headers_mut()
+            .insert(ACCEPT_ENCODING, HeaderValue::from_static("identity"));
+
+        info!("request built: {request:#?} -> forwarding to llama-server");
+
+        let response = self
             .client
             .request(request)
             .await
@@ -286,7 +298,64 @@ impl OpenAiClientOutPort for LocalLlamaCppClientAdapter {
                 error!("error posting chat completions to llama.cpp: {e}");
                 StatusCode::INTERNAL_SERVER_ERROR
             })?
-            .into_response())
+            .into_response();
+
+        info!("now streaming response");
+
+        let (mut parts, body) = response.into_parts();
+
+        info!("received response with parts: {parts:#?}");
+
+        let stream_reader = StreamReader::new(
+            body.into_data_stream()
+                .map(|res| res.map_err(IoError::other)),
+        );
+
+        let mut lines = FramedRead::new(stream_reader, LinesCodec::new());
+
+        info!("receiving lines from stream");
+        let sanitized_stream = async_stream::stream! {
+            let next = lines.next().await;
+            info!("read '{next:#?}'");
+            while let Some(Ok(line)) = lines.next().await {
+                if line.is_empty() { continue; }
+
+                // FIX 1: "content":null -> "content":""
+                if line.find("\"content\":null").is_some() {
+                    warn!(r#"santizer found '"content":null' ; replacing with '"content":""'"#);
+                }
+                let mut sanitized = line.replace("\"content\":null", "\"content\":\"\"");
+
+                // FIX 2: Sicherstellen, dass nach 'data:' ein Leerzeichen kommt (Rig/OpenAI Standard)
+                if sanitized.starts_with("data:") && !sanitized.starts_with("data: ") {
+                    warn!(r#"santizer found '"data:"' ; replacing with '"data: "'"#);
+                    sanitized = sanitized.replacen("data:", "data: ", 1);
+                }
+
+                // FIX 3: SSE-Formatierung wahren (\n\n am Ende jedes Events)
+                let sanitized = format!("{}\n\n", sanitized);
+                info!(r#"now yielding '{sanitized}'"#);
+                yield Ok::<Bytes, std::io::Error>(Bytes::from(sanitized));
+            }
+
+            // FIX 4: Sicherstellen, dass der Stream sauber terminiert
+            let epilogue = "data: [DONE]\n\n";
+            info!(r#"finalizing stream with '{epilogue}'"#);
+            yield Ok::<Bytes, std::io::Error>(Bytes::from(epilogue));
+        };
+
+        // 3. Neue Response mit dem transformierten Stream zurückgeben
+        let new_body = Body::from_stream(sanitized_stream);
+
+        // Entferne diese Header zwingend, da dein Sanitizer-Stream nun "reiner" Text ist
+        parts.headers.remove(CONTENT_ENCODING);
+        parts.headers.remove(CONTENT_LENGTH);
+
+        // Optional: Erzwinge den richtigen Content-Type für SSE
+        parts
+            .headers
+            .insert(CONTENT_TYPE, HeaderValue::from_static("text/event-stream"));
+        Ok(Response::from_parts(parts, new_body))
     }
 
     async fn post_embedding(

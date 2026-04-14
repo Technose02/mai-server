@@ -4,7 +4,7 @@ use inference_backends::{
 };
 use reqwest::get;
 use staticmodelconfig::{ModelConfiguration, ModelList};
-use std::{collections::HashMap, path::PathBuf, sync::Arc, path::Path};
+use std::{collections::HashMap, path::Path, path::PathBuf, sync::Arc};
 use tracing::info;
 
 const LLAMA_SERVER_HOST: &str = "localhost";
@@ -60,7 +60,10 @@ async fn main() {
 
         // check if paths exist locally and ignore configuration if not
         let model_path = AsRef::<Path>::as_ref(&model_configuration.model_path);
-        let mmproj_path = model_configuration.mmproj_path.as_deref().map(AsRef::<Path>::as_ref);
+        let mmproj_path = model_configuration
+            .mmproj_path
+            .as_deref()
+            .map(AsRef::<Path>::as_ref);
         if !model_path.is_file() {
             println!(
                 "skipping jsonfile {}: file '{}' not found locally",
