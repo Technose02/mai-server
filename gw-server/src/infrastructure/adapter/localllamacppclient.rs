@@ -329,19 +329,8 @@ impl OpenAiClientOutPort for LocalLlamaCppClientAdapter {
             let mut sent_done = false;
 
             loop {
-                tokio::select! {
-                    // Heartbeat-Timer
-                    _ = heartbeat_interval.tick() => {
-                        trace!("sending a heartbeat while still waiting for more data");
-                        yield Ok::<Bytes, std::io::Error>(Bytes::from(": heartbeat\n\n"));
-                    }
-                    // Echte Daten
-                    next_line = lines.next() => {
-                        // Timer sofort zurücksetzen, wenn Daten fließen
-                        heartbeat_interval.reset();
-
-                        match next_line {
-                            Some(Ok(line)) => {
+                match lines.next().await {
+                    Some(Ok(line)) => {
                                 let trimmed = line.trim();
                                 if trimmed.is_empty() { continue; }
 
@@ -358,9 +347,8 @@ impl OpenAiClientOutPort for LocalLlamaCppClientAdapter {
                                     continue;
                                 }
 
-                                // RADIKALER FIX: Ersetze alle vorkommenden :null durch :"" oder entferne sie.
-                                // Da wir im JSON-Kontext sind, ist das Ersetzen von :null durch :""
-                                // für die meisten Parser der sicherste Weg, um Optionals zu heilen.
+                                // Ersetze alle vorkommenden :null durch :"" oder entferne sie.
+                                // FIXME: UNSAUBER!!! BESSER:JSON PARSEN
                                 let mut sanitized = trimmed.replace(":null", ":\"\"");
 
                                 // Standard "data: " Formatierung
@@ -372,7 +360,7 @@ impl OpenAiClientOutPort for LocalLlamaCppClientAdapter {
                                     sent_done = true;
                                 }
 
-                                let formatted = format!("{}\n\n", sanitized);
+                                let formatted = format!("{}\n\n", sanitized.trim_end());
                                 trace!("yielding sanitized: {}", sanitized);
                                 yield Ok::<Bytes, std::io::Error>(Bytes::from(formatted));
 
@@ -383,8 +371,6 @@ impl OpenAiClientOutPort for LocalLlamaCppClientAdapter {
                                 break;
                             }
                             None => break,
-                        }
-                    }
                 }
             }
 
