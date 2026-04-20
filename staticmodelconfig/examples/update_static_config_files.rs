@@ -13,8 +13,8 @@ const LLAMA_SERVER_PORT: u16 = 11440;
 const ENV_VAR_GGML_CUDA_ENABLE_UNIFIED_MEMORY: &str = "GGML_CUDA_ENABLE_UNIFIED_MEMORY";
 const ENV_VALUE_GGML_CUDA_ENABLE_UNIFIED_MEMORY: &str = "1";
 
-//const FILTER_MODEL_KEY: Option<&str> = Some("gemma-4");
-const FILTER_MODEL_KEY: Option<&str> = None;
+const FILTER_MODEL_KEY: Option<&str> = Some("qwen3.6-35b-a3b-ud-q8-k-xl");
+//const FILTER_MODEL_KEY: Option<&str> = None;
 
 #[tokio::main]
 async fn main() {
