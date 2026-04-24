@@ -1,13 +1,13 @@
 {
-  "alias": "qwen3.6-27b-instruct-general",
-  "model-path": "/model_data/huggingface/unsloth/Qwen3.6-27B-GGUF/BF16/Qwen3.6-27B-BF16-00001-of-00002.gguf",
+  "alias": "qwen3.6-27b-ud-q8-k-xl-non-thinking-general",
+  "model-path": "/model_data/huggingface/unsloth/Qwen3.6-27B-GGUF/Qwen3.6-27B-UD-Q8_K_XL.gguf",
   "max-ctx-size": 262144,
   "vocab-type": 2,
   "n-vocab": 248320,
   "n-ctx-train": 262144,
   "n-embd": 5120,
   "n-params": 26895998464,
-  "size": 53797287936,
+  "size": 35314169856,
   "capabilities": [
     "completion",
     "multimodal"

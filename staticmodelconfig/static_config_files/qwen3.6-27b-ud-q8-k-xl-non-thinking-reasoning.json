@@ -1,5 +1,5 @@
 {
-  "alias": "qwen3.6-27b-ud-q8-k-xl-instruct-reasoning",
+  "alias": "qwen3.6-27b-ud-q8-k-xl-non-thinking-reasoning",
   "model-path": "/model_data/huggingface/unsloth/Qwen3.6-27B-GGUF/Qwen3.6-27B-UD-Q8_K_XL.gguf",
   "max-ctx-size": 262144,
   "vocab-type": 2,
