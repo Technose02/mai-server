@@ -168,7 +168,8 @@ impl ModelsServiceInPort for DefaultModelsService {
     }
 
     fn get_default_languagemodel_alias(&self) -> String {
-        "gemma-4-e4b-thinking-max".to_string()
+        //"gemma-4-e4b-thinking-max".to_string()
+        "qwen3.6-35b-a3b-ud-q8-k-xl-non-thinking-reasoning-moderate".into()
     }
 
     async fn ensure_requested_embeddingmodel_is_served(
