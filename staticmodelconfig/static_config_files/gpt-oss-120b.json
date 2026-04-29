@@ -1,0 +1,24 @@
+{
+  "alias": "gpt-oss-120b",
+  "model-path": "/model_data/huggingface/unsloth/gpt-oss-120b-GGUF/gpt-oss-120b-F16.gguf",
+  "max-ctx-size": 32768,
+  "vocab-type": 2,
+  "n-vocab": 201088,
+  "n-ctx-train": 131072,
+  "n-embd": 2880,
+  "n-params": 116829156672,
+  "size": 65355994368,
+  "capabilities": [
+    "completion"
+  ],
+  "n-gpu-layers": 99,
+  "flash-attn": "on",
+  "batch-size": 2048,
+  "ubatch-size": 2048,
+  "temp": 1.0,
+  "top-k": 0,
+  "top-p": 1.0,
+  "jinja": true,
+  "no-mmap": true,
+  "no-warmup": true
+}
