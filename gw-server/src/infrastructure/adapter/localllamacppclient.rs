@@ -124,6 +124,8 @@ impl LocalLlamaCppClientAdapter {
                 "/" => "/",
                 "/chat/bundle.css" => "/bundle.css",
                 "/chat/bundle.js" => "/bundle.js",
+                "/chat/cors-proxy" => "/cors-proxy",
+                "/chat/tools" => "/tools",
                 s if s.starts_with("/chat/props") => s.strip_prefix("/chat").unwrap(),
                 other => {
                     warn!("no mapping-rule for path-and-query of '{other} ; forwarding directly '");
@@ -191,12 +193,25 @@ impl LocalLlamaCppClientAdapter {
                 .and_then(|v| v.to_str().ok())
                 .unwrap_or("unknown")
         );
+
+        // replacing in html
         plain_content = plain_content.replace(r#"./bundle."#, r#"/chat/bundle."#);
+
+        // replacing in js
         plain_content = plain_content.replace("}/props", "}/chat/props");
         plain_content = plain_content.replace("./props", "/chat/props");
-        plain_content = plain_content.replace("}/v1", "}/api/1/v1");
-        plain_content = plain_content.replace("./v1", "./api/1/v1");
-        plain_content = plain_content.replace("/v1/models", "/api/1/v1/models");
+        plain_content = plain_content.replace(r#"CORS_PROXY_ENDPOINT="/cors-proxy""#, r#"CORS_PROXY_ENDPOINT="/chat/cors-proxy""#);
+
+        plain_content = plain_content.replace("./v1/chat/completions", "./api/1/v1/chat/completions");
+
+        plain_content = plain_content.replace(
+            r#"API_MODELS={LIST:"/v1/models",LOAD:"/models/load",UNLOAD:"/models/unload"}"#,
+            r#"API_MODELS={LIST:"/api/1/v1/models",LOAD:"/models/load",UNLOAD:"/models/unload"}"#,
+        );
+        plain_content = plain_content.replace(
+            r#"API_TOOLS={LIST:"/tools",EXECUTE:"/tools"}"#,
+            r#"API_TOOLS={LIST:"/chat/tools",EXECUTE:"/tools"}"#,
+        );
 
         debug!("processed body");
 

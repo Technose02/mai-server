@@ -18,7 +18,7 @@ use axum::{
     extract::{Path, Query, Request, State},
     http::{Response, StatusCode},
     response::IntoResponse,
-    routing::{Router, any, get, post},
+    routing::{Router, any, get, head, post},
 };
 use futures_util::stream;
 use staticmodelconfig::ModelList;
@@ -37,11 +37,13 @@ pub fn create_router(
         .route("/api/v1/models", get(get_models))
         .route("/chat", get(chat_handler))
         .route("/chat/bundle.css", get(chat_handler_assets))
-        .route("/chat/bundle.js", get(chat_handler_assets));
+        .route("/chat/bundle.js", get(chat_handler_assets))
+        .route("/chat/cors-proxy", head(chat_handler_assets));
 
     let secured = Router::new()
         // CHAT
         .route("/chat/props", get(chat_handler_assets))
+        .route("/chat/tools", get(chat_handler_assets))
         // API
         //   CHAT-COMPLETIONS
         .route(
