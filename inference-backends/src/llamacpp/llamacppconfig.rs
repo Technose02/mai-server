@@ -260,7 +260,7 @@ pub struct LlamaCppConfigArgs {
     pub temp: Option<f32>,
     pub repeat_penalty: Option<f32>,
     pub presence_penalty: Option<f32>,
-    pub seed: Option<u64>,
+    pub seed: Option<i64>,
     pub top_k: Option<u16>,
     pub top_p: Option<f32>,
     pub chat_template_kwargs: Option<String>,

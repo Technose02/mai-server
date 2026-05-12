@@ -46,7 +46,7 @@ pub struct ModelConfiguration {
     #[serde(skip_serializing_if = "Option::is_none", default = "Option::default")]
     pub presence_penalty: Option<f32>,
     #[serde(skip_serializing_if = "Option::is_none", default = "Option::default")]
-    pub seed: Option<u64>,
+    pub seed: Option<i64>,
     #[serde(skip_serializing_if = "Option::is_none", default = "Option::default")]
     pub min_p: Option<f32>,
     #[serde(skip_serializing_if = "Option::is_none", default = "Option::default")]
