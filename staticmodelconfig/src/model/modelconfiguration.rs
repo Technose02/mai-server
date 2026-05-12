@@ -68,6 +68,11 @@ pub struct ModelConfiguration {
         skip_serializing_if = "std::ops::Not::not",
         default = "default_to_false"
     )]
+    pub mlock: bool,
+    #[serde(
+        skip_serializing_if = "std::ops::Not::not",
+        default = "default_to_false"
+    )]
     pub no_warmup: bool,
     #[serde(
         skip_serializing_if = "std::ops::Not::not",

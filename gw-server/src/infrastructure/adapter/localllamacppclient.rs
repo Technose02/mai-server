@@ -200,9 +200,13 @@ impl LocalLlamaCppClientAdapter {
         // replacing in js
         plain_content = plain_content.replace("}/props", "}/chat/props");
         plain_content = plain_content.replace("./props", "/chat/props");
-        plain_content = plain_content.replace(r#"CORS_PROXY_ENDPOINT="/cors-proxy""#, r#"CORS_PROXY_ENDPOINT="/chat/cors-proxy""#);
+        plain_content = plain_content.replace(
+            r#"CORS_PROXY_ENDPOINT="/cors-proxy""#,
+            r#"CORS_PROXY_ENDPOINT="/chat/cors-proxy""#,
+        );
 
-        plain_content = plain_content.replace("./v1/chat/completions", "./api/1/v1/chat/completions");
+        plain_content =
+            plain_content.replace("./v1/chat/completions", "./api/1/v1/chat/completions");
 
         plain_content = plain_content.replace(
             r#"API_MODELS={LIST:"/v1/models",LOAD:"/models/load",UNLOAD:"/models/unload"}"#,

@@ -70,20 +70,18 @@ where
 
     pub fn on_start_process(&mut self, config: ProcessConfig) {
         match &self.state {
-            Some(ProcessState::<ProcessConfig>::Running(cur_config)) => {
-                if *cur_config == config {
-                    return;
-                }
+            Some(ProcessState::<ProcessConfig>::Running(cur_config)) if *cur_config == config => {
+                return;
             }
-            Some(ProcessState::<ProcessConfig>::Starting(starting_config)) => {
-                if *starting_config == config {
-                    return;
-                }
+            Some(ProcessState::<ProcessConfig>::Starting(starting_config))
+                if *starting_config == config =>
+            {
+                return;
             }
-            Some(ProcessState::<ProcessConfig>::Stopping(_, Some(next_config))) => {
-                if *next_config == config {
-                    return;
-                }
+            Some(ProcessState::<ProcessConfig>::Stopping(_, Some(next_config)))
+                if *next_config == config =>
+            {
+                return;
             }
             _ => {}
         }

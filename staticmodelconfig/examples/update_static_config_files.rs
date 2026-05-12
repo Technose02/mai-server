@@ -13,8 +13,8 @@ const LLAMA_SERVER_PORT: u16 = 11440;
 const ENV_VAR_GGML_CUDA_ENABLE_UNIFIED_MEMORY: &str = "GGML_CUDA_ENABLE_UNIFIED_MEMORY";
 const ENV_VALUE_GGML_CUDA_ENABLE_UNIFIED_MEMORY: &str = "1";
 
-//const FILTER_MODEL_KEY: Option<&str> = Some("qwen3.6-27b");
-const FILTER_MODEL_KEY: Option<&str> = None;
+const FILTER_MODEL_KEY: Option<&str> = Some("gemma-4-31b-it-ud-q8-k-xl");
+//const FILTER_MODEL_KEY: Option<&str> = None;
 
 #[tokio::main]
 async fn main() {
@@ -122,6 +122,7 @@ async fn update_model_configuration(
             jinja: model_configuration.jinja,
             ctx_size: Some(inference_backends::ContextSize::T8192),
             no_mmap: model_configuration.no_mmap,
+            mlock: model_configuration.mlock,
             no_warmup: model_configuration.no_warmup,
             flash_attn: model_configuration.flash_attn.clone(),
             fit: model_configuration.fit.clone(),

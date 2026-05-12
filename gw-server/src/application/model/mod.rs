@@ -110,6 +110,11 @@ pub struct LlamaCppRunConfigDto {
         skip_serializing_if = "std::ops::Not::not",
         default = "default_to_false"
     )]
+    pub mlock: bool,
+    #[serde(
+        skip_serializing_if = "std::ops::Not::not",
+        default = "default_to_false"
+    )]
     pub no_warmup: bool,
     #[serde(
         skip_serializing_if = "std::ops::Not::not",
@@ -152,6 +157,7 @@ impl LlamaCppRunConfigDto {
                 n_gpu_layers: self.n_gpu_layers,
                 jinja: self.jinja,
                 no_mmap: self.no_mmap,
+                mlock: self.mlock,
                 no_warmup: self.no_warmup,
                 flash_attn: self.flash_attn.clone(),
                 fit: self.fit.clone(),
@@ -189,6 +195,7 @@ impl From<LlamaCppRunConfig> for LlamaCppRunConfigDto {
             cache_type_k: value.args_handle.cache_type_k.clone(),
             cache_type_v: value.args_handle.cache_type_v.clone(),
             no_mmap: value.args_handle.no_mmap,
+            mlock: value.args_handle.mlock,
             no_warmup: value.args_handle.no_warmup,
             flash_attn: value.args_handle.flash_attn.clone(),
             fit: value.args_handle.fit.clone(),

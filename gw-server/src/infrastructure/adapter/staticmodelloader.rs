@@ -57,6 +57,7 @@ impl ModelLoaderOutPort for StaticModelLoader {
                 jinja: model_configuration.jinja,
                 ctx_size: optional_context_size,
                 no_mmap: model_configuration.no_mmap,
+                mlock: model_configuration.mlock,
                 no_warmup: model_configuration.no_warmup,
                 flash_attn: model_configuration.flash_attn.clone(),
                 fit: model_configuration.fit.clone(),

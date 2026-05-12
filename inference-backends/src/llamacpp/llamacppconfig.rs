@@ -245,6 +245,7 @@ pub struct LlamaCppConfigArgs {
     pub jinja: bool,
     pub ctx_size: Option<ContextSize>,
     pub no_mmap: bool,
+    pub mlock: bool,
     pub no_warmup: bool,
 
     pub flash_attn: Option<OnOffValue>,
@@ -302,6 +303,10 @@ impl LlamaCppConfigArgs {
 
         if self.no_mmap {
             cmd.arg("--no-mmap");
+        }
+
+        if self.mlock {
+            cmd.arg("--mlock");
         }
 
         if self.no_warmup {
