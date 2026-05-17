@@ -58,6 +58,8 @@ impl ModelLoaderOutPort for StaticModelLoader {
                 ctx_size: optional_context_size,
                 no_mmap: model_configuration.no_mmap,
                 mlock: model_configuration.mlock,
+                prompt_cache_all: model_configuration.prompt_cache_all,
+                chunked_prefill: model_configuration.chunked_prefill,
                 no_warmup: model_configuration.no_warmup,
                 flash_attn: model_configuration.flash_attn.clone(),
                 fit: model_configuration.fit.clone(),

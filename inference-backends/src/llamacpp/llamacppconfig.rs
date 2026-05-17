@@ -246,8 +246,9 @@ pub struct LlamaCppConfigArgs {
     pub ctx_size: Option<ContextSize>,
     pub no_mmap: bool,
     pub mlock: bool,
+    pub prompt_cache_all: bool,
+    pub chunked_prefill: bool,
     pub no_warmup: bool,
-
     pub flash_attn: Option<OnOffValue>,
     pub fit: Option<OnOffValue>,
     pub batch_size: Option<u16>,
@@ -307,6 +308,14 @@ impl LlamaCppConfigArgs {
 
         if self.mlock {
             cmd.arg("--mlock");
+        }
+
+        if self.prompt_cache_all {
+            cmd.arg("--prompt-cache-all");
+        }
+
+        if self.chunked_prefill {
+            cmd.arg("--chunked-prefill");
         }
 
         if self.no_warmup {
