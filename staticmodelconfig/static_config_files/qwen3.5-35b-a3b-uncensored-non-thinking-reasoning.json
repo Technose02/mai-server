@@ -21,7 +21,5 @@
   "top-k": 40,
   "top-p": 1.0,
   "jinja": true,
-  "no-mmap": false,
-  "no-warmup": false,
   "chat-template-kwargs": "{\"enable_thinking\":false}"
 }

@@ -20,7 +20,5 @@
   "min-p": 0.0,
   "top-k": 20,
   "top-p": 0.95,
-  "jinja": true,
-  "no-mmap": false,
-  "no-warmup": false
+  "jinja": true
 }

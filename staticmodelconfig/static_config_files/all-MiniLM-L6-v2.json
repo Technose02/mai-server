@@ -11,7 +11,5 @@
   "capabilities": [
     "completion"
   ],
-  "no-mmap": false,
-  "no-warmup": false,
   "embeddings": true
 }

@@ -18,7 +18,5 @@
   "temp": 0.0,
   "top-k": 0,
   "top-p": 1.0,
-  "jinja": true,
-  "no-mmap": false,
-  "no-warmup": false
+  "jinja": true
 }

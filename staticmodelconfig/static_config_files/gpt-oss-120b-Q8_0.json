@@ -16,8 +16,6 @@
   "batch-size": 2048,
   "ubatch-size": 2048,
   "jinja": true,
-  "no-mmap": false,
-  "no-warmup": false,
   "no-context-shift": true,
   "no-cont-batching": true
 }
