@@ -1,5 +1,5 @@
 {
-  "alias": "gemma-4-31b-it-ud-q8-k-xl-thinking",
+  "alias": "gemma-4-31b-it-ud-q8-k-xl",
   "model-path": "/model_data/huggingface/unsloth/gemma-4-31B-it-GGUF/gemma-4-31B-it-UD-Q8_K_XL.gguf",
   "max-ctx-size": 262144,
   "vocab-type": 2,
@@ -24,6 +24,5 @@
   "no-warmup": false,
   "batch-size": 8192,
   "ubatch-size": 4096,
-  "no-cont-batching": true,
-  "chat-template-kwargs": "{\"enable_thinking\": true}"
+  "no-cont-batching": true
 }

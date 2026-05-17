@@ -22,7 +22,11 @@
   "top-k": 20,
   "top-p": 0.8,
   "jinja": true,
-  "no-mmap": true,
-  "no-warmup": true,
+  "no-mmap": false,
+  "mlock": true,
+  "no-warmup": false,
+  "batch-size": 8192,
+  "ubatch-size": 4096,
+  "no-cont-batching": true,
   "chat-template-kwargs": "{\"enable_thinking\": false}"
 }

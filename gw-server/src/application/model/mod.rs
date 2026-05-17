@@ -116,18 +116,6 @@ pub struct LlamaCppRunConfigDto {
         skip_serializing_if = "std::ops::Not::not",
         default = "default_to_false"
     )]
-    pub prompt_cache_all: bool,
-
-    #[serde(
-        skip_serializing_if = "std::ops::Not::not",
-        default = "default_to_false"
-    )]
-    pub chunked_prefill: bool,
-
-    #[serde(
-        skip_serializing_if = "std::ops::Not::not",
-        default = "default_to_false"
-    )]
     pub no_warmup: bool,
     #[serde(
         skip_serializing_if = "std::ops::Not::not",
@@ -171,8 +159,6 @@ impl LlamaCppRunConfigDto {
                 jinja: self.jinja,
                 no_mmap: self.no_mmap,
                 mlock: self.mlock,
-                prompt_cache_all: self.prompt_cache_all,
-                chunked_prefill: self.chunked_prefill,
                 no_warmup: self.no_warmup,
                 flash_attn: self.flash_attn.clone(),
                 fit: self.fit.clone(),
@@ -211,8 +197,6 @@ impl From<LlamaCppRunConfig> for LlamaCppRunConfigDto {
             cache_type_v: value.args_handle.cache_type_v.clone(),
             no_mmap: value.args_handle.no_mmap,
             mlock: value.args_handle.mlock,
-            prompt_cache_all: value.args_handle.prompt_cache_all,
-            chunked_prefill: value.args_handle.chunked_prefill,
             no_warmup: value.args_handle.no_warmup,
             flash_attn: value.args_handle.flash_attn.clone(),
             fit: value.args_handle.fit.clone(),

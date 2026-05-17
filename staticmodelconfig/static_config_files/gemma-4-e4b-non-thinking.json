@@ -19,7 +19,7 @@
   "top-k": 64,
   "top-p": 0.95,
   "jinja": true,
-  "no-mmap": true,
-  "no-warmup": true,
+  "no-mmap": false,
+  "no-warmup": false,
   "chat-template-kwargs": "{\"enable_thinking\": false}"
 }

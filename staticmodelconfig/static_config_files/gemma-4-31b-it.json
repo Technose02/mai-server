@@ -1,13 +1,13 @@
 {
-  "alias": "gemma-4-31b-it-ud-q8-k-xl-thinking",
-  "model-path": "/model_data/huggingface/unsloth/gemma-4-31B-it-GGUF/gemma-4-31B-it-UD-Q8_K_XL.gguf",
+  "alias": "gemma-4-31b-it",
+  "model-path": "/model_data/huggingface/unsloth/gemma-4-31B-it-GGUF_before_update/BF16/gemma-4-31B-it-BF16-00001-of-00002.gguf",
   "max-ctx-size": 262144,
   "vocab-type": 2,
   "n-vocab": 262144,
   "n-ctx-train": 262144,
   "n-embd": 5376,
   "n-params": 30697345596,
-  "size": 35004205296,
+  "size": 61397354736,
   "capabilities": [
     "completion",
     "multimodal"
@@ -24,6 +24,5 @@
   "no-warmup": false,
   "batch-size": 8192,
   "ubatch-size": 4096,
-  "no-cont-batching": true,
-  "chat-template-kwargs": "{\"enable_thinking\": true}"
+  "no-cont-batching": true
 }

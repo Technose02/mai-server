@@ -22,6 +22,10 @@
   "top-k": 20,
   "top-p": 0.95,
   "jinja": true,
-  "no-mmap": true,
-  "no-warmup": true
+  "no-mmap": false,
+  "mlock": true,
+  "no-warmup": false,
+  "batch-size": 8192,
+  "ubatch-size": 4096,
+  "no-cont-batching": true
 }

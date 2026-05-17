@@ -13,8 +13,8 @@ const LLAMA_SERVER_PORT: u16 = 11440;
 const ENV_VAR_GGML_CUDA_ENABLE_UNIFIED_MEMORY: &str = "GGML_CUDA_ENABLE_UNIFIED_MEMORY";
 const ENV_VALUE_GGML_CUDA_ENABLE_UNIFIED_MEMORY: &str = "1";
 
-const FILTER_MODEL_KEY: Option<&str> = Some("gemma-4-31b-it-ud-q8-k-xl");
-//const FILTER_MODEL_KEY: Option<&str> = None;
+//const FILTER_MODEL_KEY: Option<&str> = Some("gemma-4-31b-it-ud-q8-k-xl");
+const FILTER_MODEL_KEY: Option<&str> = None;
 
 #[tokio::main]
 async fn main() {
@@ -127,8 +127,6 @@ async fn update_model_configuration(
             fit: model_configuration.fit.clone(),
             batch_size: model_configuration.batch_size,
             ubatch_size: model_configuration.ubatch_size,
-            prompt_cache_all: model_configuration.prompt_cache_all,
-            chunked_prefill: model_configuration.chunked_prefill,
             mlock: model_configuration.mlock,
             no_cont_batching: model_configuration.no_cont_batching,
             no_context_shift: model_configuration.no_context_shift,
