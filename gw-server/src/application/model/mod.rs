@@ -82,6 +82,12 @@ pub struct LlamaCppRunConfigDto {
     #[serde(skip_serializing_if = "Option::is_none", default = "Option::default")]
     pub cache_type_k: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none", default = "Option::default")]
+    pub cache_ram: Option<u16>,
+    #[serde(skip_serializing_if = "Option::is_none", default = "Option::default")]
+    pub spec_type: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none", default = "Option::default")]
+    pub spec_draft_n_max: Option<u8>,
+    #[serde(skip_serializing_if = "Option::is_none", default = "Option::default")]
     pub temp: Option<f32>,
     #[serde(skip_serializing_if = "Option::is_none", default = "Option::default")]
     pub repeat_penalty: Option<f32>,
@@ -165,6 +171,9 @@ impl LlamaCppRunConfigDto {
                 ubatch_size: self.ubatch_size,
                 no_cont_batching: self.no_cont_batching,
                 no_context_shift: self.no_context_shift,
+                cache_ram: self.cache_ram,
+                spec_type: self.spec_type,
+                spec_draft_n_max: self.spec_draft_n_max,
                 temp: self.temp,
                 repeat_penalty: self.repeat_penalty,
                 presence_penalty: self.presence_penalty,
@@ -195,6 +204,9 @@ impl From<LlamaCppRunConfig> for LlamaCppRunConfigDto {
             ctx_size: value.args_handle.ctx_size,
             cache_type_k: value.args_handle.cache_type_k.clone(),
             cache_type_v: value.args_handle.cache_type_v.clone(),
+            cache_ram: value.args_handle.cache_ram,
+            spec_type: value.args_handle.spec_type.clone(),
+            spec_draft_n_max: value.args_handle.spec_draft_n_max,
             no_mmap: value.args_handle.no_mmap,
             mlock: value.args_handle.mlock,
             no_warmup: value.args_handle.no_warmup,

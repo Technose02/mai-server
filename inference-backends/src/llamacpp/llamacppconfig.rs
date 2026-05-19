@@ -253,6 +253,9 @@ pub struct LlamaCppConfigArgs {
     pub ubatch_size: Option<u16>,
     pub cache_type_v: Option<String>,
     pub cache_type_k: Option<String>,
+    pub cache_ram: Option<u16>,
+    pub spec_type: Option<String>,
+    pub spec_draft_n_max: Option<u8>,
     pub no_context_shift: bool,
     pub no_cont_batching: bool,
     pub min_p: Option<f32>,
@@ -349,6 +352,20 @@ impl LlamaCppConfigArgs {
         if let Some(cache_type_k) = &self.cache_type_k {
             cmd.arg("--cache-type-k");
             cmd.arg(cache_type_k);
+        }
+
+        if let Some(cache_ram) = &self.cache_ram {
+            cmd.arg("--cache-ram");
+            cmd.arg(cache_ram.to_string());
+        }
+        if let Some(spec_type) = &self.spec_type {
+            cmd.arg("--spec-type");
+            cmd.arg(spec_type);
+        }
+
+        if let Some(spec_draft_n_max) = &self.spec_draft_n_max {
+            cmd.arg("--spec-draft-n-max");
+            cmd.arg(spec_draft_n_max.to_string());
         }
 
         if self.no_context_shift {
