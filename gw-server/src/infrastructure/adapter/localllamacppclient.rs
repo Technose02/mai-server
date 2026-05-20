@@ -209,12 +209,12 @@ impl LocalLlamaCppClientAdapter {
             plain_content.replace("./v1/chat/completions", "./api/1/v1/chat/completions");
 
         plain_content = plain_content.replace(
-            r#"API_MODELS={LIST:"/v1/models",LOAD:"/models/load",UNLOAD:"/models/unload"}"#,
-            r#"API_MODELS={LIST:"/api/1/v1/models",LOAD:"/models/load",UNLOAD:"/models/unload"}"#,
+            r#"={LIST:"/v1/models",LOAD:"/models/load",UNLOAD:"/models/unload"}"#,
+            r#"={LIST:"/api/1/v1/models",LOAD:"/models/load",UNLOAD:"/models/unload"}"#,
         );
         plain_content = plain_content.replace(
-            r#"API_TOOLS={LIST:"/tools",EXECUTE:"/tools"}"#,
-            r#"API_TOOLS={LIST:"/chat/tools",EXECUTE:"/tools"}"#,
+            r#"={LIST:"/tools",EXECUTE:"/tools"}"#,
+            r#"={LIST:"/chat/tools",EXECUTE:"/tools"}"#,
         );
 
         debug!("processed body");
