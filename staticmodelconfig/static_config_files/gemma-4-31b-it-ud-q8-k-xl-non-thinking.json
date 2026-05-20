@@ -17,12 +17,13 @@
   "flash-attn": "on",
   "batch-size": 8192,
   "ubatch-size": 4096,
-  "cache-ram": 4096,
+  "no-context-shift": true,
+  "mlock": false,
+  "cache-ram": 0,
   "temp": 1.0,
   "top-k": 64,
   "top-p": 0.95,
   "jinja": true,
-  "mlock": true,
   "no-cont-batching": true,
   "chat-template-kwargs": "{\"enable_thinking\": false}"
 }
