@@ -253,7 +253,7 @@ pub struct LlamaCppConfigArgs {
     pub ubatch_size: Option<u16>,
     pub cache_type_v: Option<String>,
     pub cache_type_k: Option<String>,
-    pub cache_ram: Option<u16>,
+    pub cache_ram: Option<i16>,
     pub spec_type: Option<String>,
     pub spec_draft_n_max: Option<u8>,
     pub no_context_shift: bool,

@@ -38,7 +38,7 @@ pub struct ModelConfiguration {
     #[serde(skip_serializing_if = "Option::is_none", default = "Option::default")]
     pub cache_type_v: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none", default = "Option::default")]
-    pub cache_ram: Option<u16>,
+    pub cache_ram: Option<i16>,
     #[serde(skip_serializing_if = "Option::is_none", default = "Option::default")]
     pub spec_type: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none", default = "Option::default")]
