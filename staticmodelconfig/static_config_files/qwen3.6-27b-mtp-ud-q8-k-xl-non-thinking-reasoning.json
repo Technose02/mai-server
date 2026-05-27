@@ -17,8 +17,11 @@
   "flash-attn": "on",
   "batch-size": 8192,
   "ubatch-size": 4096,
+  "cache-type-v": "q8_0",
+  "cache-ram": -1,
   "spec-type": "draft-mtp",
   "spec-draft-n-max": 2,
+  "cache-type-k": "q8_0",
   "temp": 1.0,
   "repeat-penalty": 1.0,
   "presence-penalty": 1.5,
@@ -27,9 +30,6 @@
   "top-p": 0.95,
   "jinja": true,
   "mlock": true,
-  "cache-ram": -1,
-  "cache-type-k": "q8_0",
-  "cache-type-v": "q8_0",
   "no-cont-batching": true,
   "chat-template-kwargs": "{\"enable_thinking\": false}"
 }
