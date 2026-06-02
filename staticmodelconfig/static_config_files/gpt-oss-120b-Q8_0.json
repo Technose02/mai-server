@@ -14,8 +14,7 @@
   "n-gpu-layers": 99,
   "flash-attn": "on",
   "batch-size": 2048,
-  "ubatch-size": 2048,
+  "ubatch-size": 512,
   "jinja": true,
-  "no-context-shift": true,
-  "no-cont-batching": true
+  "no-context-shift": true
 }

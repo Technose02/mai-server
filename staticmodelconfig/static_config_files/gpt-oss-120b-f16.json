@@ -14,7 +14,7 @@
   "n-gpu-layers": 99,
   "flash-attn": "on",
   "batch-size": 2048,
-  "ubatch-size": 2048,
+  "ubatch-size": 512,
   "temp": 1.0,
   "top-k": 0,
   "top-p": 1.0,

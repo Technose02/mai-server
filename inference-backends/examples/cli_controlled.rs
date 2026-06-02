@@ -3,7 +3,7 @@ use std::{collections::HashMap, io::stdin, sync::Arc};
 use inference_backends::{
     AttnSetting, ComfyUiBackend, ComfyUiBackendController, ComfyUiConfig, ComfyUiConfigArgs,
     ContextSize, LlamaCppBackend, LlamaCppBackendController, LlamaCppConfigArgs, LlamaCppRunConfig,
-    OnOffValue, VRamSetting,
+    OnOffAutoValue, VRamSetting,
 };
 
 #[tokio::main]
@@ -36,7 +36,7 @@ async fn main() {
         env_handle: shared_env.clone(),
         parallel: 1,
         threads: 8,
-        batch_threads: 16,
+        threads_batch: 16,
         args_handle: LlamaCppConfigArgs {
             alias: "devstral-small-2-24B-instruct-2512".to_string(),
             api_key: Some("apikey1".to_string()),
@@ -50,7 +50,7 @@ async fn main() {
             no_mmap: false,
             mlock:true,
             no_warmup: true,
-            flash_attn: Some(OnOffValue::On),
+            flash_attn: Some(OnOffAutoValue::On),
             batch_size: None,
             ubatch_size: None,
             cache_type_v: None,
@@ -68,7 +68,10 @@ async fn main() {
             fit: None,
             presence_penalty: None,
             chat_template_kwargs: None,
+            reasoning: None,
+            reasoning_budget: None,
             embeddings: false,
+            no_cache_prompt: false,
         }
         .into()
     };
@@ -77,7 +80,7 @@ async fn main() {
         env_handle: shared_env.clone(),
         parallel: 1,
         threads: 8,
-        batch_threads: 16,
+        threads_batch: 16,
         args_handle: LlamaCppConfigArgs {
             alias: "gpt-oss-120b-Q8_0".to_string(),
             api_key: Some("apikey2".to_string()),
@@ -92,7 +95,7 @@ async fn main() {
             no_mmap: false,
             mlock: true,
             no_warmup: true,
-            flash_attn: Some(OnOffValue::On),
+            flash_attn: Some(OnOffAutoValue::On),
             batch_size: Some(2048),
             ubatch_size: Some(2048),
             cache_type_v: Some("q8_0".to_string()),
@@ -110,7 +113,10 @@ async fn main() {
             fit: None,
             presence_penalty: None,
             chat_template_kwargs: None,
+            reasoning: None,
+            reasoning_budget: None,
             embeddings: false,
+            no_cache_prompt: false,
         }
         .into(),
     };

@@ -19,5 +19,5 @@
   "top-k": 64,
   "top-p": 0.95,
   "jinja": true,
-  "chat-template-kwargs": "{\"enable_thinking\": true}"
+  "reasoning": "on"
 }

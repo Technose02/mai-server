@@ -15,15 +15,13 @@
   "mmproj-path": "/model_data/huggingface/unsloth/gemma-4-31B-it-GGUF_before_update/mmproj-BF16.gguf",
   "n-gpu-layers": 99,
   "flash-attn": "on",
-  "batch-size": 8192,
-  "ubatch-size": 4096,
-  "no-context-shift": true,
-  "mlock": false,
-  "cache-ram": 0,
+  "batch-size": 2048,
+  "ubatch-size": 512,
+  "cache-ram": 8192,
   "temp": 1.0,
   "top-k": 64,
   "top-p": 0.95,
   "jinja": true,
-  "no-cont-batching": true,
-  "chat-template-kwargs": "{\"enable_thinking\": false}"
+  "no-context-shift": true,
+  "reasoning": "off"
 }

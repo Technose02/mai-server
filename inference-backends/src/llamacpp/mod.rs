@@ -8,7 +8,7 @@ use tokio::{
 use tracing::{error, info};
 
 mod llamacppconfig;
-pub use llamacppconfig::{ContextSize, LlamaCppConfigArgs, LlamaCppRunConfig, OnOffValue};
+pub use llamacppconfig::{ContextSize, LlamaCppConfigArgs, LlamaCppRunConfig, OnOffAutoValue};
 
 pub type LlamaCppProtocol = ProcessProtocol<LlamaCppRunConfig>;
 pub type LlamaCppBackendController = BackendController<LlamaCppRunConfig>;
@@ -43,6 +43,9 @@ impl RunBackendProcess for LlamaCppBackend {
 
         cmd.arg("--port");
         cmd.arg(self.port.to_string());
+
+        cmd.arg("--threads-http");
+        cmd.arg(1.to_string());
 
         if let Some(timeout) = self.timeout {
             cmd.arg("--timeout");

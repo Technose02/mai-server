@@ -1,5 +1,5 @@
 {
-  "alias": "gemma-4-31b-it-ud-q8-k-xl",
+  "alias": "gemma-4-31b-no-mtmd-it-ud-q8-k-xl",
   "model-path": "/model_data/huggingface/unsloth/gemma-4-31B-it-GGUF/gemma-4-31B-it-UD-Q8_K_XL.gguf",
   "max-ctx-size": 262144,
   "vocab-type": 2,
@@ -9,10 +9,8 @@
   "n-params": 30697345596,
   "size": 35004205296,
   "capabilities": [
-    "completion",
-    "multimodal"
+    "completion"
   ],
-  "mmproj-path": "/model_data/huggingface/unsloth/gemma-4-31B-it-GGUF_before_update/mmproj-BF16.gguf",
   "n-gpu-layers": 99,
   "flash-attn": "on",
   "batch-size": 2048,
@@ -22,5 +20,6 @@
   "top-k": 64,
   "top-p": 0.95,
   "jinja": true,
+  "mlock": true,
   "no-context-shift": true
 }

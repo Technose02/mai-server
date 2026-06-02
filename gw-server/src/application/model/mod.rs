@@ -6,7 +6,7 @@ use axum::{
     http::{StatusCode, header},
 };
 use http_body_util::BodyExt;
-use inference_backends::{ContextSize, LlamaCppConfigArgs, LlamaCppRunConfig, OnOffValue};
+use inference_backends::{ContextSize, LlamaCppConfigArgs, LlamaCppRunConfig, OnOffAutoValue};
 use serde::{Deserialize, Serialize};
 use tracing::{error, trace};
 
@@ -64,7 +64,7 @@ pub struct LlamaCppRunConfigDto {
     #[serde(skip_serializing_if = "Option::is_none", default = "Option::default")]
     pub threads: Option<i8>,
     #[serde(skip_serializing_if = "Option::is_none", default = "Option::default")]
-    pub batch_threads: Option<i8>,
+    pub threads_batch: Option<i8>,
     #[serde(skip_serializing_if = "Option::is_none", default = "Option::default")]
     pub parallel: Option<u8>,
     #[serde(skip_serializing_if = "Option::is_none", default = "Option::default")]
@@ -72,9 +72,9 @@ pub struct LlamaCppRunConfigDto {
     #[serde(skip_serializing_if = "Option::is_none", default = "Option::default")]
     pub ctx_size: Option<ContextSize>,
     #[serde(skip_serializing_if = "Option::is_none", default = "Option::default")]
-    pub flash_attn: Option<OnOffValue>,
+    pub flash_attn: Option<OnOffAutoValue>,
     #[serde(skip_serializing_if = "Option::is_none", default = "Option::default")]
-    pub fit: Option<OnOffValue>,
+    pub fit: Option<OnOffAutoValue>,
     #[serde(skip_serializing_if = "Option::is_none", default = "Option::default")]
     pub batch_size: Option<u16>,
     #[serde(skip_serializing_if = "Option::is_none", default = "Option::default")]
@@ -139,6 +139,18 @@ pub struct LlamaCppRunConfigDto {
     #[serde(skip_serializing_if = "Option::is_none", default = "Option::default")]
     pub chat_template_kwargs: Option<String>,
 
+    #[serde(skip_serializing_if = "Option::is_none", default = "Option::default")]
+    pub reasoning: Option<OnOffAutoValue>,
+
+    #[serde(skip_serializing_if = "Option::is_none", default = "Option::default")]
+    pub reasoning_budget: Option<i16>,
+
+    #[serde(
+        skip_serializing_if = "std::ops::Not::not",
+        default = "default_to_false"
+    )]
+    pub no_cache_prompt: bool,
+
     #[serde(
         skip_serializing_if = "std::ops::Not::not",
         default = "default_to_false"
@@ -152,7 +164,7 @@ impl LlamaCppRunConfigDto {
             env_handle: Arc::new(self.env),
             parallel: self.parallel.unwrap_or(DEFAULT_PARALLEL),
             threads: self.threads.unwrap_or(-1),
-            batch_threads: self.batch_threads.unwrap_or(-1),
+            threads_batch: self.threads_batch.unwrap_or(-1),
             args_handle: Arc::new(LlamaCppConfigArgs {
                 alias: self.alias.clone(),
                 api_key: api_key.map(Into::<String>::into),
@@ -184,6 +196,9 @@ impl LlamaCppRunConfigDto {
                 top_k: self.top_k,
                 top_p: self.top_p,
                 chat_template_kwargs: self.chat_template_kwargs.clone(),
+                reasoning: self.reasoning.clone(),
+                reasoning_budget: self.reasoning_budget,
+                no_cache_prompt: self.no_cache_prompt,
                 embeddings: self.embeddings,
             }),
         }
@@ -202,7 +217,7 @@ impl From<LlamaCppRunConfig> for LlamaCppRunConfigDto {
             prio: value.args_handle.prio,
             min_p: value.args_handle.min_p,
             threads: Some(value.threads),
-            batch_threads: Some(value.batch_threads),
+            threads_batch: Some(value.threads_batch),
             n_gpu_layers: value.args_handle.n_gpu_layers,
             jinja: value.args_handle.jinja,
             ctx_size: value.args_handle.ctx_size,
@@ -226,6 +241,9 @@ impl From<LlamaCppRunConfig> for LlamaCppRunConfigDto {
             top_k: value.args_handle.top_k,
             top_p: value.args_handle.top_p,
             chat_template_kwargs: value.args_handle.chat_template_kwargs.clone(),
+            reasoning: value.args_handle.reasoning.clone(),
+            reasoning_budget:value.args_handle.reasoning_budget,
+            no_cache_prompt: value.args_handle.no_cache_prompt,
             embeddings: value.args_handle.embeddings,
         }
     }

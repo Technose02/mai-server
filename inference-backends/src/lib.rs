@@ -7,7 +7,7 @@ pub use comfyui::{
 };
 pub use llamacpp::{
     ContextSize, LlamaCppBackend, LlamaCppBackendController, LlamaCppConfigArgs, LlamaCppRunConfig,
-    OnOffValue,
+    OnOffAutoValue,
 };
 
 pub type LlamaCppProcessState = managed_process::ProcessState<LlamaCppRunConfig>;

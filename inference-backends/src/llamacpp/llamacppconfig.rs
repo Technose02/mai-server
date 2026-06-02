@@ -8,7 +8,7 @@ pub struct LlamaCppRunConfig {
     pub args_handle: Arc<LlamaCppConfigArgs>,
     pub parallel: u8,
     pub threads: i8,
-    pub batch_threads: i8,
+    pub threads_batch: i8,
 }
 
 impl LlamaCppRunConfig {
@@ -18,8 +18,8 @@ impl LlamaCppRunConfig {
         cmd.arg(self.parallel.to_string());
         cmd.arg("--threads");
         cmd.arg(self.threads.to_string());
-        cmd.arg("-tb");
-        cmd.arg(self.batch_threads.to_string());
+        cmd.arg("--threads-batch");
+        cmd.arg(self.threads_batch.to_string());
     }
 
     pub fn apply_env(&self, cmd: &mut Command) {
@@ -102,53 +102,65 @@ impl PartialOrd for ContextSize {
     }
 }
 
+//#[derive(Debug, Clone)]
+//pub enum OnOffValue {
+//    On,
+//    Off,
+//    Other(String),
+//}
+
 #[derive(Debug, Clone)]
-pub enum OnOffValue {
+pub enum OnOffAutoValue {
     On,
     Off,
+    Auto,
     Other(String),
 }
 
-impl<'a, 's> From<&'a OnOffValue> for &'s str
+impl<'a, 's> From<&'a OnOffAutoValue> for &'s str
 where
     'a: 's,
 {
-    fn from(value: &'a OnOffValue) -> Self {
+    fn from(value: &'a OnOffAutoValue) -> Self {
         match value {
-            OnOffValue::Off => "off",
-            OnOffValue::On => "on",
-            OnOffValue::Other(s) => s,
+            OnOffAutoValue::Off => "off",
+            OnOffAutoValue::On => "on",
+            OnOffAutoValue::Auto => "auto",
+            OnOffAutoValue::Other(s) => s,
         }
     }
 }
 
-impl From<OnOffValue> for String {
-    fn from(value: OnOffValue) -> Self {
+impl From<OnOffAutoValue> for String {
+    fn from(value: OnOffAutoValue) -> Self {
         match value {
-            OnOffValue::Off => "off".into(),
-            OnOffValue::On => "on".into(),
-            OnOffValue::Other(s) => s,
+            OnOffAutoValue::Off => "off".into(),
+            OnOffAutoValue::On => "on".into(),
+            OnOffAutoValue::Auto => "auto".into(),
+            OnOffAutoValue::Other(s) => s,
         }
     }
 }
 
-impl From<String> for OnOffValue {
+impl From<String> for OnOffAutoValue {
     fn from(value: String) -> Self {
         match value.to_lowercase().as_str() {
-            "on" => OnOffValue::On,
-            "off" => OnOffValue::Off,
-            _ => OnOffValue::Other(value),
+            "on" => OnOffAutoValue::On,
+            "off" => OnOffAutoValue::Off,
+            "auto" => OnOffAutoValue::Auto,
+            _ => OnOffAutoValue::Other(value),
         }
     }
 }
 
-impl PartialEq for OnOffValue {
+impl PartialEq for OnOffAutoValue {
     fn eq(&self, other: &Self) -> bool {
         match self {
-            OnOffValue::On => matches!(other, OnOffValue::On),
-            OnOffValue::Off => matches!(other, OnOffValue::Off),
-            OnOffValue::Other(s) => {
-                if let OnOffValue::Other(other_s) = other
+            OnOffAutoValue::On => matches!(other, OnOffAutoValue::On),
+            OnOffAutoValue::Off => matches!(other, OnOffAutoValue::Off),
+            OnOffAutoValue::Auto => matches!(other, OnOffAutoValue::Auto),
+            OnOffAutoValue::Other(s) => {
+                if let OnOffAutoValue::Other(other_s) = other
                     && other_s == s
                 {
                     true
@@ -160,23 +172,23 @@ impl PartialEq for OnOffValue {
     }
 }
 
-struct OnOffValueVisitor;
+struct OnOffAutoValueVisitor;
 
-impl<'de> Visitor<'de> for OnOffValueVisitor {
-    type Value = OnOffValue;
+impl<'de> Visitor<'de> for OnOffAutoValueVisitor {
+    type Value = OnOffAutoValue;
 
     fn visit_string<E>(self, v: String) -> Result<Self::Value, E>
     where
         E: serde::de::Error,
     {
-        Ok(Into::<OnOffValue>::into(v))
+        Ok(Into::<OnOffAutoValue>::into(v))
     }
 
     fn visit_str<E>(self, v: &str) -> Result<Self::Value, E>
     where
         E: serde::de::Error,
     {
-        Ok(Into::<OnOffValue>::into(String::from(v)))
+        Ok(Into::<OnOffAutoValue>::into(String::from(v)))
     }
 
     fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
@@ -184,16 +196,16 @@ impl<'de> Visitor<'de> for OnOffValueVisitor {
     }
 }
 
-impl<'de> Deserialize<'de> for OnOffValue {
+impl<'de> Deserialize<'de> for OnOffAutoValue {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
     where
         D: serde::Deserializer<'de>,
     {
-        deserializer.deserialize_string(OnOffValueVisitor)
+        deserializer.deserialize_string(OnOffAutoValueVisitor)
     }
 }
 
-impl Serialize for OnOffValue {
+impl Serialize for OnOffAutoValue {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: serde::Serializer,
@@ -250,8 +262,8 @@ pub struct LlamaCppConfigArgs {
     pub no_mmap: bool,
     pub mlock: bool,
     pub no_warmup: bool,
-    pub flash_attn: Option<OnOffValue>,
-    pub fit: Option<OnOffValue>,
+    pub flash_attn: Option<OnOffAutoValue>,
+    pub fit: Option<OnOffAutoValue>,
     pub batch_size: Option<u16>,
     pub ubatch_size: Option<u16>,
     pub cache_type_v: Option<String>,
@@ -269,7 +281,10 @@ pub struct LlamaCppConfigArgs {
     pub top_k: Option<u16>,
     pub top_p: Option<f32>,
     pub chat_template_kwargs: Option<String>,
+    pub reasoning: Option<OnOffAutoValue>,
+    pub reasoning_budget: Option<i16>,
     pub embeddings: bool,
+    pub no_cache_prompt: bool,
 }
 
 impl LlamaCppConfigArgs {
@@ -322,6 +337,10 @@ impl LlamaCppConfigArgs {
             cmd.arg("--embeddings");
         }
 
+        if self.no_cache_prompt {
+            cmd.arg("--no-cache-prompt");
+        }
+
         if let Some(ctx_size) = self.ctx_size {
             cmd.arg("--ctx-size");
             cmd.arg(Into::<u64>::into(&ctx_size).to_string());
@@ -361,6 +380,7 @@ impl LlamaCppConfigArgs {
             cmd.arg("--cache-ram");
             cmd.arg(cache_ram.to_string());
         }
+
         if let Some(spec_type) = &self.spec_type {
             cmd.arg("--spec-type");
             cmd.arg(spec_type);
@@ -413,6 +433,16 @@ impl LlamaCppConfigArgs {
             cmd.arg("--top-p");
             cmd.arg(format!("{top_p:.2}"));
         }
+
+        if let Some(reasoning) = &self.reasoning {
+            cmd.arg("--reasoning");
+            cmd.arg(Into::<String>::into(reasoning.clone()));
+        }
+
+        if let Some(reasoning_budget) = &self.reasoning_budget {
+            cmd.arg("--reasoning-budget");
+            cmd.arg(reasoning_budget.to_string());
+        }       
 
         if let Some(chat_template_kwargs) = &self.chat_template_kwargs {
             cmd.arg("--chat-template-kwargs");

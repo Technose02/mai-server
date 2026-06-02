@@ -1,5 +1,5 @@
 use crate::{Error, Result};
-use inference_backends::{ContextSize, OnOffValue};
+use inference_backends::{ContextSize, OnOffAutoValue};
 use serde::{Deserialize, Serialize};
 use std::path::{Path, PathBuf};
 
@@ -28,9 +28,9 @@ pub struct ModelConfiguration {
     #[serde(skip_serializing_if = "Option::is_none", default = "Option::default")]
     pub n_gpu_layers: Option<u8>,
     #[serde(skip_serializing_if = "Option::is_none", default = "Option::default")]
-    pub flash_attn: Option<OnOffValue>,
+    pub flash_attn: Option<OnOffAutoValue>,
     #[serde(skip_serializing_if = "Option::is_none", default = "Option::default")]
-    pub fit: Option<OnOffValue>,
+    pub fit: Option<OnOffAutoValue>,
     #[serde(skip_serializing_if = "Option::is_none", default = "Option::default")]
     pub batch_size: Option<u16>,
     #[serde(skip_serializing_if = "Option::is_none", default = "Option::default")]
@@ -94,11 +94,23 @@ pub struct ModelConfiguration {
     #[serde(skip_serializing_if = "Option::is_none", default = "Option::default")]
     pub chat_template_kwargs: Option<String>,
 
+    #[serde(skip_serializing_if = "Option::is_none", default = "Option::default")]
+    pub reasoning: Option<OnOffAutoValue>,
+
+    #[serde(skip_serializing_if = "Option::is_none", default = "Option::default")]
+    pub reasoning_budget: Option<i16>,
+
     #[serde(
         skip_serializing_if = "std::ops::Not::not",
         default = "default_to_false"
     )]
     pub embeddings: bool,
+
+    #[serde(
+        skip_serializing_if = "std::ops::Not::not",
+        default = "default_to_false"
+    )]
+    pub no_cache_prompt: bool,
 }
 
 fn default_to_false() -> bool {

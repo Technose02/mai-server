@@ -22,5 +22,6 @@
   "jinja": true,
   "no-mmap": false,
   "no-warmup": false,
+  "reasoning": "on",
   "chat-template-kwargs": "{\"reasoning_effort\":\"high\"}"
 }

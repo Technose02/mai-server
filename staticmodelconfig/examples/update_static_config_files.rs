@@ -112,7 +112,7 @@ async fn update_model_configuration(
         env_handle,
         parallel: 1,
         threads: 8,
-        batch_threads: 16,
+        threads_batch: 16,
         args_handle: Arc::new(LlamaCppConfigArgs {
             alias: model_configuration.alias.clone(),
             api_key: None,
@@ -145,6 +145,9 @@ async fn update_model_configuration(
             top_k: model_configuration.top_k,
             top_p: model_configuration.top_p,
             chat_template_kwargs: model_configuration.chat_template_kwargs.clone(),
+            reasoning: None,
+            reasoning_budget: None,
+            no_cache_prompt: false,
             embeddings: model_configuration.embeddings,
         }),
     };
