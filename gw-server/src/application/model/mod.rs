@@ -64,6 +64,8 @@ pub struct LlamaCppRunConfigDto {
     #[serde(skip_serializing_if = "Option::is_none", default = "Option::default")]
     pub threads: Option<i8>,
     #[serde(skip_serializing_if = "Option::is_none", default = "Option::default")]
+    pub batch_threads: Option<i8>,
+    #[serde(skip_serializing_if = "Option::is_none", default = "Option::default")]
     pub parallel: Option<u8>,
     #[serde(skip_serializing_if = "Option::is_none", default = "Option::default")]
     pub n_gpu_layers: Option<u8>,
@@ -150,6 +152,7 @@ impl LlamaCppRunConfigDto {
             env_handle: Arc::new(self.env),
             parallel: self.parallel.unwrap_or(DEFAULT_PARALLEL),
             threads: self.threads.unwrap_or(-1),
+            batch_threads: self.batch_threads.unwrap_or(-1),
             args_handle: Arc::new(LlamaCppConfigArgs {
                 alias: self.alias.clone(),
                 api_key: api_key.map(Into::<String>::into),
@@ -199,6 +202,7 @@ impl From<LlamaCppRunConfig> for LlamaCppRunConfigDto {
             prio: value.args_handle.prio,
             min_p: value.args_handle.min_p,
             threads: Some(value.threads),
+            batch_threads: Some(value.batch_threads),
             n_gpu_layers: value.args_handle.n_gpu_layers,
             jinja: value.args_handle.jinja,
             ctx_size: value.args_handle.ctx_size,

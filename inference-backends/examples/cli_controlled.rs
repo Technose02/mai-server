@@ -36,6 +36,7 @@ async fn main() {
         env_handle: shared_env.clone(),
         parallel: 1,
         threads: 8,
+        batch_threads: 16,
         args_handle: LlamaCppConfigArgs {
             alias: "devstral-small-2-24B-instruct-2512".to_string(),
             api_key: Some("apikey1".to_string()),
@@ -76,6 +77,7 @@ async fn main() {
         env_handle: shared_env.clone(),
         parallel: 1,
         threads: 8,
+        batch_threads: 16,
         args_handle: LlamaCppConfigArgs {
             alias: "gpt-oss-120b-Q8_0".to_string(),
             api_key: Some("apikey2".to_string()),

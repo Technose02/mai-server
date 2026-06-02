@@ -8,6 +8,7 @@ pub struct LlamaCppRunConfig {
     pub args_handle: Arc<LlamaCppConfigArgs>,
     pub parallel: u8,
     pub threads: i8,
+    pub batch_threads: i8,
 }
 
 impl LlamaCppRunConfig {
@@ -17,6 +18,8 @@ impl LlamaCppRunConfig {
         cmd.arg(self.parallel.to_string());
         cmd.arg("--threads");
         cmd.arg(self.threads.to_string());
+        cmd.arg("-tb");
+        cmd.arg(self.batch_threads.to_string());
     }
 
     pub fn apply_env(&self, cmd: &mut Command) {

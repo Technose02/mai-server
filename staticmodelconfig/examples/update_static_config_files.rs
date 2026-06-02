@@ -112,6 +112,7 @@ async fn update_model_configuration(
         env_handle,
         parallel: 1,
         threads: 8,
+        batch_threads: 16,
         args_handle: Arc::new(LlamaCppConfigArgs {
             alias: model_configuration.alias.clone(),
             api_key: None,

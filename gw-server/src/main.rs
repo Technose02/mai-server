@@ -138,6 +138,7 @@ async fn create_app(
     // init services
     let parallel_llamacpp_requests = 1_u8;
     let number_of_llamacpp_threads = 8_i8;
+    let number_of_llamacpp_batch_threads = 16_i8;
     let environment_args = {
         let mut environment_args = HashMap::new();
         environment_args.insert("GGML_CUDA_ENABLE_UNIFIED_MEMORY".into(), "1".into());
@@ -155,6 +156,7 @@ async fn create_app(
         model_loader,
         parallel_llamacpp_requests,
         number_of_llamacpp_threads,
+        number_of_llamacpp_batch_threads,
         environment_args,
     );
 
