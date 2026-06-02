@@ -52,7 +52,7 @@ impl RunBackendProcess for LlamaCppBackend {
         process_config.apply_args(&mut cmd);
 
         // provide std-streams
-        cmd.stdout(Stdio::null());
+        cmd.stdout(Stdio::piped());
         cmd.stderr(Stdio::piped());
 
         cmd.kill_on_drop(true);
@@ -60,19 +60,32 @@ impl RunBackendProcess for LlamaCppBackend {
         // spawn process
         let mut proc_handle = cmd.spawn().unwrap();
 
+        // spawn std-out observing task
+        let stdout = proc_handle.stdout.take().unwrap();
+        spawn(async move {
+            let mut outlines = BufReader::new(stdout).lines();            
+            loop {
+                if let Ok(Some(outline)) = outlines.next_line().await {
+                    info!("llama-server [stdout]: {outline}");
+                }
+            }
+        });
+
         // spawn std-err observing task
         let stderr = proc_handle.stderr.take().unwrap();
         let notifier_cloned = notifier.clone();
         spawn(async move {
-            let mut lines = BufReader::new(stderr).lines();
+            let mut errlines = BufReader::new(stderr).lines();            
             loop {
-                if let Ok(Some(line)) = lines.next_line().await
-                    && line.contains("server is listening on http")
-                {
+                if let Ok(Some(errline)) = errlines.next_line().await {
+                    info!("llama-server [stderr]: {errline}");
+                    if errline.contains("server is listening on http") {
                     notifier_cloned
                         .send(LlamaCppProtocol::ProcessStarted)
                         .await
                         .unwrap();
+                    }
+
                 }
             }
         });
