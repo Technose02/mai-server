@@ -63,7 +63,7 @@ impl RunBackendProcess for LlamaCppBackend {
         // spawn std-out observing task
         let stdout = proc_handle.stdout.take().unwrap();
         spawn(async move {
-            let mut outlines = BufReader::new(stdout).lines();            
+            let mut outlines = BufReader::new(stdout).lines();
             loop {
                 if let Ok(Some(outline)) = outlines.next_line().await {
                     info!("llama-server [stdout]: {outline}");
@@ -75,17 +75,16 @@ impl RunBackendProcess for LlamaCppBackend {
         let stderr = proc_handle.stderr.take().unwrap();
         let notifier_cloned = notifier.clone();
         spawn(async move {
-            let mut errlines = BufReader::new(stderr).lines();            
+            let mut errlines = BufReader::new(stderr).lines();
             loop {
                 if let Ok(Some(errline)) = errlines.next_line().await {
                     info!("llama-server [stderr]: {errline}");
                     if errline.contains("server is listening on http") {
-                    notifier_cloned
-                        .send(LlamaCppProtocol::ProcessStarted)
-                        .await
-                        .unwrap();
+                        notifier_cloned
+                            .send(LlamaCppProtocol::ProcessStarted)
+                            .await
+                            .unwrap();
                     }
-
                 }
             }
         });

@@ -24,7 +24,7 @@ use tokio_util::{
     codec::{FramedRead, LinesCodec},
     io::StreamReader,
 };
-use tracing::{debug, error, trace, warn};
+use tracing::{debug, error, info, trace, warn};
 
 const LLAMACPP_HTTP_SCHEME: &str = "http";
 const LLAMACPP_HOST: &str = "localhost";
@@ -318,14 +318,16 @@ impl OpenAiClientOutPort for LocalLlamaCppClientAdapter {
             let response_result;
 
             // PHASE A: Warten auf Verbindung
+            info!("connecting to llama-server");
             loop {
                 tokio::select! {
                     _ = heartbeat_interval.tick() => {
-                        trace!("sending a heartbeat while still waiting for response from llama-server");
+                        info!("\tsending a heartbeat while still waiting for response from llama-server");
                         yield Ok::<Bytes, std::io::Error>(Bytes::from(": heartbeat\n\n"));
                     }
                     res = &mut connect_future => {
                         response_result = res;
+                        info!("connect resolved");
                         break;
                     }
                 }
@@ -347,9 +349,19 @@ impl OpenAiClientOutPort for LocalLlamaCppClientAdapter {
             let mut lines = FramedRead::new(stream_reader, LinesCodec::new());
             let mut sent_done = false;
 
+            info!("streaming from llama-server");
+
+
             loop {
-                match lines.next().await {
+                tokio::select! {
+                    _ = heartbeat_interval.tick() => {
+                        info!("\tsending a heartbeat while waiting for tokens");
+                        yield Ok::<Bytes, std::io::Error>(Bytes::from(": heartbeat\n\n"));
+                    }
+                    next_line = lines.next() => {
+                        match next_line {
                     Some(Ok(line)) => {
+                        heartbeat_interval.reset();
                         let trimmed = line.trim();
                         if trimmed.is_empty() { continue; }
                         // Wenn es ein Kommentar (Heartbeat) ist, direkt durchreichen
@@ -383,6 +395,9 @@ impl OpenAiClientOutPort for LocalLlamaCppClientAdapter {
                         break;
                     }
                     None => break,
+                        }
+                    }
+
                 }
             }
 
