@@ -1,5 +1,5 @@
 {
-  "alias": "gemma-4-31b-it",
+  "alias": "gemma-4-12b-it",
   "model-path": "/model_data/huggingface/unsloth/gemma-4-12b-it-GGUF/gemma-4-12b-it-BF16.gguf",
   "max-ctx-size": 262144,
   "vocab-type": 2,
