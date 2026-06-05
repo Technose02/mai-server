@@ -1,0 +1,17 @@
+{
+  "alias": "ternary-bonsai-8b-q2-0",
+  "model-path": "/model_data/huggingface/prism-ml/Ternary-Bonsai-8B-gguf/Ternary-Bonsai-8B-Q2_0.gguf",
+  "max-ctx-size": 0,
+  "vocab-type": 0,
+  "n-vocab": 0,
+  "n-ctx-train": 0,
+  "n-embd": 0,
+  "n-params": 0,
+  "size": 0,
+  "capabilities": [
+    "completion"
+  ],
+  "n-gpu-layers": 99,
+  "flash-attn": "on",
+  "jinja": true
+}
