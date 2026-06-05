@@ -1,0 +1,25 @@
+{
+  "alias": "gemma-4-31b-it",
+  "model-path": "/model_data/huggingface/unsloth/gemma-4-12b-it-GGUF/gemma-4-12b-it-BF16.gguf",
+  "max-ctx-size": 262144,
+  "vocab-type": 2,
+  "n-vocab": 262144,
+  "n-ctx-train": 262144,
+  "n-embd": 5376,
+  "n-params": 30697345596,
+  "size": 61397354736,
+  "capabilities": [
+    "completion",
+    "multimodal"
+  ],
+  "mmproj-path": "/model_data/huggingface/unsloth/gemma-4-12b-it-GGUF/mmproj-BF16.gguf",
+  "n-gpu-layers": 99,
+  "flash-attn": "on",
+  "batch-size": 2048,
+  "ubatch-size": 512,
+  "temp": 1.0,
+  "top-k": 64,
+  "top-p": 0.95,
+  "jinja": true,
+  "mlock": true
+}
