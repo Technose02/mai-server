@@ -141,10 +141,9 @@ async fn create_app(
     let number_of_llamacpp_batch_threads = 16_i8;
     let environment_args = {
         let mut environment_args = HashMap::new();
-        environment_args.insert("GGML_CUDA_ENABLE_UNIFIED_MEMORY".into(), "1".into());
-        environment_args.insert("TORCH_ROCM_AOTRITON_ENABLE_EXPERIMENTAL".into(), "1".into());
         environment_args.insert("GGML_HIP_NO_VMM".into(), "1".into()); // Behebt VMM-Hänger bei großen Allokationen
         environment_args.insert("HSA_OVERRIDE_GFX_VERSION".into(), "11.5.1".into()); // Erzwingt korrekten RDNA 3.5 Pfad
+        environment_args.insert("GGML_HIP_ENABLE_UNIFIED_MEMORY".into(), "1".into());
         environment_args
     };
 
