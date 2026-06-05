@@ -4,7 +4,7 @@
   "max-ctx-size": 262144,
   "vocab-type": 2,
   "n-vocab": 262144,
-  "n-ctx-train": 131072,
+  "n-ctx-train": 262144,
   "n-embd": 3840,
   "n-params": 11907350576,
   "size": 23816241344,
