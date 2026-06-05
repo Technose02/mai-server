@@ -172,7 +172,7 @@ impl ModelsServiceInPort for DefaultModelsService {
     }
 
     fn get_default_languagemodel_alias(&self) -> String {
-        "gemma-4-31b-it-thinking".into()
+        "gemma-4-12b-it-thinking".into()
     }
 
     async fn ensure_requested_embeddingmodel_is_served(
