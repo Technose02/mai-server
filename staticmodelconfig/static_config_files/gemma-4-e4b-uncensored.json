@@ -7,7 +7,7 @@
   "n-ctx-train": 131072,
   "n-embd": 2560,
   "n-params": 7518069290,
-  "size": 15037270184,
+  "size": 8117405864,
   "capabilities": [
     "completion",
     "multimodal"

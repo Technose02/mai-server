@@ -1,0 +1,28 @@
+{
+  "alias": "qwen3.6-35b-a3b-uncensored-q8-k-p",
+  "model-path": "/model_data/huggingface/HauhauCS/Qwen3.6-35B-A3B-Uncensored-HauhauCS-Aggressive/Qwen3.6-35B-A3B-Uncensored-HauhauCS-Aggressive-Q8_K_P.gguf",
+  "max-ctx-size": 262144,
+  "vocab-type": 2,
+  "n-vocab": 248320,
+  "n-ctx-train": 262144,
+  "n-embd": 2048,
+  "n-params": 34660610688,
+  "size": 43594025472,
+  "capabilities": [
+    "completion",
+    "multimodal"
+  ],
+  "mmproj-path": "/model_data/huggingface/HauhauCS/Qwen3.6-35B-A3B-Uncensored-HauhauCS-Aggressive/mmproj-Qwen3.6-35B-A3B-Uncensored-HauhauCS-Aggressive-f16.gguf",
+  "n-gpu-layers": 99,
+  "flash-attn": "on",
+  "batch-size": 2048,
+  "ubatch-size": 512,
+  "temp": 0.6,
+  "repeat-penalty": 1.0,
+  "presence-penalty": 0.0,
+  "min-p": 0.0,
+  "top-k": 20,
+  "top-p": 0.95,
+  "jinja": true,
+  "mlock": true
+}
