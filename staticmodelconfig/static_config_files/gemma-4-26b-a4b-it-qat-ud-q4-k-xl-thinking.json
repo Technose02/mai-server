@@ -1,18 +1,18 @@
 {
-  "alias": "gemma-4-12b-it-ud-q8-k-xl",
-  "model-path": "/model_data/huggingface/unsloth/gemma-4-12b-it-GGUF/gemma-4-12b-it-UD-Q8_K_XL.gguf",
+  "alias": "gemma-4-26b-a4b-it-qat-ud-q4-k-xl",
+  "model-path": "/model_data/huggingface/unsloth/gemma-4-26B-A4B-it-qat-GGUF/gemma-4-26B-A4B-it-qat-UD-Q4_K_XL.gguf",
   "max-ctx-size": 262144,
   "vocab-type": 2,
   "n-vocab": 262144,
   "n-ctx-train": 262144,
-  "n-embd": 3840,
-  "n-params": 11907350576,
-  "size": 13621502144,
+  "n-embd": 2816,
+  "n-params": 25233142046,
+  "size": 14233222264,
   "capabilities": [
     "completion",
     "multimodal"
   ],
-  "mmproj-path": "/model_data/huggingface/unsloth/gemma-4-12b-it-GGUF/mmproj-BF16.gguf",
+  "mmproj-path": "/model_data/huggingface/unsloth/gemma-4-26B-A4B-it-qat-GGUF/mmproj-BF16.gguf",
   "n-gpu-layers": 99,
   "flash-attn": "on",
   "batch-size": 2048,
@@ -26,5 +26,5 @@
   "jinja": true,
   "mlock": true,
   "no-context-shift": true,
-  "reasoning": "off"
+  "reasoning": "on"
 }
