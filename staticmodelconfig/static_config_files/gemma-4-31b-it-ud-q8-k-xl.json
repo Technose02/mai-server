@@ -12,7 +12,7 @@
     "completion",
     "multimodal"
   ],
-  "mmproj-path": "/model_data/huggingface/unsloth/gemma-4-31B-it-GGUF_before_update/mmproj-BF16.gguf",
+  "mmproj-path": "/model_data/huggingface/unsloth/gemma-4-31B-it-GGUF/mmproj-BF16.gguf",
   "n-gpu-layers": 99,
   "flash-attn": "on",
   "batch-size": 2048,
