@@ -442,7 +442,7 @@ impl LlamaCppConfigArgs {
         if let Some(reasoning_budget) = &self.reasoning_budget {
             cmd.arg("--reasoning-budget");
             cmd.arg(reasoning_budget.to_string());
-        }       
+        }
 
         if let Some(chat_template_kwargs) = &self.chat_template_kwargs {
             cmd.arg("--chat-template-kwargs");

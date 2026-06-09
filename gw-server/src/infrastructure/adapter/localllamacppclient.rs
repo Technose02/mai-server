@@ -126,9 +126,15 @@ impl LocalLlamaCppClientAdapter {
                 "/chat/bundle.js" => "/bundle.js",
                 "/chat/cors-proxy" => "/cors-proxy",
                 "/chat/tools" => "/tools",
-                s if s.starts_with("/chat/props") => s.strip_prefix("/chat").unwrap(),
+                "/chat/props" => "/props",
+                s if s.starts_with("/chat/props?")
+                    || s.starts_with("/chat/bundle.css?")
+                    || s.starts_with("/chat/bundle.js?") =>
+                {
+                    s.strip_prefix("/chat").unwrap()
+                }
                 other => {
-                    warn!("no mapping-rule for path-and-query of '{other} ; forwarding directly '");
+                    warn!("no mapping-rule for path-and-query of '{other}' ; forwarding directly");
                     other
                 }
             }

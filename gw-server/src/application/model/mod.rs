@@ -242,7 +242,7 @@ impl From<LlamaCppRunConfig> for LlamaCppRunConfigDto {
             top_p: value.args_handle.top_p,
             chat_template_kwargs: value.args_handle.chat_template_kwargs.clone(),
             reasoning: value.args_handle.reasoning.clone(),
-            reasoning_budget:value.args_handle.reasoning_budget,
+            reasoning_budget: value.args_handle.reasoning_budget,
             no_cache_prompt: value.args_handle.no_cache_prompt,
             embeddings: value.args_handle.embeddings,
         }
