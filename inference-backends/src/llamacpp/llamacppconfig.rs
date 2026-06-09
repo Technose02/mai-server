@@ -256,7 +256,7 @@ pub struct LlamaCppConfigArgs {
     pub mmproj_path: Option<String>,
 
     pub prio: Option<u8>,
-    pub n_gpu_layers: Option<u8>,
+    pub n_gpu_layers: Option<i16>,
     pub jinja: bool,
     pub ctx_size: Option<ContextSize>,
     pub no_mmap: bool,

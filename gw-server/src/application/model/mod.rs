@@ -68,7 +68,7 @@ pub struct LlamaCppRunConfigDto {
     #[serde(skip_serializing_if = "Option::is_none", default = "Option::default")]
     pub parallel: Option<u8>,
     #[serde(skip_serializing_if = "Option::is_none", default = "Option::default")]
-    pub n_gpu_layers: Option<u8>,
+    pub n_gpu_layers: Option<i16>,
     #[serde(skip_serializing_if = "Option::is_none", default = "Option::default")]
     pub ctx_size: Option<ContextSize>,
     #[serde(skip_serializing_if = "Option::is_none", default = "Option::default")]

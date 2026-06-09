@@ -26,7 +26,7 @@ pub struct ModelConfiguration {
     #[serde(skip_serializing_if = "Option::is_none", default = "Option::default")]
     pub prio: Option<u8>,
     #[serde(skip_serializing_if = "Option::is_none", default = "Option::default")]
-    pub n_gpu_layers: Option<u8>,
+    pub n_gpu_layers: Option<i16>,
     #[serde(skip_serializing_if = "Option::is_none", default = "Option::default")]
     pub flash_attn: Option<OnOffAutoValue>,
     #[serde(skip_serializing_if = "Option::is_none", default = "Option::default")]
