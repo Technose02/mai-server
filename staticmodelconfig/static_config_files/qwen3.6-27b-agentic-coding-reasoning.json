@@ -1,5 +1,5 @@
 {
-  "alias": "qwen3.6-27b-agentic-coding",
+  "alias": "qwen3.6-27b-agentic-coding-reasoning",
   "model-path": "/model_data/huggingface/unsloth/Qwen3.6-27B-MTP-GGUF/Qwen3.6-27B-UD-Q8_K_XL.gguf",
   "max-ctx-size": 262144,
   "vocab-type": 2,
