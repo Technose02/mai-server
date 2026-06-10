@@ -18,7 +18,7 @@
   "batch-size": 2048,
   "ubatch-size": 512,
   "cache-type-v": "q8_0",
-  "cache-ram": 0,
+  "cache-ram": -1,
   "spec-type": "draft-mtp",
   "spec-draft-n-max": 2,
   "cache-type-k": "q8_0",
