@@ -15,8 +15,8 @@
   "mmproj-path": "/model_data/huggingface/unsloth/Qwen3.6-27B-MTP-GGUF/mmproj-BF16.gguf",
   "n-gpu-layers": -1,
   "flash-attn": "on",
-  "batch-size": 2048,
-  "ubatch-size": 512,
+  "batch-size": 1024,
+  "ubatch-size": 1024,
   "cache-type-v": "q8_0",
   "cache-ram": -1,
   "spec-type": "draft-mtp",
@@ -30,5 +30,6 @@
   "top-p": 0.95,
   "jinja": true,
   "mlock": true,
-  "reasoning": "off"
+  "reasoning": "off",
+  "chat-template-kwargs": "{\"preserve_thinking\":\"true\"}"
 }
