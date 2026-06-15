@@ -137,8 +137,8 @@ async fn create_app(
 
     // init services
     let parallel_llamacpp_requests = 1_u8;
-    let number_of_llamacpp_threads = 8_i8;
-    let number_of_llamacpp_batch_threads = 16_i8;
+    let number_of_llamacpp_threads = 16_i8;
+    let number_of_llamacpp_batch_threads = 32_i8;
     let environment_args = {
         let mut environment_args = HashMap::new();
         environment_args.insert("GGML_HIP_NO_VMM".into(), "1".into()); // Behebt VMM-Hänger bei großen Allokationen
