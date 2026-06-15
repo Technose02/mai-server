@@ -38,12 +38,17 @@ pub fn create_router(
         .route("/chat", get(chat_handler))
         .route("/chat/bundle.css", get(chat_handler_assets))
         .route("/chat/bundle.js", get(chat_handler_assets))
+        .route("/chat/_app/{*path}", get(chat_handler_assets))
+        .route("/chat/favicon.ico",get(chat_handler_assets))
+        .route("/chat/favicon.svg",get(chat_handler_assets))
+        .route("/chat/apple/{*path}",get(chat_handler_assets))
         .route("/chat/cors-proxy", head(chat_handler_assets));
 
     let secured = Router::new()
         // CHAT
         .route("/chat/props", get(chat_handler_assets))
         .route("/chat/tools", get(chat_handler_assets))
+        .route("/chat/build.json", get(chat_handler_assets))
         // API
         //   CHAT-COMPLETIONS
         .route(

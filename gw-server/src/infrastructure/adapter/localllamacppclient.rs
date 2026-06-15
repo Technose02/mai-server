@@ -125,14 +125,18 @@ impl LocalLlamaCppClientAdapter {
                 "/chat/bundle.css" => "/bundle.css",
                 "/chat/bundle.js" => "/bundle.js",
                 "/chat/cors-proxy" => "/cors-proxy",
+                "/chat/favicon.ico" => "/favicon.ico",
+                "/chat/favicon.svg" => "/favicon.svg",
                 "/chat/tools" => "/tools",
                 "/chat/props" => "/props",
                 s if s.starts_with("/chat/props?")
+                    || s.starts_with("/chat/_app")
                     || s.starts_with("/chat/bundle.css?")
                     || s.starts_with("/chat/bundle.js?") =>
                 {
                     s.strip_prefix("/chat").unwrap()
-                }
+                },
+                a if a.starts_with("/chat/apple/apple-") => a.strip_prefix("/chat/apple").unwrap(),
                 other => {
                     warn!("no mapping-rule for path-and-query of '{other}' ; forwarding directly");
                     other
@@ -221,6 +225,30 @@ impl LocalLlamaCppClientAdapter {
         plain_content = plain_content.replace(
             r#"={LIST:"/tools",EXECUTE:"/tools"}"#,
             r#"={LIST:"/chat/tools",EXECUTE:"/tools"}"#,
+        );
+        plain_content = plain_content.replace(
+            r#"/_app/"#,
+            r#"/chat/_app/"#,
+        );
+        plain_content = plain_content.replace(
+            r#"favicon.ico"#,
+            r#"chat/favicon.ico"#
+        );
+        plain_content = plain_content.replace(
+            r#"favicon.svg"#,
+            r#"chat/favicon.svg"#
+        );
+        plain_content = plain_content.replace(
+            r#"./apple-"#,
+            r#"./chat/apple/apple-"#
+        );
+        plain_content = plain_content.replace(
+            r#"href="apple-"#,
+            r#"href="chat/apple/apple-"#
+        );
+        plain_content = plain_content.replace(
+            r#"/build.json"#,
+            r#"/chat/build.json"#
         );
 
         debug!("processed body");
