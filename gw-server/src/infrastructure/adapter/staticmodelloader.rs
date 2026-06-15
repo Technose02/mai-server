@@ -66,6 +66,7 @@ impl ModelLoaderOutPort for StaticModelLoader {
                 cache_type_k: model_configuration.cache_type_k.clone(),
                 cache_type_v: model_configuration.cache_type_v.clone(),
                 cache_ram: model_configuration.cache_ram,
+                cache_reuse: model_configuration.cache_reuse,
                 spec_type: model_configuration.spec_type.clone(),
                 spec_draft_n_max: model_configuration.spec_draft_n_max,
                 no_context_shift: model_configuration.no_context_shift,

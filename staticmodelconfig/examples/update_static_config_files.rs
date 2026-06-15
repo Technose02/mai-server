@@ -130,6 +130,7 @@ async fn update_model_configuration(
             ubatch_size: model_configuration.ubatch_size,
             mlock: model_configuration.mlock,
             cache_ram: model_configuration.cache_ram,
+            cache_reuse: model_configuration.cache_reuse,
             spec_type: model_configuration.spec_type.clone(),
             spec_draft_n_max: model_configuration.spec_draft_n_max,
             no_cont_batching: model_configuration.no_cont_batching,

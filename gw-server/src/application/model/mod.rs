@@ -86,6 +86,8 @@ pub struct LlamaCppRunConfigDto {
     #[serde(skip_serializing_if = "Option::is_none", default = "Option::default")]
     pub cache_ram: Option<i16>,
     #[serde(skip_serializing_if = "Option::is_none", default = "Option::default")]
+    pub cache_reuse: Option<i16>,
+    #[serde(skip_serializing_if = "Option::is_none", default = "Option::default")]
     pub spec_type: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none", default = "Option::default")]
     pub spec_draft_n_max: Option<u8>,
@@ -187,6 +189,7 @@ impl LlamaCppRunConfigDto {
                 no_cont_batching: self.no_cont_batching,
                 no_context_shift: self.no_context_shift,
                 cache_ram: self.cache_ram,
+                cache_reuse: self.cache_reuse,
                 spec_type: self.spec_type,
                 spec_draft_n_max: self.spec_draft_n_max,
                 temp: self.temp,
@@ -224,6 +227,7 @@ impl From<LlamaCppRunConfig> for LlamaCppRunConfigDto {
             cache_type_k: value.args_handle.cache_type_k.clone(),
             cache_type_v: value.args_handle.cache_type_v.clone(),
             cache_ram: value.args_handle.cache_ram,
+            cache_reuse: value.args_handle.cache_reuse,
             spec_type: value.args_handle.spec_type.clone(),
             spec_draft_n_max: value.args_handle.spec_draft_n_max,
             no_mmap: value.args_handle.no_mmap,

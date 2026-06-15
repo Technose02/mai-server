@@ -269,6 +269,7 @@ pub struct LlamaCppConfigArgs {
     pub cache_type_v: Option<String>,
     pub cache_type_k: Option<String>,
     pub cache_ram: Option<i16>,
+    pub cache_reuse: Option<i16>,
     pub spec_type: Option<String>,
     pub spec_draft_n_max: Option<u8>,
     pub no_context_shift: bool,
@@ -379,6 +380,11 @@ impl LlamaCppConfigArgs {
         if let Some(cache_ram) = &self.cache_ram {
             cmd.arg("--cache-ram");
             cmd.arg(cache_ram.to_string());
+        }
+
+        if let Some(cache_reuse) = &self.cache_reuse {
+            cmd.arg("--cache-reuse");
+            cmd.arg(cache_reuse.to_string());
         }
 
         if let Some(spec_type) = &self.spec_type {
