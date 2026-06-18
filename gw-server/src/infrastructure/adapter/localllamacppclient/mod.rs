@@ -1,4 +1,4 @@
-use crate::{SecurityConfig, domain::ports::OpenAiClientOutPort};
+use crate::{domain::ports::OpenAiClientOutPort, model::SecurityConfig};
 use async_openai::types::{chat::CreateChatCompletionRequest, embeddings::CreateEmbeddingRequest};
 use async_trait::async_trait;
 use axum::{
@@ -13,18 +13,18 @@ use axum::{
     },
     response::{IntoResponse, Response},
 };
-use flate2::{Compression, read::GzDecoder};
+use flate2::Compression;
 use futures::StreamExt;
 use http_body_util::BodyExt;
-use std::{
-    io::{Read, Write},
-    sync::Arc,
-};
+use std::{io::Write, sync::Arc};
 use tokio_util::{
     codec::{FramedRead, LinesCodec},
     io::StreamReader,
 };
 use tracing::{debug, error, info, trace, warn};
+
+mod responsepayload;
+use responsepayload::ResponsePayload;
 
 const LLAMACPP_HTTP_SCHEME: &str = "http";
 const LLAMACPP_HOST: &str = "localhost";
@@ -129,13 +129,16 @@ impl LocalLlamaCppClientAdapter {
                 "/chat/favicon.svg" => "/favicon.svg",
                 "/chat/tools" => "/tools",
                 "/chat/props" => "/props",
+                "/chat/build.json" => "/build.json",
                 s if s.starts_with("/chat/props?")
                     || s.starts_with("/chat/_app")
                     || s.starts_with("/chat/bundle.css?")
+                    || (s.starts_with("/chat/pwa-") && s.ends_with(".png"))
+                    || (s.starts_with("/chat/maskable-icon-") && s.ends_with(".png"))
                     || s.starts_with("/chat/bundle.js?") =>
                 {
                     s.strip_prefix("/chat").unwrap()
-                },
+                }
                 a if a.starts_with("/chat/apple/apple-") => a.strip_prefix("/chat/apple").unwrap(),
                 other => {
                     warn!("no mapping-rule for path-and-query of '{other}' ; forwarding directly");
@@ -177,86 +180,14 @@ impl LocalLlamaCppClientAdapter {
 
         debug!("received {} bytes", bytes.len());
 
-        let mut plain_content = match content_encoding.and_then(|v| v.to_str().ok()) {
-            Some("gzip") => {
-                let mut decoder = GzDecoder::new(&bytes[..]);
-                let mut decoded_text = String::new();
-                decoder.read_to_string(&mut decoded_text).map_err(|e| {
-                    error!("Gzip Dekomprimierung fehlgeschlagen: {e}");
-                    StatusCode::INTERNAL_SERVER_ERROR
-                })?;
-                Ok(decoded_text)
-            }
-            Some(encoding) => {
-                error!("unexpected content-encoding of llama-cpp-response: {encoding}");
-                Err(StatusCode::INTERNAL_SERVER_ERROR)
-            }
-            None => Ok(String::from_utf8_lossy(&bytes).to_string()),
-        }?;
+        let content_type = res_parts
+            .headers
+            .get(CONTENT_TYPE)
+            .and_then(|v| v.to_str().ok())
+            .unwrap_or("unknown");
 
-        // process decoded text
-        trace!(
-            "performing replacement in payload of content-type {}",
-            res_parts
-                .headers
-                .get(CONTENT_TYPE)
-                .and_then(|v| v.to_str().ok())
-                .unwrap_or("unknown")
-        );
-
-        // replacing in html
-        plain_content = plain_content.replace(r#"./bundle."#, r#"/chat/bundle."#);
-
-        // replacing in js
-        plain_content = plain_content.replace("}/props", "}/chat/props");
-        plain_content = plain_content.replace("./props", "/chat/props");
-        plain_content = plain_content.replace(
-            r#"CORS_PROXY_ENDPOINT="/cors-proxy""#,
-            r#"CORS_PROXY_ENDPOINT="/chat/cors-proxy""#,
-        );
-
-        plain_content =
-            plain_content.replace("./v1/chat/completions", "./api/1/v1/chat/completions");
-
-        plain_content = plain_content.replace(
-            r#"={LIST:"/v1/models",LOAD:"/models/load",UNLOAD:"/models/unload"}"#,
-            r#"={LIST:"/api/1/v1/models",LOAD:"/models/load",UNLOAD:"/models/unload"}"#,
-        );
-        plain_content = plain_content.replace(
-            r#"={LIST:"/tools",EXECUTE:"/tools"}"#,
-            r#"={LIST:"/chat/tools",EXECUTE:"/tools"}"#,
-        );
-        plain_content = plain_content.replace(
-            r#"/_app/"#,
-            r#"/chat/_app/"#,
-        );
-        plain_content = plain_content.replace(
-            r#"favicon.ico"#,
-            r#"chat/favicon.ico"#
-        );
-        plain_content = plain_content.replace(
-            r#"favicon.svg"#,
-            r#"chat/favicon.svg"#
-        );
-        plain_content = plain_content.replace(
-            r#"./apple-"#,
-            r#"./chat/apple/apple-"#
-        );
-        plain_content = plain_content.replace(
-            r#"href="apple-"#,
-            r#"href="chat/apple/apple-"#
-        );
-        plain_content = plain_content.replace(
-            r#"/build.json"#,
-            r#"/chat/build.json"#
-        );
-
-        debug!("processed body");
-
-        trace!("received content: {plain_content}");
-
-        // repack body
-        let data = plain_content.into_bytes();
+        let data: Vec<u8> =
+            ResponsePayload::try_from_body(content_type, content_encoding, bytes)?.process()?;
 
         let buf = Vec::with_capacity(data.len());
         let mut enc = flate2::write::GzEncoder::new(buf, Compression::best());
