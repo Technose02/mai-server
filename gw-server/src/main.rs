@@ -1,4 +1,7 @@
-use crate::{
+use axum::routing::Router;
+use axum_server::tls_rustls::RustlsConfig;
+use gw_server::{
+    application,
     domain::{
         ports::{
             ModelManagerServiceInPort, ModelsServiceInPort, OpenAiRequestForwardPServiceInPort,
@@ -11,9 +14,8 @@ use crate::{
     infrastructure::adapter::{
         LlamaCppControllerAdapter, LocalLlamaCppClientAdapter, StaticModelLoader,
     },
+    model::{ApplicationConfig, SecurityConfig},
 };
-use axum::routing::Router;
-use axum_server::tls_rustls::RustlsConfig;
 use rand::Rng;
 use rustls::pki_types::{IpAddr, Ipv4Addr};
 use std::{
@@ -21,12 +23,12 @@ use std::{
 };
 use tracing::{Level, info};
 
-mod application;
-mod domain;
-mod infrastructure;
+//mod application;
+//mod domain;
+//mod infrastructure;
 
-mod model;
-pub(crate) use model::{ApplicationConfig, SecurityConfig};
+//mod model;
+//pub(crate) use model::{ApplicationConfig, SecurityConfig};
 
 const MAISERVER_LOG_KEY: &str = "MAISERVER_LOG";
 const RANDOM_APIKEY_LEN: u8 = 25;

@@ -1,9 +1,10 @@
 use crate::{
-    ApplicationConfig, SecurityConfig,
     application::{
         middleware::check_auth,
         model::{LlamaCppProcessStateResponse, LlamaCppRunConfigDto},
     },
+    model::ApplicationConfig,
+    model::SecurityConfig,
 };
 use axum::{
     extract::{Json as JsonExtract, State},

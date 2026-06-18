@@ -1,5 +1,4 @@
 use crate::{
-    ApplicationConfig, SecurityConfig,
     application::{
         middleware::check_auth,
         model::{
@@ -7,6 +6,8 @@ use crate::{
             try_map_request_body_to_create_embedding_request,
         },
     },
+    model::ApplicationConfig,
+    model::SecurityConfig,
 };
 use async_openai::types::chat::{
     ChatCompletionRequestMessage, ChatCompletionRequestUserMessage,
@@ -36,19 +37,25 @@ pub fn create_router(
         )
         .route("/api/v1/models", get(get_models))
         .route("/chat", get(chat_handler))
+        .route("/manifest.webmanifest", get(chat_handler_assets))
         .route("/chat/bundle.css", get(chat_handler_assets))
         .route("/chat/bundle.js", get(chat_handler_assets))
         .route("/chat/_app/{*path}", get(chat_handler_assets))
-        .route("/chat/favicon.ico",get(chat_handler_assets))
-        .route("/chat/favicon.svg",get(chat_handler_assets))
-        .route("/chat/apple/{*path}",get(chat_handler_assets))
+        .route("/chat/favicon.ico", get(chat_handler_assets))
+        .route("/chat/favicon.svg", get(chat_handler_assets))
+        .route("/chat/apple/{*path}", get(chat_handler_assets))
+        .route("/chat/build.json", get(chat_handler_assets))
+        .route("/chat/pwa-64x64.png", get(chat_handler_assets))
+        .route("/chat/maskable-icon-512x512.png", get(chat_handler_assets))
+        .route("/chat/pwa-512x512.png", get(chat_handler_assets))
+        .route("/chat/pwa-192x192.png", get(chat_handler_assets))
+        .route("/sw.js", get(chat_handler_assets))
         .route("/chat/cors-proxy", head(chat_handler_assets));
 
     let secured = Router::new()
         // CHAT
         .route("/chat/props", get(chat_handler_assets))
         .route("/chat/tools", get(chat_handler_assets))
-        .route("/chat/build.json", get(chat_handler_assets))
         // API
         //   CHAT-COMPLETIONS
         .route(

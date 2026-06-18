@@ -7,7 +7,7 @@ pub trait SecurityConfig: Send + Sync + 'static {
     fn get_apikey(&self) -> Option<Cow<'_, str>>;
 }
 
-pub(crate) trait ApplicationConfig: Send + Sync + 'static {
+pub trait ApplicationConfig: Send + Sync + 'static {
     fn openai_chat_completions_service(&self) -> Arc<dyn OpenAiRequestForwardPServiceInPort>;
     fn openai_embeddings_service(&self) -> Arc<dyn OpenAiRequestForwardPServiceInPort>;
     fn languagemodelmanager_service(&self) -> Arc<dyn ModelManagerServiceInPort>;

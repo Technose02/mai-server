@@ -1,4 +1,4 @@
-use crate::{SecurityConfig, domain::ports::ModelLoaderOutPort};
+use crate::{domain::ports::ModelLoaderOutPort, model::SecurityConfig};
 use async_trait::async_trait;
 use inference_backends::LlamaCppConfigArgs;
 use staticmodelconfig::{ContextSizeAwareAlias, ModelConfiguration};
