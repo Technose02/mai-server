@@ -130,6 +130,7 @@ impl LocalLlamaCppClientAdapter {
                 "/chat/tools" => "/tools",
                 "/chat/props" => "/props",
                 "/chat/build.json" => "/build.json",
+                "/sw.js" => "/sw.js",
                 s if s.starts_with("/chat/props?")
                     || s.starts_with("/chat/_app")
                     || s.starts_with("/chat/bundle.css?")
