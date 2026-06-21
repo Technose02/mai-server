@@ -31,4 +31,5 @@ async-stream = "0.3.6"
 [dev-dependencies]
 base64 = "0.22.1"
 dotenv = "0.15.0"
-rig-core = "0.32.0"
+image = "0.25.10"
+rig-core = "0.39.0"

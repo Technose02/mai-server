@@ -1,5 +1,5 @@
 use axum::http::Method;
-use rig::http_client::ReqwestClient;
+use rig_core::http_client::ReqwestClient;
 use serde_json::json;
 
 const BASE_URL: &str = "https://mai-server.ipv64.net:8080";
@@ -10,7 +10,6 @@ async fn main() {
         dotenv::dotenv().ok();
         std::env::var("MAI_SERVER_APIKEY").unwrap()
     };
-
 
     let client = ReqwestClient::new();
     let r = client.request(Method::PUT, format!("{BASE_URL}/admin/llamacpp/llm"))

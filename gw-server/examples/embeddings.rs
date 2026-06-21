@@ -1,5 +1,5 @@
 use dotenv;
-use rig::{client::EmbeddingsClient, embeddings::EmbeddingModel};
+use rig_core::{client::EmbeddingsClient, embeddings::EmbeddingModel};
 use tracing::info;
 
 const MAI_SERVER_APIKEY: &str = "MAI_SERVER_APIKEY";
@@ -12,7 +12,7 @@ async fn main() {
     let apikey = std::env::var(MAI_SERVER_APIKEY)
         .unwrap_or_else(|_| panic!("env-var {MAI_SERVER_APIKEY} not set"));
 
-    let client = rig::providers::openai::Client::builder()
+    let client = rig_core::providers::openai::Client::builder()
         .base_url("https://mai-server.ipv64.net:8080/api/v1")
         .api_key(apikey)
         .build()
