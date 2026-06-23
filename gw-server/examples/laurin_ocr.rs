@@ -1,6 +1,5 @@
-use std::{io::Write, path::PathBuf};
+use std::{fs::{read_to_string,create_dir_all}, io::Write, path::PathBuf};
 
-//use axum::extract::ws::Message;
 use base64::{Engine, prelude::BASE64_STANDARD};
 use dotenv;
 use futures::StreamExt;
@@ -19,11 +18,57 @@ use tracing::info;
 
 const MAI_SERVER_APIKEY: &str = "MAI_SERVER_APIKEY";
 const SCANNED_PAGES_DIR: &str = "/data0/dev/python/laurins-geheimnis-md/data/images";
-const OUT_DIR: &str = "/home/technose02/Documents/laurin_ocr_out/take2";
+const OUT_DIR: &str = "/home/technose02/Documents/laurin_ocr_out/take3";
 const SEED: u64 = 2;
+const CONTINUE: bool = true;
 
 //const MODEL: &str = "qwen3.6-27b-agentic-coding-no-reasoning-60000";
 const MODEL: &str = "qwen3.6-27b-mtp-ud-q8-k-xl-non-thinking-reasoning-200000";
+
+struct PathUtil(u16);
+impl PathUtil {
+    fn path_to_src_image(&self) -> PathBuf {
+        PathBuf::from(SCANNED_PAGES_DIR).join(format!("laurin_{:03}.png", self.0))
+    }
+
+    fn path_to_dest_doc(&self) -> PathBuf {
+        PathBuf::from(OUT_DIR).join(&format!("page_{:03}.md", self.0))
+    }
+
+    fn create_outdir() {
+        create_dir_all(Self::outdir()).unwrap_or_else(|e| panic!("could not create dir(s) '{}': {e}", Self::outdir().to_string_lossy()));
+    }
+
+    fn outdir() -> PathBuf {
+        PathBuf::from(OUT_DIR)
+    }
+
+    fn path_to_all_pages_md() -> PathBuf {
+        Self::outdir().join("all_pages.md")
+    }
+}
+
+struct AllMd(String);
+impl AllMd {
+    fn new() -> Self {
+        Self(String::new())
+    }
+
+    fn append(&mut self, content: impl AsRef<str>) -> &mut Self {
+        if !self.0.is_empty() {
+            self.0.push_str("\n\n---\n\n");
+        }
+        self.0.push_str(content.as_ref());
+        self
+    }
+
+    async fn persist(&self) -> &Self {
+        tokio::fs::write(PathUtil::path_to_all_pages_md(), &self.0)
+            .await
+            .unwrap_or_else(|e| panic!("error updating 'all_pages.md': {e}"));
+        self
+    }
+}
 
 #[tokio::main]
 async fn main() {
@@ -70,26 +115,53 @@ Antworte ausschließlich mit dem generierten Text."#,
         }))
         .build();
 
-    let mut idx = 1_u16;
-    let laurin_ocr_out = std::path::PathBuf::from(OUT_DIR);
-    if let Err(e) = std::fs::create_dir_all(&laurin_ocr_out) {
-        panic!("could not create dir(s) '{:#?}': {e}", &laurin_ocr_out)
-    }
+    // Verzeichnisstruktur für die konvertiereten Seiten erstellen
+    PathUtil::create_outdir();
 
-    let mut markdown_content = String::new();
-    let mut content_previous_page = Option::None;
+    // Initialisierung
+    let (mut idx, mut content_previous_page, mut all_md) = {
+        if CONTINUE {
+            let mut all_md = AllMd::new();
+            {
+                let mut idx_of_last_existing_doc = 0_u16;
+                let mut content_previous_page = Option::None;
+                while PathUtil(idx_of_last_existing_doc + 1)
+                    .path_to_dest_doc()
+                    .is_file()
+                {
+                    let path_to_last_existing_doc =
+                        PathUtil(idx_of_last_existing_doc + 1).path_to_dest_doc();
+                    let content_previous_page_inner = read_to_string(&path_to_last_existing_doc)
+                        .unwrap_or_else(|e| {
+                            format!(
+                                "Error reading '{}': '{e}'",
+                                path_to_last_existing_doc.to_string_lossy()
+                            )
+                        });
+                    all_md.append(&content_previous_page_inner);
+                    content_previous_page = Some(content_previous_page_inner);
+                    idx_of_last_existing_doc += 1;
+                }
+                all_md.persist().await;
+                (idx_of_last_existing_doc + 1, content_previous_page, all_md)
+            }
+        } else {
+            (1_u16, Option::None, AllMd::new())
+        }
+    };
+
+    // Forlaufende Konvertierung der gescannten Seiten
     loop {
-        if let Some((image, path)) = load_image(idx as usize) {
+        if let Some((image, path)) = load_image(idx) {
             info!("analyzing image {path:#?}...");
 
             let mut usercontent = if let Some(content_previous_page) = content_previous_page {
                 OneOrMany::one(UserContent::text(format!(
                     r#"Dies ist der Text der vorherigen Seite:
-    <TEXT_VORHERIGE_SEITE>
-    {content_previous_page}
-    </TEXT_VORHERIGE_SEITE>
-    Die nächste Seite ist als Bild angefügt. Generiere nun den Text der nächsten Seite.
-    "#
+<TEXT_VORHERIGE_SEITE>
+{content_previous_page}
+</TEXT_VORHERIGE_SEITE>
+Die nächste Seite ist als Bild angefügt. Generiere nun den Text der nächsten Seite."#
                 )))
             } else {
                 OneOrMany::one(UserContent::text(
@@ -118,44 +190,23 @@ Antworte ausschließlich mit dem generierten Text."#,
             }
 
             if let Some(final_response) = final_response {
-                markdown_content.push_str("\n\n---\n\n");
-                markdown_content.push_str(final_response.response());
+                all_md.append(final_response.response());
 
                 content_previous_page = Some(final_response.response().to_string());
 
                 info!("\twriting output to {path:#?}...");
 
-                tokio::fs::write(laurin_ocr_out.join("all_pages.md"), &markdown_content)
-                    .await
-                    .unwrap_or_else(|e| panic!("error updating 'all_pages.md': {e}"));
+                all_md.persist().await;
 
-                tokio::fs::write(
-                    laurin_ocr_out.join(&format!("page_{:03}.md", idx)),
-                    final_response.response(),
-                )
-                .await
-                .unwrap_or_else(|e| panic!("error writing output as md-file: {e}"));
+                tokio::fs::write(PathUtil(idx).path_to_dest_doc(), final_response.response())
+                    .await
+                    .unwrap_or_else(|e| panic!("error writing output as md-file: {e}"));
                 idx += 1;
                 info!("\tdone");
                 continue;
             } else {
-                panic!("no final response received!");
+                panic!("no 'final response' received!");
             }
-
-            //match agent.prompt(image).await {
-            //    Ok(res) => {
-            //        info!("\twriting output to {path:#?}...");
-            //        tokio::fs::write(laurin_ocr_out.join(&format!("page_{:03}.md", idx)), res)
-            //            .await
-            //            .unwrap_or_else(|e| panic!("error writing output as md-file: {e}"));
-            //        idx += 1;
-            //        info!("\tdone");
-            //        continue;
-            //    }
-            //    Err(e) => {
-            //        panic!("{e}")
-            //    }
-            //}
         }
         break;
     }
@@ -163,8 +214,8 @@ Antworte ausschließlich mit dem generierten Text."#,
     info!("all done");
 }
 
-fn load_image(idx: usize) -> Option<(Image, PathBuf)> {
-    let src = std::path::PathBuf::from(SCANNED_PAGES_DIR).join(format!("laurin_{idx:03}.png"));
+fn load_image(idx: u16) -> Option<(Image, PathBuf)> {
+    let src = PathUtil(idx).path_to_src_image();
     if src.exists() && src.is_file() {
         let mut img = image::ImageReader::open(&src)
             .unwrap()
