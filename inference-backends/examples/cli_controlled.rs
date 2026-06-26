@@ -42,6 +42,7 @@ async fn main() {
             api_key: Some("apikey1".to_string()),
             model_path: "/model_data/huggingface/unsloth/Devstral-Small-2-24B-Instruct-2512-GGUF/Devstral-Small-2-24B-Instruct-2512-UD-Q8_K_XL.gguf".to_string(),
             mmproj_path: Some("/model_data/huggingface/unsloth/Devstral-Small-2-24B-Instruct-2512-GGUF/mmproj-F16.gguf".to_string()),
+            model_draft: None,
             prio: Some(3),
             min_p: Some(0.01),
             n_gpu_layers: Some(99),
@@ -88,6 +89,7 @@ async fn main() {
             model_path: "/model_data/huggingface/unsloth/gpt-oss-120b-GGUF/Q8_0/gpt-oss-120b-Q8_0-00001-of-00002.gguf"
                 .to_string(),
             mmproj_path: None,
+            model_draft: None,
             prio: None,
             min_p: None,
             n_gpu_layers: Some(99),
