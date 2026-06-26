@@ -24,6 +24,9 @@ pub struct ModelConfiguration {
     pub mmproj_path: Option<String>,
 
     #[serde(skip_serializing_if = "Option::is_none", default = "Option::default")]
+    pub model_draft: Option<String>,
+
+    #[serde(skip_serializing_if = "Option::is_none", default = "Option::default")]
     pub prio: Option<u8>,
     #[serde(skip_serializing_if = "Option::is_none", default = "Option::default")]
     pub n_gpu_layers: Option<i16>,

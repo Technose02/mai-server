@@ -58,6 +58,8 @@ pub struct LlamaCppRunConfigDto {
 
     #[serde(skip_serializing_if = "Option::is_none", default = "Option::default")]
     pub mmproj_path: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none", default = "Option::default")]
+    pub model_draft: Option<String>,
 
     #[serde(skip_serializing_if = "Option::is_none", default = "Option::default")]
     pub prio: Option<u8>,
@@ -176,6 +178,7 @@ impl LlamaCppRunConfigDto {
                 ctx_size: self.ctx_size,
                 model_path: self.model_path.clone(),
                 mmproj_path: self.mmproj_path.clone(),
+                model_draft: self.model_draft.clone(),
                 prio: self.prio,
                 min_p: self.min_p,
                 n_gpu_layers: self.n_gpu_layers,
@@ -217,6 +220,7 @@ impl From<LlamaCppRunConfig> for LlamaCppRunConfigDto {
             batch_size: value.args_handle.batch_size,
             model_path: value.args_handle.model_path.clone(),
             mmproj_path: value.args_handle.mmproj_path.clone(),
+            model_draft:value.args_handle.model_draft.clone(),
             prio: value.args_handle.prio,
             min_p: value.args_handle.min_p,
             threads: Some(value.threads),

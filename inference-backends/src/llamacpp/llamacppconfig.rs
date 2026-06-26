@@ -254,6 +254,7 @@ pub struct LlamaCppConfigArgs {
     pub model_path: String,
 
     pub mmproj_path: Option<String>,
+    pub model_draft: Option<String>,
 
     pub prio: Option<u8>,
     pub n_gpu_layers: Option<i16>,
@@ -306,6 +307,12 @@ impl LlamaCppConfigArgs {
             cmd.arg("--mmproj");
             //cmd.arg(mmproj_path.to_string_lossy().as_ref());
             cmd.arg(mmproj_path.as_str());
+        }
+
+        if let Some(model_draft) = &self.model_draft {
+            cmd.arg("--model-draft");
+            //cmd.arg(mmproj_path.to_string_lossy().as_ref());
+            cmd.arg(model_draft.as_str());
         }
 
         if let Some(prio) = self.prio {

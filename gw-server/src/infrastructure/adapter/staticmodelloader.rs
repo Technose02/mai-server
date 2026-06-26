@@ -52,6 +52,7 @@ impl ModelLoaderOutPort for StaticModelLoader {
                     .map(|apikey| apikey.to_string()),
                 model_path: model_configuration.model_path.clone(),
                 mmproj_path: model_configuration.mmproj_path.clone(),
+                model_draft: model_configuration.model_draft.clone(),
                 prio: model_configuration.prio,
                 n_gpu_layers: model_configuration.n_gpu_layers,
                 jinja: model_configuration.jinja,
