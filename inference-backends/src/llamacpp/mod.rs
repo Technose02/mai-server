@@ -82,7 +82,7 @@ impl RunBackendProcess for LlamaCppBackend {
             loop {
                 if let Ok(Some(errline)) = errlines.next_line().await {
                     info!("llama-server [stderr]: {errline}");
-                    if errline.contains("server is listening on http") {
+                    if errline.contains("listening on http") {
                         notifier_cloned
                             .send(LlamaCppProtocol::ProcessStarted)
                             .await
