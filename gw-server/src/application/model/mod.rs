@@ -220,7 +220,7 @@ impl From<LlamaCppRunConfig> for LlamaCppRunConfigDto {
             batch_size: value.args_handle.batch_size,
             model_path: value.args_handle.model_path.clone(),
             mmproj_path: value.args_handle.mmproj_path.clone(),
-            model_draft:value.args_handle.model_draft.clone(),
+            model_draft: value.args_handle.model_draft.clone(),
             prio: value.args_handle.prio,
             min_p: value.args_handle.min_p,
             threads: Some(value.threads),
