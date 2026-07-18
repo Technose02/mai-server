@@ -1,4 +1,8 @@
-use std::{fs::{read_to_string,create_dir_all}, io::Write, path::PathBuf};
+use std::{
+    fs::{create_dir_all, read_to_string},
+    io::Write,
+    path::PathBuf,
+};
 
 use base64::{Engine, prelude::BASE64_STANDARD};
 use dotenv;
@@ -36,7 +40,12 @@ impl PathUtil {
     }
 
     fn create_outdir() {
-        create_dir_all(Self::outdir()).unwrap_or_else(|e| panic!("could not create dir(s) '{}': {e}", Self::outdir().to_string_lossy()));
+        create_dir_all(Self::outdir()).unwrap_or_else(|e| {
+            panic!(
+                "could not create dir(s) '{}': {e}",
+                Self::outdir().to_string_lossy()
+            )
+        });
     }
 
     fn outdir() -> PathBuf {
