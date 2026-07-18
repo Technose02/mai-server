@@ -1,5 +1,6 @@
 mod comfyui;
 mod llamacpp;
+pub mod stablediffusioncpp;
 
 pub use comfyui::{
     AttnSetting, ComfyUiBackend, ComfyUiBackendController, ComfyUiConfig, ComfyUiConfigArgs,
