@@ -1,90 +1,31 @@
 use inference_backends::stablediffusioncpp::{
-    SamplingMethod, Scheduler, StableDiffusionCppConfig, StableDiffusionEvent, StableDiffusionJob,
-    ZImageTurboJob,
+    FlashAttentionMode, SamplingMethod, Scheduler, StableDiffusionCppConfig, StableDiffusionJob,
+    ZImageTurboJob, helpers::simple_generation,
 };
 use std::path::PathBuf;
 
-// ROCM
 const VALID_PATH_TO_EXECUTABLE: &str =
     "/data0/inference/stable-diffusion.cpp/build-rocm/bin/sd-cli";
+//"/data0/inference/stable-diffusion.cpp/build-vulkan/bin/sd-cli";
 
-// VULKAN
-//const VALID_PATH_TO_EXECUTABLE: &str =
-//    "/data0/inference/stable-diffusion.cpp/build-vulkan/bin/sd-cli";
-
-async fn generate(outfile: &str, width: usize, height: usize, prompt: &str) {
+#[tokio::main]
+async fn main() {
     let path_to_executable: PathBuf = VALID_PATH_TO_EXECUTABLE.into();
     let sdcfg = StableDiffusionCppConfig::init(path_to_executable)
         .unwrap()
         .with_temporary_output_dir("/tmp")
-        .with_flash_attention();
+        .with_flash_attention_mode(FlashAttentionMode::All);
 
-    let mut event_receiver = sdcfg
-        .run(
-            ZImageTurboJob::default()
+    let job = ZImageTurboJob::default()
                 .with_steps(8)
                 .with_cfg_scale(1.0)
                 .with_guidance(3.5)
                 .with_offload_to_cpu(false)
                 .with_scheduler(Scheduler::Simple)
                 .with_sampling_method(SamplingMethod::Euler)
-                .with_width(width)
-                .with_height(height)
-                .with_prompt(prompt),
-        )
-        .await
-        .unwrap();
-
-    while let Some(event) = event_receiver.recv().await {
-        match event {
-            StableDiffusionEvent::GenerationStarted {
-                seed,
-                started_at: _,
-            } => {
-                println!("generation job started with seed {seed}");
-            }
-            StableDiffusionEvent::Progress {
-                step,
-                nsteps,
-                duration,
-            } => {
-                println!(
-                    "still generating (step {step} of {nsteps} completed, {}ms elapsed)",
-                    duration.as_millis()
-                )
-            }
-            StableDiffusionEvent::Error(e) => {
-                panic!("generation failed with an error: {e}");
-            }
-            StableDiffusionEvent::GenerationFinished {
-                boxed_data,
-                duration,
-            } => {
-                tokio::fs::write(format!("{outfile}.png"), *boxed_data)
-                    .await
-                    .unwrap();
-                println!(
-                    "generation job finished successfully after {} (see '{outfile}.png')",
-                    (chrono::NaiveTime::from_hms_opt(0, 0, 0).unwrap() + duration)
-                        .format("%H:%M:%S")
-                );
-                break;
-            }
-
-            // ignore other output for now
-            StableDiffusionEvent::StdErrLine(_) | StableDiffusionEvent::StdOutLine(_) => {}
-        }
-    }
-}
-
-#[tokio::main]
-async fn main() {
-    for outfile in (0..=10).map(|n| format!("zimage_turbo_1_{:02}", n)) {
-        generate(
-            &outfile,
-            1024,
-            1024,
-            r#"
+                .with_width(1024)
+                .with_height(1024)
+                .with_prompt(r#"
 Professional 3D character design sheet of an adorable, fluffy baby owl in Disney Pixar art style.
 The character, Uli, features extremely soft, voluminous light-brown taupe fur with messy, cute tufts
 on top of his head, large expressive glistening dark eyes, and small dark brown rounded feet.
@@ -93,8 +34,9 @@ The image consists of four orthographic views: full front view, profile side vie
 charming three-quarter view. High-resolution 8k render, cinematic character design, subsurface scattering
 on fur, intricate knit texture on the scarf. Set against a solid, plain white background with no shadows,
 no reflections, and no backdrop, completely isolated.
-"#
-        )
-        .await
+"#);
+
+    for outfile in (0..=100).map(|n| format!("zimage_turbo_1_{:02}", n)) {
+        simple_generation(&sdcfg, &job, outfile).await.unwrap()
     }
 }

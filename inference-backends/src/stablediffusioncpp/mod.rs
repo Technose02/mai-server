@@ -1,17 +1,13 @@
 mod stablediffusionconfig;
-pub use stablediffusionconfig::{StableDiffusionCppConfig, StableDiffusionEvent};
+pub use stablediffusionconfig::{
+    FlashAttentionMode, StableDiffusionCppConfig, StableDiffusionEvent,
+};
 
 mod stablediffusionjob;
+pub use stablediffusionjob::templates::{AnimaTurboJob, Krea2TurboJob, ZImageJob, ZImageTurboJob};
 pub use stablediffusionjob::{SamplingMethod, Scheduler, StableDiffusionJob};
 
-mod krea2turbo;
-pub use krea2turbo::Krea2TurboJob;
-mod animaturbo;
-pub use animaturbo::AnimaTurboJob;
-mod zimage;
-pub use zimage::ZImageJob;
-mod zimageturbo;
-pub use zimageturbo::ZImageTurboJob;
+pub mod helpers;
 
 #[derive(Debug)]
 pub enum StableDiffusionError {
@@ -27,3 +23,5 @@ impl std::fmt::Display for StableDiffusionError {
 }
 
 impl core::error::Error for StableDiffusionError {}
+
+pub type StableDiffusionResult<T> = core::result::Result<T, StableDiffusionError>;

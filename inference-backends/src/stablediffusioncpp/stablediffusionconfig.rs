@@ -9,7 +9,14 @@ use tokio::{
 pub struct StableDiffusionCppConfig {
     path_to_executable: PathBuf,
     temporary_output_dir: Option<PathBuf>,
-    use_flash_attention: bool,
+    flash_attention_mode: FlashAttentionMode,
+}
+
+#[derive(Clone, Copy, Debug)]
+pub enum FlashAttentionMode {
+    All,
+    DiffusionOnly,
+    None,
 }
 
 pub enum StableDiffusionEvent {
@@ -54,7 +61,7 @@ impl StableDiffusionCppConfig {
                 Ok(StableDiffusionCppConfig {
                     path_to_executable,
                     temporary_output_dir: None,
-                    use_flash_attention: false,
+                    flash_attention_mode: FlashAttentionMode::None,
                 })
             } else {
                 Err(StableDiffusionError::Custom(
@@ -69,14 +76,14 @@ impl StableDiffusionCppConfig {
         self
     }
 
-    pub fn with_flash_attention(mut self) -> Self {
-        self.use_flash_attention = true;
+    pub fn with_flash_attention_mode(mut self, flash_attention_mode: FlashAttentionMode) -> Self {
+        self.flash_attention_mode = flash_attention_mode;
         self
     }
 
-    pub async fn run(
+    pub fn run<J: StableDiffusionJob>(
         &self,
-        job: impl StableDiffusionJob,
+        job: &J,
         //        event_sender: mpsc::Sender<StableDiffusionEvent>,
     ) -> Result<Receiver<StableDiffusionEvent>, StableDiffusionError> {
         let mut cmd = tokio::process::Command::new(&self.path_to_executable);
@@ -116,8 +123,14 @@ impl StableDiffusionCppConfig {
         cmd.stdout(std::process::Stdio::piped());
         cmd.stderr(std::process::Stdio::piped());
 
-        if self.use_flash_attention {
-            cmd.arg("--diffusion-fa");
+        match self.flash_attention_mode {
+            FlashAttentionMode::All => {
+                cmd.arg("--fa");
+            }
+            FlashAttentionMode::DiffusionOnly => {
+                cmd.arg("--diffusion-fa");
+            }
+            _ => {}
         }
 
         if job.vae_tiling() {
@@ -132,16 +145,6 @@ impl StableDiffusionCppConfig {
 
         let mut child = cmd.spawn().expect("failed to spawn sd-cli process");
         let started_at = Instant::now();
-
-        if let Err(e) = event_sender
-            .send(StableDiffusionEvent::GenerationStarted { seed, started_at })
-            .await
-        {
-            eprintln!(
-                "error sending StableDiffusionEvent::GenerationStarted: {}",
-                e
-            );
-        }
 
         let mut out_reader = BufReader::new(child.stdout.take().unwrap());
         let mut err_reader = BufReader::new(child.stderr.take().unwrap());
@@ -258,6 +261,16 @@ impl StableDiffusionCppConfig {
 
         // Task Warten auf Fertigstellung
         tokio::spawn(async move {
+            if let Err(e) = event_sender
+                .send(StableDiffusionEvent::GenerationStarted { seed, started_at })
+                .await
+            {
+                eprintln!(
+                    "error sending StableDiffusionEvent::GenerationStarted: {}",
+                    e
+                );
+            }
+
             match child.wait().await {
                 Ok(status) => {
                     if status.success() {
@@ -365,18 +378,15 @@ mod test {
         let sdcfg = StableDiffusionCppConfig::init(path_to_executable)
             .unwrap()
             .with_temporary_output_dir("/tmp")
-            .with_flash_attention();
+            .with_flash_attention_mode(FlashAttentionMode::All);
 
-        let mut event_receiver = sdcfg
-            .run(
-                crate::stablediffusioncpp::Krea2TurboJob::default()
-                    .with_width(1280)
-                    .with_height(720)
-                    .with_steps(12)
-                    .with_prompt("a cute little owl drinking coffee"),
-            )
-            .await
-            .unwrap();
+        let job = crate::stablediffusioncpp::Krea2TurboJob::default()
+            .with_width(1280)
+            .with_height(720)
+            .with_steps(12)
+            .with_prompt("a cute little owl drinking coffee");
+
+        let mut event_receiver = sdcfg.run(&job).unwrap();
 
         while let Some(event) = event_receiver.recv().await {
             match event {
