@@ -21,7 +21,7 @@ impl Default for Krea2TurboJob {
             seed: None,
             scheduler:Scheduler::Simple,
             sampling_method: SamplingMethod::Euler,
-            prompt: "A Logo in white on black background saying 'Krea2TurboJob' in capitals using a classic computer terminal font. Text is centered horizontally and vertically".into()
+            prompt: "A Logo in white on black background saying 'Krea2 Turbo' in capitals using a classic computer terminal font. Text is centered horizontally and vertically".into()
         })
     }
 }
