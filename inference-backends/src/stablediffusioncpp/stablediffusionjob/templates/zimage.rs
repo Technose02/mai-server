@@ -1,6 +1,6 @@
 use crate::stablediffusioncpp::{
     SamplingMethod, Scheduler, StableDiffusionJob,
-    stablediffusionjob::{HasBaseJob, JobBase},
+    stablediffusionjob::{FlashAttentionMode, HasBaseJob, JobBase},
 };
 
 pub struct ZImageJob(JobBase);
@@ -17,11 +17,12 @@ impl Default for ZImageJob {
             cfg_scale: 7.0,
             guidance: 3.5,
             vae_tiling: false,
+            flash_attention_mode: FlashAttentionMode::None,
             offload_to_cpu: true,
             seed: None,
             scheduler: Scheduler::Simple,
             sampling_method: SamplingMethod::Euler,
-            prompt: "A Logo in white on black background saying 'Z-Image' in capitals using a classic computer terminal font. Text is centered horizontally and vertically".into()
+            prompt: "A Logo in white on black background saying 'Z Image' in capitals using a classic computer terminal font. Text is centered horizontally and vertically".into()
         })
     }
 }

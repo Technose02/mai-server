@@ -1,11 +1,14 @@
 use std::path::Path;
 
+mod flashattentionmode;
+pub use flashattentionmode::FlashAttentionMode;
 mod scheduler;
 pub use scheduler::Scheduler;
 mod samplingmethod;
 pub use samplingmethod::SamplingMethod;
 mod jobbase;
 pub(super) use jobbase::{HasBaseJob, JobBase};
+
 pub mod templates;
 
 pub trait StableDiffusionJob: HasBaseJob {
@@ -74,6 +77,14 @@ pub trait StableDiffusionJob: HasBaseJob {
     }
     fn with_vae_tiling(mut self, vae_tiling: bool) -> Self {
         self.base_mut().vae_tiling = vae_tiling;
+        self
+    }
+
+    fn flash_attention_mode(&self) -> FlashAttentionMode {
+        self.base().flash_attention_mode
+    }
+    fn with_flash_attention_mode(mut self, flash_attention_mode: FlashAttentionMode) -> Self {
+        self.base_mut().flash_attention_mode = flash_attention_mode;
         self
     }
 

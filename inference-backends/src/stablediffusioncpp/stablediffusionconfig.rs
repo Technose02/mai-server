@@ -1,5 +1,10 @@
-use crate::stablediffusioncpp::{StableDiffusionError, StableDiffusionJob};
-use std::{path::PathBuf, time::Duration};
+use crate::stablediffusioncpp::{
+    FlashAttentionMode, StableDiffusionError, StableDiffusionJob, StableDiffusionResult,
+};
+use std::{
+    path::{Path, PathBuf},
+    time::Duration,
+};
 use tokio::{
     io::{AsyncReadExt, BufReader},
     sync::mpsc::{Receiver, channel},
@@ -8,15 +13,7 @@ use tokio::{
 
 pub struct StableDiffusionCppConfig {
     path_to_executable: PathBuf,
-    temporary_output_dir: Option<PathBuf>,
-    flash_attention_mode: FlashAttentionMode,
-}
-
-#[derive(Clone, Copy, Debug)]
-pub enum FlashAttentionMode {
-    All,
-    DiffusionOnly,
-    None,
+    temp_dir: Option<PathBuf>,
 }
 
 pub enum StableDiffusionEvent {
@@ -39,17 +36,14 @@ pub enum StableDiffusionEvent {
 }
 
 impl StableDiffusionCppConfig {
-    pub fn init(
-        path_to_executable: impl Into<PathBuf>,
-    ) -> core::result::Result<StableDiffusionCppConfig, StableDiffusionError> {
-        let path_to_executable = path_to_executable.into();
+    fn validate_path_to_executable(path_to_executable: &Path) -> StableDiffusionResult<()> {
         if !path_to_executable.is_file() {
             Err(StableDiffusionError::Custom(
                 "invalid path to stablediffusion.cpp executable".to_string(),
             ))
         } else {
             //stable-diffusion.cpp version
-            let mut cmd = std::process::Command::new(&path_to_executable);
+            let mut cmd = std::process::Command::new(path_to_executable);
             cmd.arg("--version");
             let output = cmd.output().map_err(|e| {
                 StableDiffusionError::Custom(format!("Error running stablediffusion.cpp: {e}"))
@@ -58,11 +52,7 @@ impl StableDiffusionCppConfig {
                 .stdout
                 .starts_with("stable-diffusion.cpp version".as_bytes())
             {
-                Ok(StableDiffusionCppConfig {
-                    path_to_executable,
-                    temporary_output_dir: None,
-                    flash_attention_mode: FlashAttentionMode::None,
-                })
+                Ok(())
             } else {
                 Err(StableDiffusionError::Custom(
                     "this is not stablediffusion.cpp".to_string(),
@@ -71,14 +61,35 @@ impl StableDiffusionCppConfig {
         }
     }
 
-    pub fn with_temporary_output_dir(mut self, temporary_output_dir: impl Into<PathBuf>) -> Self {
-        self.temporary_output_dir = Some(temporary_output_dir.into());
-        self
+    fn validate_temp_dir(temp_dir: &Path) -> StableDiffusionResult<()> {
+        if temp_dir.is_dir() {
+            Ok(())
+        } else {
+            Err(StableDiffusionError::Custom(format!(
+                "directory '{temp_dir:#?}' does not exist"
+            )))
+        }
     }
 
-    pub fn with_flash_attention_mode(mut self, flash_attention_mode: FlashAttentionMode) -> Self {
-        self.flash_attention_mode = flash_attention_mode;
-        self
+    pub fn init_locally(path_to_executable: impl Into<PathBuf>) -> StableDiffusionResult<Self> {
+        let path_to_executable = path_to_executable.into();
+        Self::validate_path_to_executable(&path_to_executable)?;
+
+        Ok(StableDiffusionCppConfig {
+            path_to_executable,
+            temp_dir: None,
+        })
+    }
+
+    pub fn init_with_temp_dir(
+        path_to_executable: impl Into<PathBuf>,
+        temp_dir: impl Into<PathBuf>,
+    ) -> StableDiffusionResult<Self> {
+        let mut s = Self::init_locally(path_to_executable)?;
+        let temp_dir = temp_dir.into();
+        Self::validate_temp_dir(&temp_dir)?;
+        s.temp_dir = Some(temp_dir);
+        Ok(s)
     }
 
     pub fn run<J: StableDiffusionJob>(
@@ -93,7 +104,7 @@ impl StableDiffusionCppConfig {
         let seed = job.seed().unwrap_or(rand::random::<u32>());
 
         let tmp_output = "sd_temp_out.png";
-        let output_dir = if let Some(output_dir) = &self.temporary_output_dir {
+        let output_dir = if let Some(output_dir) = &self.temp_dir {
             output_dir.clone()
         } else {
             std::env::current_dir().map_err(|e| {
@@ -123,8 +134,8 @@ impl StableDiffusionCppConfig {
         cmd.stdout(std::process::Stdio::piped());
         cmd.stderr(std::process::Stdio::piped());
 
-        match self.flash_attention_mode {
-            FlashAttentionMode::All => {
+        match job.flash_attention_mode() {
+            FlashAttentionMode::Full => {
                 cmd.arg("--fa");
             }
             FlashAttentionMode::DiffusionOnly => {
@@ -369,21 +380,20 @@ mod test {
     #[test]
     fn init_stable_diffusion_cpp_config_with_valid_path_works() {
         let path_to_executable: PathBuf = VALID_PATH_TO_EXECUTABLE.into();
-        assert!(StableDiffusionCppConfig::init(path_to_executable).is_ok())
+        assert!(StableDiffusionCppConfig::init_locally(path_to_executable).is_ok())
     }
 
     #[tokio::test]
     pub async fn run_krea2_job_works() {
         let path_to_executable: PathBuf = VALID_PATH_TO_EXECUTABLE.into();
-        let sdcfg = StableDiffusionCppConfig::init(path_to_executable)
-            .unwrap()
-            .with_temporary_output_dir("/tmp")
-            .with_flash_attention_mode(FlashAttentionMode::All);
+        let sdcfg =
+            StableDiffusionCppConfig::init_with_temp_dir(path_to_executable, "/tmp").unwrap();
 
         let job = crate::stablediffusioncpp::Krea2TurboJob::default()
             .with_width(1280)
             .with_height(720)
             .with_steps(12)
+            .with_flash_attention_mode(FlashAttentionMode::Full)
             .with_prompt("a cute little owl drinking coffee");
 
         let mut event_receiver = sdcfg.run(&job).unwrap();

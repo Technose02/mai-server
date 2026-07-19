@@ -1,6 +1,6 @@
 use crate::stablediffusioncpp::{
     SamplingMethod, Scheduler, StableDiffusionJob,
-    stablediffusionjob::{HasBaseJob, JobBase},
+    stablediffusionjob::{FlashAttentionMode, HasBaseJob, JobBase},
 };
 
 pub struct ZImageTurboJob(JobBase);
@@ -17,6 +17,7 @@ impl Default for ZImageTurboJob {
             cfg_scale: 1.0,
             guidance: 3.5,
             vae_tiling: false,
+            flash_attention_mode: FlashAttentionMode::None,
             offload_to_cpu: true,
             seed: None,
             scheduler:Scheduler::Simple,

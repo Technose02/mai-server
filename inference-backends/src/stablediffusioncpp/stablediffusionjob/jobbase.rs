@@ -1,4 +1,4 @@
-use crate::stablediffusioncpp::{SamplingMethod, Scheduler};
+use crate::stablediffusioncpp::{FlashAttentionMode, SamplingMethod, Scheduler};
 use std::path::PathBuf;
 
 pub struct JobBase {
@@ -12,6 +12,7 @@ pub struct JobBase {
     pub guidance: f32,
     pub vae_tiling: bool,
     pub offload_to_cpu: bool,
+    pub flash_attention_mode: FlashAttentionMode,
     pub seed: Option<u32>,
     pub steps: usize,
     pub scheduler: Scheduler,

@@ -2,7 +2,6 @@ use inference_backends::stablediffusioncpp::{
     FlashAttentionMode, SamplingMethod, Scheduler, StableDiffusionCppConfig, StableDiffusionJob,
     ZImageTurboJob, helpers::simple_generation,
 };
-use std::path::PathBuf;
 
 const VALID_PATH_TO_EXECUTABLE: &str =
     "/data0/inference/stable-diffusion.cpp/build-rocm/bin/sd-cli";
@@ -10,17 +9,12 @@ const VALID_PATH_TO_EXECUTABLE: &str =
 
 #[tokio::main]
 async fn main() {
-    let path_to_executable: PathBuf = VALID_PATH_TO_EXECUTABLE.into();
-    let sdcfg = StableDiffusionCppConfig::init(path_to_executable)
-        .unwrap()
-        .with_temporary_output_dir("/tmp")
-        .with_flash_attention_mode(FlashAttentionMode::All);
-
     let job = ZImageTurboJob::default()
                 .with_steps(8)
                 .with_cfg_scale(1.0)
                 .with_guidance(3.5)
                 .with_offload_to_cpu(false)
+                .with_flash_attention_mode(FlashAttentionMode::Full)
                 .with_scheduler(Scheduler::Simple)
                 .with_sampling_method(SamplingMethod::Euler)
                 .with_width(1024)
@@ -36,6 +30,8 @@ on fur, intricate knit texture on the scarf. Set against a solid, plain white ba
 no reflections, and no backdrop, completely isolated.
 "#);
 
+    let sdcfg =
+        StableDiffusionCppConfig::init_with_temp_dir(VALID_PATH_TO_EXECUTABLE, "/tmp").unwrap();
     for outfile in (0..=100).map(|n| format!("zimage_turbo_1_{:02}", n)) {
         simple_generation(&sdcfg, &job, outfile).await.unwrap()
     }

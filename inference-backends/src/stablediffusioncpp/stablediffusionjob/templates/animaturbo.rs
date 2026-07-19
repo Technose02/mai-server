@@ -1,6 +1,6 @@
 use crate::stablediffusioncpp::{
     SamplingMethod, Scheduler, StableDiffusionJob,
-    stablediffusionjob::{HasBaseJob, JobBase},
+    stablediffusionjob::{FlashAttentionMode, HasBaseJob, JobBase},
 };
 
 pub struct AnimaTurboJob(JobBase);
@@ -17,6 +17,7 @@ impl Default for AnimaTurboJob {
             cfg_scale: 7.0,
             guidance: 3.5,
             vae_tiling: false,
+            flash_attention_mode: FlashAttentionMode::None,
             offload_to_cpu: false,
             seed: None,
             scheduler: Scheduler::Simple,
