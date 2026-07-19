@@ -1,4 +1,4 @@
-use super::{SamplingMethod, Scheduler, StableDiffusionJob};
+use crate::stablediffusioncpp::{SamplingMethod, Scheduler, StableDiffusionJob};
 use std::path::{Path, PathBuf};
 
 pub struct AnimaTurboJob {
