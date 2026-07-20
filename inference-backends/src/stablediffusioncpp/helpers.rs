@@ -6,7 +6,7 @@ use chrono::NaiveTime;
 use std::fmt::Display;
 
 pub async fn simple_generation<J: StableDiffusionJob>(
-    config: &StableDiffusionCppConfig,
+    config: &mut StableDiffusionCppConfig,
     job: &J,
     filename: impl Display,
 ) -> StableDiffusionResult<()> {
@@ -55,6 +55,10 @@ pub async fn simple_generation<J: StableDiffusionJob>(
                         + duration)
                         .format("%H:%M:%S")
                 );
+                break;
+            }
+            StableDiffusionEvent::Killed => {
+                println!("sd-cli process killed");
                 break;
             }
 

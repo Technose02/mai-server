@@ -30,9 +30,9 @@ on fur, intricate knit texture on the scarf. Set against a solid, plain white ba
 no reflections, and no backdrop, completely isolated.
 "#);
 
-    let sdcfg =
+    let mut sdcfg =
         StableDiffusionCppConfig::init_with_temp_dir(VALID_PATH_TO_EXECUTABLE, "/tmp").unwrap();
     for outfile in (0..=100).map(|n| format!("krea2_1_{:02}", n)) {
-        simple_generation(&sdcfg, &job, outfile).await.unwrap()
+        simple_generation(&mut sdcfg, &job, outfile).await.unwrap()
     }
 }

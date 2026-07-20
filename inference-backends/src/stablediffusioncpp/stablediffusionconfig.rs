@@ -7,13 +7,25 @@ use std::{
 };
 use tokio::{
     io::{AsyncReadExt, BufReader},
-    sync::mpsc::{Receiver, channel},
+    sync::{
+        mpsc::{Receiver, channel},
+        oneshot::{
+            Receiver as OneShotReceiver, Sender as OneShotSender, channel as oneshot_channel,
+        },
+    },
     time::Instant,
 };
+
+type ProcessKillerHandle = (
+    OneShotSender<OneShotSender<()>>,
+    OneShotSender<()>,
+    OneShotReceiver<()>,
+);
 
 pub struct StableDiffusionCppConfig {
     path_to_executable: PathBuf,
     temp_dir: Option<PathBuf>,
+    active_process_killer: Option<ProcessKillerHandle>,
 }
 
 pub enum StableDiffusionEvent {
@@ -33,6 +45,7 @@ pub enum StableDiffusionEvent {
         boxed_data: Box<Vec<u8>>,
         duration: Duration,
     },
+    Killed,
 }
 
 impl StableDiffusionCppConfig {
@@ -78,6 +91,7 @@ impl StableDiffusionCppConfig {
         Ok(StableDiffusionCppConfig {
             path_to_executable,
             temp_dir: None,
+            active_process_killer: None,
         })
     }
 
@@ -93,7 +107,7 @@ impl StableDiffusionCppConfig {
     }
 
     pub fn run<J: StableDiffusionJob>(
-        &self,
+        &mut self,
         job: &J,
         //        event_sender: mpsc::Sender<StableDiffusionEvent>,
     ) -> Result<Receiver<StableDiffusionEvent>, StableDiffusionError> {
@@ -153,7 +167,6 @@ impl StableDiffusionCppConfig {
         }
 
         //println!("CMD: {:#?}", cmd);
-
         let mut child = cmd.spawn().expect("failed to spawn sd-cli process");
         let started_at = Instant::now();
 
@@ -270,6 +283,10 @@ impl StableDiffusionCppConfig {
             }
         });
 
+        let (killed_sender, killed_receiver) = oneshot_channel::<()>();
+        let (kill_sender, kill_receiver) = oneshot_channel::<OneShotSender<()>>();
+        self.active_process_killer = Some((kill_sender, killed_sender, killed_receiver));
+
         // Task Warten auf Fertigstellung
         tokio::spawn(async move {
             if let Err(e) = event_sender
@@ -282,8 +299,13 @@ impl StableDiffusionCppConfig {
                 );
             }
 
-            match child.wait().await {
-                Ok(status) => {
+            tokio::select!(
+                Ok(killed_sender) = kill_receiver => {
+                    child.kill().await.expect("failed to kill sd-cli-process");
+                    event_sender.send(StableDiffusionEvent::Killed).await.expect("failed to send Killed-Event");
+                    killed_sender.send(()).expect("failed to send killed-confirmation");
+                },
+                res = child.wait() => {match res {                Ok(status) => {
                     if status.success() {
                         let image_file = output_dir.join(tmp_output);
                         let data = tokio::fs::read(&image_file).await.map_err(|e| {
@@ -354,11 +376,24 @@ impl StableDiffusionCppConfig {
                     {
                         eprintln!("error sending StableDiffusionEvent::Error: {}", e);
                     }
-                }
-            }
+                }}}
+            );
         });
 
         Ok(event_receiver)
+    }
+
+    pub async fn stop(&mut self) {
+        if let Some((kill_sender, killed_sender, killed_receiver)) =
+            self.active_process_killer.take()
+        {
+            kill_sender
+                .send(killed_sender)
+                .expect("failed to send killed_sender");
+            killed_receiver
+                .await
+                .expect("failed to receive killed-confirmation");
+        }
     }
 }
 
@@ -386,7 +421,7 @@ mod test {
     #[tokio::test]
     pub async fn run_krea2_job_works() {
         let path_to_executable: PathBuf = VALID_PATH_TO_EXECUTABLE.into();
-        let sdcfg =
+        let mut sdcfg =
             StableDiffusionCppConfig::init_with_temp_dir(path_to_executable, "/tmp").unwrap();
 
         let job = crate::stablediffusioncpp::Krea2TurboJob::default()
@@ -433,6 +468,10 @@ mod test {
                             .add(chrono::Duration::milliseconds(duration.as_millis() as i64))
                             .format("%H:%M:%S")
                     );
+                    break;
+                }
+                StableDiffusionEvent::Killed => {
+                    println!("sd-cli process killed");
                     break;
                 }
 
