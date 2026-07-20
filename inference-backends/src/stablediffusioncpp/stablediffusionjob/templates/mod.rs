@@ -9,3 +9,6 @@ pub use zimage::ZImageJob;
 
 mod zimageturbo;
 pub use zimageturbo::ZImageTurboJob;
+
+mod flux2klein9b;
+pub use flux2klein9b::Flux2Klein9b;
