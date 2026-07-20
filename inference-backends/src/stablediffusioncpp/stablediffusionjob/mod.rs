@@ -116,9 +116,32 @@ pub trait StableDiffusionJob: HasBaseJob {
     fn sampling_method(&self) -> SamplingMethod {
         self.base().sampling_method
     }
-
     fn with_sampling_method(mut self, sampling_method: SamplingMethod) -> Self {
         self.base_mut().sampling_method = sampling_method;
+        self
+    }
+
+    fn ref_image_1(&self) -> &Option<Vec<u8>> {
+        &self.base().ref_image_1
+    }
+    fn with_ref_image_1(mut self, ref_image_data: Vec<u8>) -> Self {
+        self.base_mut().ref_image_1 = Some(ref_image_data);
+        self
+    }
+
+    fn ref_image_2(&self) -> &Option<Vec<u8>> {
+        &self.base().ref_image_2
+    }
+    fn with_ref_image_2(mut self, ref_image_data: Vec<u8>) -> Self {
+        self.base_mut().ref_image_2 = Some(ref_image_data);
+        self
+    }
+
+    fn ref_image_3(&self) -> &Option<Vec<u8>> {
+        &self.base().ref_image_3
+    }
+    fn with_ref_image_3(mut self, ref_image_data: Vec<u8>) -> Self {
+        self.base_mut().ref_image_3 = Some(ref_image_data);
         self
     }
 }

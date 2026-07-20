@@ -118,8 +118,11 @@ impl StableDiffusionCppConfig {
         let seed = job.seed().unwrap_or(rand::random::<u32>());
 
         let tmp_output = "sd_temp_out.png";
-        let output_dir = if let Some(output_dir) = &self.temp_dir {
-            output_dir.clone()
+        let ref_image_1 = "sd_ref_input_01.png";
+        let ref_image_2 = "sd_ref_input_02.png";
+        let ref_image_3 = "sd_ref_input_03.png";
+        let temp_dir = if let Some(temp_dir) = &self.temp_dir {
+            temp_dir.clone()
         } else {
             std::env::current_dir().map_err(|e| {
                 StableDiffusionError::Custom(format!(
@@ -129,7 +132,7 @@ impl StableDiffusionCppConfig {
             })?
         };
 
-        cmd.current_dir(&output_dir);
+        cmd.current_dir(&temp_dir);
         cmd.arg("--diffusion-model").arg(job.diffusion_model());
         cmd.arg("--llm").arg(job.llm());
         cmd.arg("--vae").arg(job.vae());
@@ -144,6 +147,30 @@ impl StableDiffusionCppConfig {
         cmd.arg("--output").arg(tmp_output);
         cmd.arg("--scheduler").arg(job.scheduler());
         cmd.arg("--sampling-method").arg(job.sampling_method());
+
+        if let Some(ref_image_data) = job.ref_image_1() {
+            let ref_image_path = temp_dir.join(ref_image_1);
+            std::fs::write(&ref_image_path, ref_image_data)
+                .expect("failed writing temporary file '{ref_image_path:#?}'");
+            cmd.arg("--ref-image")
+                .arg(format!("{}", ref_image_path.to_string_lossy()));
+        }
+
+        if let Some(ref_image_data) = job.ref_image_2() {
+            let ref_image_path = temp_dir.join(ref_image_2);
+            std::fs::write(&ref_image_path, ref_image_data)
+                .expect("failed writing temporary file '{ref_image_path:#?}'");
+            cmd.arg("--ref-image")
+                .arg(format!("{}", ref_image_path.to_string_lossy()));
+        }
+
+        if let Some(ref_image_data) = job.ref_image_3() {
+            let ref_image_path = temp_dir.join(ref_image_3);
+            std::fs::write(&ref_image_path, ref_image_data)
+                .expect("failed writing temporary file '{ref_image_path:#?}'");
+            cmd.arg("--ref-image")
+                .arg(format!("{}", ref_image_path.to_string_lossy()));
+        }
 
         cmd.stdout(std::process::Stdio::piped());
         cmd.stderr(std::process::Stdio::piped());
@@ -307,7 +334,7 @@ impl StableDiffusionCppConfig {
                 },
                 res = child.wait() => {match res {                Ok(status) => {
                     if status.success() {
-                        let image_file = output_dir.join(tmp_output);
+                        let image_file = temp_dir.join(tmp_output);
                         let data = tokio::fs::read(&image_file).await.map_err(|e| {
                             StableDiffusionError::Custom(format!(
                                 "unable to read from temp-imagefile '{}': '{e}'",
@@ -386,13 +413,9 @@ impl StableDiffusionCppConfig {
     pub async fn stop(&mut self) {
         if let Some((kill_sender, killed_sender, killed_receiver)) =
             self.active_process_killer.take()
+            && kill_sender.send(killed_sender).is_ok()
         {
-            kill_sender
-                .send(killed_sender)
-                .expect("failed to send killed_sender");
-            killed_receiver
-                .await
-                .expect("failed to receive killed-confirmation");
+            _ = killed_receiver.await;
         }
     }
 }

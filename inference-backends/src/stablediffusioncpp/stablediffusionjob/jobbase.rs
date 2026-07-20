@@ -17,6 +17,9 @@ pub struct JobBase {
     pub steps: usize,
     pub scheduler: Scheduler,
     pub sampling_method: SamplingMethod,
+    pub ref_image_1: Option<Vec<u8>>,
+    pub ref_image_2: Option<Vec<u8>>,
+    pub ref_image_3: Option<Vec<u8>>,
 }
 
 pub trait HasBaseJob: Default {
