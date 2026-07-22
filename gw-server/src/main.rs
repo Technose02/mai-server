@@ -35,7 +35,8 @@ const RANDOM_APIKEY_LEN: u8 = 25;
 const LLAMACPP_LLM_PORT: u16 = 11440;
 const LLAMACPP_LLM_TIMEOUT_SECS: u16 = 60000;
 const LLAMACPP_EMBEDDINGS_PORT: u16 = 11441;
-const LLAMACPP_COMMAND: &str = "./build/bin/llama-server";
+//const LLAMACPP_COMMAND: &str = "./build-vulkan/bin/llama-server";
+const LLAMACPP_COMMAND: &str = "./build-rocm/bin/llama-server";
 const LLAMACPP_EXECDIR: &str = "/data0/inference/llama.cpp/";
 
 struct MyAppState {
