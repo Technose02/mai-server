@@ -28,7 +28,7 @@ async fn main() {
         .with_height(1024)
         .with_prompt(
             r#"
-high quality photo of a boreal owl sitting on a table inside a stylish coffee shop and drinking a cappuchino.
+high quality photo of a boreal owl sitting on a table inside a stylish coffee shop holding a mug of cappuchino with just its wings.
 "#,
         );
 
