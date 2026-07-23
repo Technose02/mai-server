@@ -23,13 +23,6 @@ use std::{
 };
 use tracing::{Level, info};
 
-//mod application;
-//mod domain;
-//mod infrastructure;
-
-//mod model;
-//pub(crate) use model::{ApplicationConfig, SecurityConfig};
-
 const MAISERVER_LOG_KEY: &str = "MAISERVER_LOG";
 const RANDOM_APIKEY_LEN: u8 = 25;
 const LLAMACPP_LLM_PORT: u16 = 11440;
