@@ -28,9 +28,23 @@ const RANDOM_APIKEY_LEN: u8 = 25;
 const LLAMACPP_LLM_PORT: u16 = 11440;
 const LLAMACPP_LLM_TIMEOUT_SECS: u16 = 60000;
 const LLAMACPP_EMBEDDINGS_PORT: u16 = 11441;
-//const LLAMACPP_COMMAND: &str = "./build-vulkan/bin/llama-server";
-const LLAMACPP_COMMAND: &str = "./build-rocm/bin/llama-server";
 const LLAMACPP_EXECDIR: &str = "/data0/inference/llama.cpp/";
+
+#[derive(Default)]
+enum LlamaCppBackend {
+    Vulkan,
+    #[default]
+    RocM
+}
+
+impl LlamaCppBackend {
+    pub fn llamacpp_command(&self) -> &'static str {
+        match self {
+            LlamaCppBackend::RocM => "./build-rocm/bin/llama-server",
+            LlamaCppBackend::Vulkan => "./build-vulkan/bin/llama-server"
+        }
+    }
+}
 
 struct MyAppState {
     openai_chat_completions_service: Arc<dyn OpenAiRequestForwardPServiceInPort>,
@@ -78,6 +92,7 @@ async fn create_app(
     provided_apikey: Option<String>,
     localhost: bool,
     log_request_info: bool,
+    llamacpp_backend: LlamaCppBackend
 ) -> Router {
     let security_config = match provided_apikey {
         None if localhost => Arc::new(MySecurityConfig { apikey: None }),
@@ -113,14 +128,14 @@ async fn create_app(
     let llamacpp_llm_backend_controller = LlamaCppControllerAdapter::create_adapter(
         LLAMACPP_LLM_PORT,
         Some(LLAMACPP_LLM_TIMEOUT_SECS),
-        LLAMACPP_COMMAND,
+        llamacpp_backend.llamacpp_command(),
         LLAMACPP_EXECDIR,
     )
     .await;
     let llamacpp_embeddings_backend_controller = LlamaCppControllerAdapter::create_adapter(
         LLAMACPP_EMBEDDINGS_PORT,
         None,
-        LLAMACPP_COMMAND,
+        llamacpp_backend.llamacpp_command(),
         LLAMACPP_EXECDIR,
     )
     .await;
@@ -215,13 +230,15 @@ async fn main() {
     }
 
     let mut args = std::env::args();
-    let (host, port, tls, provided_api_key, provided_log_request_info, _provided_llama_cpp_chatui) = {
+    let (host, port, tls, provided_api_key, provided_log_request_info, _provided_llama_cpp_chatui, llamacpp_backend) = {
         let mut port = None;
         let mut api_key = None;
         let mut log_request_info = false;
         let mut llama_cpp_chatui = false;
         let mut no_https = false;
         let mut override_host = None;
+        let mut llamacpp_backend = LlamaCppBackend::default();
+
         while let Some(a) = args.next() {
             if port.is_none() && (a == "--port" || a == "-p") {
                 if let Some(port_value) = args.next() {
@@ -273,6 +290,15 @@ async fn main() {
             if a == "--no-https" {
                 no_https = true;
             }
+
+            if a == "--rocm" {
+                llamacpp_backend = LlamaCppBackend::RocM;
+            }
+
+            if a == "--vulkan" {
+                llamacpp_backend = LlamaCppBackend::Vulkan;
+            }
+
         }
         let port = match port {
             Some(p) => p,
@@ -287,6 +313,7 @@ async fn main() {
             api_key,
             log_request_info,
             llama_cpp_chatui,
+            llamacpp_backend
         )
     };
 
@@ -294,6 +321,7 @@ async fn main() {
         provided_api_key,
         host == IpAddr::V4(Ipv4Addr::from([127, 0, 0, 1])),
         provided_log_request_info,
+        llamacpp_backend
     )
     .await;
     let addr = SocketAddr::from((host, port));

@@ -4,7 +4,7 @@ use inference_backends::{
     LlamaCppBackend, LlamaCppBackendController, LlamaCppProcessState, LlamaCppRunConfig,
 };
 use std::sync::Arc;
-use tracing::trace;
+use tracing::{trace,info};
 
 pub struct LlamaCppControllerAdapter {
     llamacpp_controller: LlamaCppBackendController,
@@ -17,14 +17,17 @@ impl LlamaCppControllerAdapter {
         llama_cpp_command: impl Into<String>,
         llama_cpp_execdir: impl Into<String>,
     ) -> Arc<dyn LlamaCppControllerOutPort> {
+        let llama_cpp_command = llama_cpp_command.into();
+        info!("using llama_cpp_command '{}'", llama_cpp_command);
         let llamacpp_controller = LlamaCppBackendController::init_backend(LlamaCppBackend {
             host: "localhost".to_owned(),
             port,
             timeout,
-            llama_cpp_command: llama_cpp_command.into(),
+            llama_cpp_command,
             llama_cpp_execdir: llama_cpp_execdir.into(),
         })
         .await;
+
 
         Arc::new(Self {
             llamacpp_controller,

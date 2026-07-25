@@ -6,4 +6,5 @@ cargo run --release -p gw-server -- \
   --override-host-ip 127.0.0.1 \
   --no-https \
   --api-key $MAI_SERVER_NO_APIKEY \
-  --log-request-info
+  --log-request-info \
+  --rocm
