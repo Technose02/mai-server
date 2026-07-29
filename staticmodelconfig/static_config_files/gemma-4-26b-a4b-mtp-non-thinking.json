@@ -19,12 +19,12 @@
   "batch-size": 512,
   "ubatch-size": 2048,
   "cache-reuse": 64,
+  "spec-type": "draft-mtp",
+  "spec-draft-n-max": 4,
   "temp": 1.0,
   "top-k": 64,
   "top-p": 0.95,
   "jinja": true,
   "mlock": true,
-  "reasoning": "off",
-  "spec-type": "draft-mtp",
-  "spec-draft-n-max": 4
+  "reasoning": "off"
 }

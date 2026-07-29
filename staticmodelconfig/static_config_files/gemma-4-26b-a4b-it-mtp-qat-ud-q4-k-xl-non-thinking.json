@@ -1,5 +1,5 @@
 {
-  "alias": "gemma-4-26b-a4b-it-mtp-qat-ud-q4-k-xl",
+  "alias": "gemma-4-26b-a4b-it-mtp-qat-ud-q4-k-xl-non-thinking",
   "model-path": "/model_data/huggingface/unsloth/gemma-4-26B-A4B-it-qat-GGUF/gemma-4-26B-A4B-it-qat-UD-Q4_K_XL.gguf",
   "max-ctx-size": 262144,
   "vocab-type": 2,

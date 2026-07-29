@@ -21,12 +21,12 @@
   "cache-type-v": "q8_0",
   "cache-ram": -1,
   "cache-reuse": 64,
+  "spec-type": "draft-mtp",
+  "spec-draft-n-max": 4,
   "cache-type-k": "q8_0",
   "temp": 1.0,
   "top-k": 64,
   "top-p": 0.95,
   "jinja": true,
-  "no-context-shift": true,
-  "spec-type": "draft-mtp",
-  "spec-draft-n-max": 4
+  "no-context-shift": true
 }
