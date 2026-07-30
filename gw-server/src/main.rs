@@ -34,14 +34,14 @@ const LLAMACPP_EXECDIR: &str = "/data0/inference/llama.cpp/";
 enum LlamaCppBackend {
     Vulkan,
     #[default]
-    RocM
+    RocM,
 }
 
 impl LlamaCppBackend {
     pub fn llamacpp_command(&self) -> &'static str {
         match self {
             LlamaCppBackend::RocM => "./build-rocm/bin/llama-server",
-            LlamaCppBackend::Vulkan => "./build-vulkan/bin/llama-server"
+            LlamaCppBackend::Vulkan => "./build-vulkan/bin/llama-server",
         }
     }
 }
@@ -92,7 +92,7 @@ async fn create_app(
     provided_apikey: Option<String>,
     localhost: bool,
     log_request_info: bool,
-    llamacpp_backend: LlamaCppBackend
+    llamacpp_backend: LlamaCppBackend,
 ) -> Router {
     let security_config = match provided_apikey {
         None if localhost => Arc::new(MySecurityConfig { apikey: None }),
@@ -230,7 +230,15 @@ async fn main() {
     }
 
     let mut args = std::env::args();
-    let (host, port, tls, provided_api_key, provided_log_request_info, _provided_llama_cpp_chatui, llamacpp_backend) = {
+    let (
+        host,
+        port,
+        tls,
+        provided_api_key,
+        provided_log_request_info,
+        _provided_llama_cpp_chatui,
+        llamacpp_backend,
+    ) = {
         let mut port = None;
         let mut api_key = None;
         let mut log_request_info = false;
@@ -298,7 +306,6 @@ async fn main() {
             if a == "--vulkan" {
                 llamacpp_backend = LlamaCppBackend::Vulkan;
             }
-
         }
         let port = match port {
             Some(p) => p,
@@ -313,7 +320,7 @@ async fn main() {
             api_key,
             log_request_info,
             llama_cpp_chatui,
-            llamacpp_backend
+            llamacpp_backend,
         )
     };
 
@@ -321,7 +328,7 @@ async fn main() {
         provided_api_key,
         host == IpAddr::V4(Ipv4Addr::from([127, 0, 0, 1])),
         provided_log_request_info,
-        llamacpp_backend
+        llamacpp_backend,
     )
     .await;
     let addr = SocketAddr::from((host, port));

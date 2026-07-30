@@ -1,7 +1,8 @@
 use inference_backends::stablediffusioncpp::{
-    FlashAttentionMode, Flux2Klein9b, SamplingMethod, Scheduler, StableDiffusionCppConfig,
+    FlashAttentionMode, Flux2Klein9bJob, SamplingMethod, Scheduler, StableDiffusionCppConfig,
     StableDiffusionEvent, StableDiffusionJob, ZImageTurboJob,
 };
+use tracing::level_filters::LevelFilter;
 
 const VALID_PATH_TO_EXECUTABLE: &str =
     "/data0/inference/stable-diffusion.cpp/build-rocm/bin/sd-cli";
@@ -12,6 +13,10 @@ const EDITED_IMAGE_FILE: &str = "flux2klein9b_edit_01_edited.png";
 
 #[tokio::main]
 async fn main() {
+    tracing_subscriber::fmt()
+        .with_max_level(LevelFilter::INFO)
+        .init();
+
     let mut sdcfg =
         StableDiffusionCppConfig::init_with_temp_dir(VALID_PATH_TO_EXECUTABLE, "/tmp").unwrap();
 
@@ -67,7 +72,7 @@ high quality photo of a boreal owl sitting on a table inside a stylish coffee sh
 
     let uli_reference_image =
         std::fs::read("pose_04_784_816.png").expect("failed to read uli-reference-image");
-    let edit_job = Flux2Klein9b::default()
+    let edit_job = Flux2Klein9bJob::default()
         .with_steps(4)
         .with_cfg_scale(1.0)
         .with_guidance(3.5)

@@ -4,7 +4,7 @@ use inference_backends::{
     LlamaCppBackend, LlamaCppBackendController, LlamaCppProcessState, LlamaCppRunConfig,
 };
 use std::sync::Arc;
-use tracing::{trace,info};
+use tracing::{info, trace};
 
 pub struct LlamaCppControllerAdapter {
     llamacpp_controller: LlamaCppBackendController,
@@ -27,7 +27,6 @@ impl LlamaCppControllerAdapter {
             llama_cpp_execdir: llama_cpp_execdir.into(),
         })
         .await;
-
 
         Arc::new(Self {
             llamacpp_controller,

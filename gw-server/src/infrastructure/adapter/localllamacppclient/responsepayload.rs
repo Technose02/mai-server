@@ -130,10 +130,7 @@ impl ResponsePayload {
 
         content = content.replace("./v1/chat/completions", "./api/1/v1/chat/completions");
 
-        content = content.replace(
-            r#"={LIST:"/v1/models","#,
-            r#"={LIST:"/api/1/v1/models","#,
-        );
+        content = content.replace(r#"={LIST:"/v1/models","#, r#"={LIST:"/api/1/v1/models","#);
         content = content.replace(
             r#"={LIST:"/tools",EXECUTE:"/tools"}"#,
             r#"={LIST:"/chat/tools",EXECUTE:"/tools"}"#,

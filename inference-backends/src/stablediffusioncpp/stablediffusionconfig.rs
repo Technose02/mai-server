@@ -332,15 +332,16 @@ impl StableDiffusionCppConfig {
                     event_sender.send(StableDiffusionEvent::Killed).await.expect("failed to send Killed-Event");
                     killed_sender.send(()).expect("failed to send killed-confirmation");
                 },
-                res = child.wait() => {match res {                Ok(status) => {
-                    if status.success() {
-                        let image_file = temp_dir.join(tmp_output);
-                        let data = tokio::fs::read(&image_file).await.map_err(|e| {
-                            StableDiffusionError::Custom(format!(
-                                "unable to read from temp-imagefile '{}': '{e}'",
-                                image_file.to_string_lossy()
-                            ))
-                        });
+                res = child.wait() => {match res {
+                    Ok(status) => {
+                        if status.success() {
+                            let image_file = temp_dir.join(tmp_output);
+                            let data = tokio::fs::read(&image_file).await.map_err(|e| {
+                                StableDiffusionError::Custom(format!(
+                                    "unable to read from temp-imagefile '{}': '{e}'",
+                                    image_file.to_string_lossy()
+                                ))
+                            });
 
                         if let Err(error) = data {
                             if let Err(e) =
@@ -384,7 +385,7 @@ impl StableDiffusionCppConfig {
                             .send(StableDiffusionEvent::Error(StableDiffusionError::Custom(
                                 format!(
                                     "stable-diffusion.cpp exited with status {}",
-                                    status.code().unwrap_or(-1)
+                                    status.code().unwrap_or(-1),
                                 ),
                             )))
                             .await

@@ -1,6 +1,6 @@
 use inference_backends::stablediffusioncpp::{
-    FlashAttentionMode, SamplingMethod, Scheduler, StableDiffusionCppConfig, StableDiffusionJob,
-    ZImageTurboJob,
+    FlashAttentionMode, MageFlowTurboJob, SamplingMethod, Scheduler, StableDiffusionCppConfig,
+    StableDiffusionJob,
     helpers::{LogSetting, simple_generation},
 };
 use tracing::level_filters::LevelFilter;
@@ -15,11 +15,10 @@ async fn main() {
         .with_max_level(LevelFilter::INFO)
         .init();
 
-    let job = ZImageTurboJob::default()
-                .with_steps(8)
+    let job = MageFlowTurboJob::default()
+                .with_steps(4)
                 .with_cfg_scale(1.0)
-                .with_guidance(3.5)
-                .with_offload_to_cpu(false)
+                .with_offload_to_cpu(true)
                 .with_flash_attention_mode(FlashAttentionMode::Full)
                 .with_scheduler(Scheduler::Simple)
                 .with_sampling_method(SamplingMethod::Euler)
@@ -38,12 +37,12 @@ no reflections, and no backdrop, completely isolated.
 
     let mut sdcfg =
         StableDiffusionCppConfig::init_with_temp_dir(VALID_PATH_TO_EXECUTABLE, "/tmp").unwrap();
-    for outfile in (0..=100).map(|n| format!("zimage_turbo_1_{:02}", n)) {
+    for outfile in (0..=100).map(|n| format!("mage_flow_1_{:02}", n)) {
         simple_generation(
             &mut sdcfg,
             &job,
             outfile,
-            LogSetting::Err(LevelFilter::INFO),
+            LogSetting::Err(LevelFilter::ERROR),
         )
         .await
         .unwrap()

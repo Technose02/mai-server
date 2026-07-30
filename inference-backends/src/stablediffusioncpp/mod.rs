@@ -3,7 +3,7 @@ pub use stablediffusionconfig::{StableDiffusionCppConfig, StableDiffusionEvent};
 
 mod stablediffusionjob;
 pub use stablediffusionjob::templates::{
-    AnimaTurboJob, Flux2Klein9b, Krea2TurboJob, ZImageJob, ZImageTurboJob,
+    AnimaTurboJob, Flux2Klein9bJob, Krea2TurboJob, MageFlowTurboJob, ZImageJob, ZImageTurboJob,
 };
 pub use stablediffusionjob::{FlashAttentionMode, SamplingMethod, Scheduler, StableDiffusionJob};
 

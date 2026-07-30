@@ -1,8 +1,8 @@
-use std::time::Duration;
-
 use inference_backends::stablediffusioncpp::{
     Krea2TurboJob, StableDiffusionCppConfig, StableDiffusionEvent,
 };
+use std::time::Duration;
+use tracing::level_filters::LevelFilter;
 
 const VALID_PATH_TO_EXECUTABLE: &str =
     "/data0/inference/stable-diffusion.cpp/build-rocm/bin/sd-cli";
@@ -10,6 +10,10 @@ const VALID_PATH_TO_EXECUTABLE: &str =
 
 #[tokio::main]
 async fn main() {
+    tracing_subscriber::fmt()
+        .with_max_level(LevelFilter::INFO)
+        .init();
+
     // create sdcfg
     let mut sdcfg =
         StableDiffusionCppConfig::init_with_temp_dir(VALID_PATH_TO_EXECUTABLE, "/tmp").unwrap();

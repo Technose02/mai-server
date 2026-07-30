@@ -3,9 +3,9 @@ use crate::stablediffusioncpp::{
     stablediffusionjob::{FlashAttentionMode, HasBaseJob, JobBase},
 };
 
-pub struct Flux2Klein9b(JobBase);
+pub struct Flux2Klein9bJob(JobBase);
 
-impl Default for Flux2Klein9b {
+impl Default for Flux2Klein9bJob {
     fn default() -> Self {
         Self(JobBase {
             path_to_model: "/model_data/huggingface/unsloth/FLUX.2-klein-9B-GGUF/flux-2-klein-9b-BF16.gguf".into(),
@@ -30,7 +30,7 @@ impl Default for Flux2Klein9b {
     }
 }
 
-impl HasBaseJob for Flux2Klein9b {
+impl HasBaseJob for Flux2Klein9bJob {
     fn base(&self) -> &JobBase {
         &self.0
     }
@@ -40,4 +40,4 @@ impl HasBaseJob for Flux2Klein9b {
     }
 }
 
-impl StableDiffusionJob for Flux2Klein9b {}
+impl StableDiffusionJob for Flux2Klein9bJob {}

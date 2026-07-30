@@ -11,4 +11,7 @@ mod zimageturbo;
 pub use zimageturbo::ZImageTurboJob;
 
 mod flux2klein9b;
-pub use flux2klein9b::Flux2Klein9b;
+pub use flux2klein9b::Flux2Klein9bJob;
+
+mod mageflowturbo;
+pub use mageflowturbo::MageFlowTurboJob;
