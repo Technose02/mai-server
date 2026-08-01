@@ -4,7 +4,7 @@
 /**/letsencrypt
 /.vscode/settings.json
 *.secret*
-
+/**/*nsfw*
 *.png
 
 .env
