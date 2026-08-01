@@ -1,4 +1,7 @@
-use std::path::Path;
+use std::{
+    collections::HashMap,
+    path::{Path, PathBuf},
+};
 
 mod flashattentionmode;
 pub use flashattentionmode::FlashAttentionMode;
@@ -8,6 +11,10 @@ mod samplingmethod;
 pub use samplingmethod::SamplingMethod;
 mod jobbase;
 pub(super) use jobbase::{HasBaseJob, JobBase};
+mod clipmodel;
+pub use clipmodel::ClipModel;
+
+use crate::stablediffusioncpp::{StableDiffusionError, StableDiffusionResult};
 
 pub mod templates;
 
@@ -16,8 +23,8 @@ pub trait StableDiffusionJob: HasBaseJob {
         &self.base().path_to_model
     }
 
-    fn llm(&self) -> &Path {
-        &self.base().path_to_textencoder
+    fn textencoder(&self) -> &ClipModel {
+        &self.base().textencoder
     }
 
     fn vae(&self) -> &Path {
@@ -143,5 +150,25 @@ pub trait StableDiffusionJob: HasBaseJob {
     fn with_ref_image_3(mut self, ref_image_data: Vec<u8>) -> Self {
         self.base_mut().ref_image_3 = Some(ref_image_data);
         self
+    }
+
+    fn lora_models(&self) -> &HashMap<PathBuf, f32> {
+        &self.base().lora_models
+    }
+    fn with_lora(mut self, path: impl Into<PathBuf>, weight: f32) -> StableDiffusionResult<Self> {
+        let path = path.into();
+        match (path.is_file(), weight >= 0.0) {
+            (false, _) => Err(StableDiffusionError::Custom(format!(
+                "invalid lora-path: '{}'",
+                path.to_string_lossy()
+            ))),
+            (true, false) => Err(StableDiffusionError::Custom(format!(
+                "lora-weight must not be negative; got '{weight}'"
+            ))),
+            _ => {
+                self.base_mut().lora_models.insert(path, weight);
+                Ok(self)
+            }
+        }
     }
 }

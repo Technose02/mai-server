@@ -15,3 +15,9 @@ pub use flux2klein9b::Flux2Klein9bJob;
 
 mod mageflowturbo;
 pub use mageflowturbo::MageFlowTurboJob;
+
+mod fluxdev;
+pub use fluxdev::FluxDevJob;
+
+mod fluxschnell;
+pub use fluxschnell::FluxSchnellJob;

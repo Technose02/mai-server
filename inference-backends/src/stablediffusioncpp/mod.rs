@@ -2,10 +2,15 @@ mod stablediffusionconfig;
 pub use stablediffusionconfig::{StableDiffusionCppConfig, StableDiffusionEvent};
 
 mod stablediffusionjob;
-pub use stablediffusionjob::templates::{
-    AnimaTurboJob, Flux2Klein9bJob, Krea2TurboJob, MageFlowTurboJob, ZImageJob, ZImageTurboJob,
+pub use stablediffusionjob::{
+    FlashAttentionMode, SamplingMethod, Scheduler, StableDiffusionJob,
+    templates::{
+        AnimaTurboJob, Flux2Klein9bJob, FluxDevJob, Krea2TurboJob, MageFlowTurboJob, ZImageJob,
+        ZImageTurboJob,FluxSchnellJob
+    },
 };
-pub use stablediffusionjob::{FlashAttentionMode, SamplingMethod, Scheduler, StableDiffusionJob};
+
+mod loradir;
 
 pub mod helpers;
 

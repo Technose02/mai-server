@@ -1,6 +1,6 @@
 use std::ffi::OsStr;
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Default)]
 pub enum Scheduler {
     Discrete,
     Karras,
@@ -9,6 +9,7 @@ pub enum Scheduler {
     Gits,
     Smoothstep,
     SgmUniform,
+    #[default]
     Simple,
     KlOptimal,
     Lcm,

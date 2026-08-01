@@ -1,5 +1,6 @@
 use crate::stablediffusioncpp::{
     FlashAttentionMode, StableDiffusionError, StableDiffusionJob, StableDiffusionResult,
+    loradir::LoraDir, stablediffusionjob::ClipModel,
 };
 use std::{
     path::{Path, PathBuf},
@@ -132,10 +133,36 @@ impl StableDiffusionCppConfig {
             })?
         };
 
+        // lora handling
+        let mut prompt = job.prompt().to_string();
+        let mut lora_dir = LoraDir::new(&temp_dir, "loras")?;
+
+        if !job.lora_models().is_empty() {
+            for (path, weight) in job.lora_models() {
+                let filename_base = path
+                    .file_prefix()
+                    .unwrap_or_else(|| panic!("unable to resolve filename of lora-path"))
+                    .to_string_lossy();
+                lora_dir.add_softlink(&path);
+                prompt.push_str(&format!("<lora:{filename_base}:{weight:.2}>"));
+            }
+            cmd.arg("--lora-model-dir")
+                .arg(AsRef::<Path>::as_ref(&lora_dir).to_string_lossy().as_ref());
+        }
+
         cmd.current_dir(&temp_dir);
         cmd.arg("--diffusion-model").arg(job.diffusion_model());
-        cmd.arg("--llm").arg(job.llm());
         cmd.arg("--vae").arg(job.vae());
+
+        // apply textencoder
+        match job.textencoder() {
+            ClipModel::Llm(path) => cmd.arg("--llm").arg(path),
+            ClipModel::CliplAndT5XXL { clip_l, t5xxl } => {
+                cmd.arg("--clip_l").arg(clip_l).arg("--t5xxl").arg(t5xxl)
+            }
+            ClipModel::None => panic!("no textencoder set [NONE]"),
+        };
+
         cmd.arg("--cfg-scale")
             .arg(format!("{:.1}", job.cfg_scale()));
         cmd.arg("--guidance").arg(format!("{:.1}", job.guidance()));
@@ -143,7 +170,7 @@ impl StableDiffusionCppConfig {
         cmd.arg("--seed").arg(seed.to_string());
         cmd.arg("--width").arg(job.width().to_string());
         cmd.arg("--height").arg(job.height().to_string());
-        cmd.arg("--prompt").arg(job.prompt());
+        cmd.arg("--prompt").arg(prompt);
         cmd.arg("--output").arg(tmp_output);
         cmd.arg("--scheduler").arg(job.scheduler());
         cmd.arg("--sampling-method").arg(job.sampling_method());
@@ -193,7 +220,8 @@ impl StableDiffusionCppConfig {
             cmd.arg("--offload-to-cpu");
         }
 
-        //println!("CMD: {:#?}", cmd);
+        tracing::info!("Final cmd: {:#?}", cmd);
+
         let mut child = cmd.spawn().expect("failed to spawn sd-cli process");
         let started_at = Instant::now();
 
@@ -406,6 +434,7 @@ impl StableDiffusionCppConfig {
                     }
                 }}}
             );
+            drop(lora_dir);
         });
 
         Ok(event_receiver)

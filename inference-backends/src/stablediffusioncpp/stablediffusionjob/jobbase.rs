@@ -1,9 +1,12 @@
-use crate::stablediffusioncpp::{FlashAttentionMode, SamplingMethod, Scheduler};
-use std::path::PathBuf;
+use crate::stablediffusioncpp::{
+    FlashAttentionMode, SamplingMethod, Scheduler, stablediffusionjob::ClipModel,
+};
+use std::{collections::HashMap, path::PathBuf};
 
+#[derive(Default)]
 pub struct JobBase {
     pub path_to_model: PathBuf,
-    pub path_to_textencoder: PathBuf,
+    pub textencoder: ClipModel,
     pub path_to_vae: PathBuf,
     pub prompt: String,
     pub width: usize,
@@ -20,6 +23,7 @@ pub struct JobBase {
     pub ref_image_1: Option<Vec<u8>>,
     pub ref_image_2: Option<Vec<u8>>,
     pub ref_image_3: Option<Vec<u8>>,
+    pub lora_models: HashMap<PathBuf, f32>,
 }
 
 pub trait HasBaseJob: Default {

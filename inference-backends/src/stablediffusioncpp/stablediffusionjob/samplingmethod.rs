@@ -1,7 +1,8 @@
 use std::ffi::OsStr;
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Default)]
 pub enum SamplingMethod {
+    #[default]
     Euler,
     EulerA,
     Heun,
