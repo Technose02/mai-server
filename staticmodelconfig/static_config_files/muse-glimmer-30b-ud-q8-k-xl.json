@@ -1,0 +1,26 @@
+{
+  "alias": "muse-glimmer-30b-ud-q8-k-xl",
+  "model-path": "/model_data/huggingface/unsloth/Muse-Glimmer-30B-GGUF/Muse-Glimmer-30B-UD-Q8_K_XL.gguf",
+  "max-ctx-size": 262144,
+  "vocab-type": 2,
+  "n-vocab": 202048,
+  "n-ctx-train": 131072,
+  "n-embd": 6656,
+  "n-params": 27854794240,
+  "size": 32287537152,
+  "capabilities": [
+    "completion",
+    "multimodal"
+  ],
+  "mmproj-path": "/model_data/huggingface/unsloth/Muse-Glimmer-30B-GGUF/mmproj-Muse-Glimmer-30B-BF16.gguf",
+  "n-gpu-layers": 99,
+  "flash-attn": "on",
+  "batch-size": 512,
+  "ubatch-size": 2048,
+  "cache-reuse": 64,
+  "temp": 1.0,
+  "top-k": 64,
+  "top-p": 0.95,
+  "jinja": true,
+  "mlock": true
+}

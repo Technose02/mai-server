@@ -13,8 +13,12 @@ const LLAMA_SERVER_PORT: u16 = 11440;
 const ENV_VAR_GGML_CUDA_ENABLE_UNIFIED_MEMORY: &str = "GGML_CUDA_ENABLE_UNIFIED_MEMORY";
 const ENV_VALUE_GGML_CUDA_ENABLE_UNIFIED_MEMORY: &str = "1";
 
-const FILTER_MODEL_KEY: Option<&str> = Some("gemma-4-");
-//const FILTER_MODEL_KEY: Option<&str> = None;
+//const FILTER_MODEL_KEY: Option<&str> = Some("muse-");
+const FILTER_MODEL_KEY: Option<&str> = None;
+
+//const LLAMA_SERVER_BACKEND: &str = "./build-rocm/bin/llama-server";
+const LLAMA_SERVER_BACKEND: &str = "./build-vulkan/bin/llama-server";
+
 
 #[tokio::main]
 async fn main() {
@@ -24,7 +28,7 @@ async fn main() {
         host: LLAMA_SERVER_HOST.to_owned(),
         port: LLAMA_SERVER_PORT,
         timeout: None,
-        llama_cpp_command: "./build/bin/llama-server".into(),
+        llama_cpp_command: LLAMA_SERVER_BACKEND.into(),
         llama_cpp_execdir: "/data0/inference/llama.cpp/".into(),
     })
     .await;
