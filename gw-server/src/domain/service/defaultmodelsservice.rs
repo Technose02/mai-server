@@ -172,7 +172,7 @@ impl ModelsServiceInPort for DefaultModelsService {
     }
 
     fn get_default_languagemodel_alias(&self) -> String {
-        "gemma-4-agentic-fastest-thinking-large".into()
+        "ornith1.5-35b-a3b-fast-1-large".into()
     }
 
     async fn ensure_requested_embeddingmodel_is_served(
