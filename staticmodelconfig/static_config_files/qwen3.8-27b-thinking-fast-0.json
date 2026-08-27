@@ -16,7 +16,7 @@
   "n-gpu-layers": 99,
   "flash-attn": "on",
   "batch-size": 2048,
-  "ubatch-size": 2048,
+  "ubatch-size": 512,
   "cache-type-v": "q8_0",
   "cache-reuse": 256,
   "spec-type": "draft-mtp",
