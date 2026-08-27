@@ -7,7 +7,7 @@
     "n-gpu-layers" : 99,
     "jinja" : true,
     "ctx-size" : 32768,
-    "no-mmap" : true,
+    "load-mode": "mlock",
     "flash-attn" : "on",
     "batch-size": 2048,
     "ubatch-size": 512,

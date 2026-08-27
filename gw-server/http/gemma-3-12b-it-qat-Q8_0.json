@@ -8,7 +8,7 @@
     "n-gpu-layers" : 99,
     "jinja" : true,
     "ctx-size" : 131072,
-    "no-mmap" : true,
+    "load-mode": "mlock",
     "flash-attn" : "on",
     "prio": 2,
     "threads": 8,
