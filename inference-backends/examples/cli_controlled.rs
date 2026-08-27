@@ -3,7 +3,7 @@ use std::{collections::HashMap, io::stdin, sync::Arc};
 use inference_backends::{
     AttnSetting, ComfyUiBackend, ComfyUiBackendController, ComfyUiConfig, ComfyUiConfigArgs,
     ContextSize, LlamaCppBackend, LlamaCppBackendController, LlamaCppConfigArgs, LlamaCppRunConfig,
-    OnOffAutoValue, VRamSetting,
+    LoadMode, OnOffAutoValue, VRamSetting,
 };
 
 #[tokio::main]
@@ -48,8 +48,7 @@ async fn main() {
             n_gpu_layers: Some(99),
             jinja: true,
             ctx_size: Some(ContextSize::T262144),
-            no_mmap: false,
-            mlock:true,
+            load_mode: Some(LoadMode::MmapPlusMlock),
             no_warmup: true,
             flash_attn: Some(OnOffAutoValue::On),
             batch_size: None,
@@ -95,8 +94,7 @@ async fn main() {
             n_gpu_layers: Some(99),
             jinja: true,
             ctx_size: Some(ContextSize::T32768),
-            no_mmap: false,
-            mlock: true,
+            load_mode: Some(LoadMode::MmapPlusMlock),
             no_warmup: true,
             flash_attn: Some(OnOffAutoValue::On),
             batch_size: Some(2048),

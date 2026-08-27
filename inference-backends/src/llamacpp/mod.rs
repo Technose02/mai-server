@@ -10,6 +10,9 @@ use tracing::{error, info};
 mod llamacppconfig;
 pub use llamacppconfig::{ContextSize, LlamaCppConfigArgs, LlamaCppRunConfig, OnOffAutoValue};
 
+mod loadmode;
+pub use loadmode::LoadMode;
+
 pub type LlamaCppProtocol = ProcessProtocol<LlamaCppRunConfig>;
 pub type LlamaCppBackendController = BackendController<LlamaCppRunConfig>;
 

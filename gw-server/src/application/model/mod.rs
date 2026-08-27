@@ -6,7 +6,9 @@ use axum::{
     http::{StatusCode, header},
 };
 use http_body_util::BodyExt;
-use inference_backends::{ContextSize, LlamaCppConfigArgs, LlamaCppRunConfig, OnOffAutoValue};
+use inference_backends::{
+    ContextSize, LlamaCppConfigArgs, LlamaCppRunConfig, LoadMode, OnOffAutoValue,
+};
 use serde::{Deserialize, Serialize};
 use tracing::{error, trace};
 
@@ -107,23 +109,14 @@ pub struct LlamaCppRunConfigDto {
     pub top_k: Option<u16>,
     #[serde(skip_serializing_if = "Option::is_none", default = "Option::default")]
     pub top_p: Option<f32>,
+    #[serde(skip_serializing_if = "Option::is_none", default = "Option::default")]
+    pub load_mode: Option<LoadMode>,
 
     #[serde(
         skip_serializing_if = "std::ops::Not::not",
         default = "default_to_false"
     )]
     pub jinja: bool,
-    #[serde(
-        skip_serializing_if = "std::ops::Not::not",
-        default = "default_to_false"
-    )]
-    pub no_mmap: bool,
-    #[serde(
-        skip_serializing_if = "std::ops::Not::not",
-        default = "default_to_false"
-    )]
-    pub mlock: bool,
-
     #[serde(
         skip_serializing_if = "std::ops::Not::not",
         default = "default_to_false"
@@ -183,8 +176,7 @@ impl LlamaCppRunConfigDto {
                 min_p: self.min_p,
                 n_gpu_layers: self.n_gpu_layers,
                 jinja: self.jinja,
-                no_mmap: self.no_mmap,
-                mlock: self.mlock,
+                load_mode: self.load_mode,
                 no_warmup: self.no_warmup,
                 flash_attn: self.flash_attn.clone(),
                 fit: self.fit.clone(),
@@ -234,8 +226,7 @@ impl From<LlamaCppRunConfig> for LlamaCppRunConfigDto {
             cache_reuse: value.args_handle.cache_reuse,
             spec_type: value.args_handle.spec_type.clone(),
             spec_draft_n_max: value.args_handle.spec_draft_n_max,
-            no_mmap: value.args_handle.no_mmap,
-            mlock: value.args_handle.mlock,
+            load_mode: value.args_handle.load_mode,
             no_warmup: value.args_handle.no_warmup,
             flash_attn: value.args_handle.flash_attn.clone(),
             fit: value.args_handle.fit.clone(),

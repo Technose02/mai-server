@@ -1,3 +1,4 @@
+use crate::llamacpp::LoadMode;
 use serde::{Deserialize, Serialize, de::Visitor};
 use std::{collections::HashMap, sync::Arc};
 use tokio::process::Command;
@@ -260,8 +261,7 @@ pub struct LlamaCppConfigArgs {
     pub n_gpu_layers: Option<i16>,
     pub jinja: bool,
     pub ctx_size: Option<ContextSize>,
-    pub no_mmap: bool,
-    pub mlock: bool,
+    pub load_mode: Option<LoadMode>,
     pub no_warmup: bool,
     pub flash_attn: Option<OnOffAutoValue>,
     pub fit: Option<OnOffAutoValue>,
@@ -325,16 +325,13 @@ impl LlamaCppConfigArgs {
             cmd.arg(n_gpu_layers.to_string());
         }
 
+        if let Some(load_mode) = self.load_mode {
+            cmd.arg("--load-mode");
+            cmd.arg(load_mode.as_ref());
+        }
+
         if self.jinja {
             cmd.arg("--jinja");
-        }
-
-        if self.no_mmap {
-            cmd.arg("--no-mmap");
-        }
-
-        if self.mlock {
-            cmd.arg("--mlock");
         }
 
         if self.no_warmup {

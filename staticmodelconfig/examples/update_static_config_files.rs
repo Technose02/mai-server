@@ -14,11 +14,11 @@ const ENV_VAR_GGML_CUDA_ENABLE_UNIFIED_MEMORY: &str = "GGML_CUDA_ENABLE_UNIFIED_
 const ENV_VALUE_GGML_CUDA_ENABLE_UNIFIED_MEMORY: &str = "1";
 
 //const FILTER_MODEL_KEY: Option<&str> = Some("muse-");
-const FILTER_MODEL_KEY: Option<&str> = None;
+const FILTER_MODEL_KEY_MUST_CONTAIN: Option<&str> = None;
+const FILTER_MODEL_KEY_MUST_NOT_CONTAIN: Option<&str> = Some("gemma-4-12b-");
 
-//const LLAMA_SERVER_BACKEND: &str = "./build-rocm/bin/llama-server";
-const LLAMA_SERVER_BACKEND: &str = "./build-vulkan/bin/llama-server";
-
+const LLAMA_SERVER_BACKEND: &str = "./build-rocm/bin/llama-server";
+//const LLAMA_SERVER_BACKEND: &str = "./build-vulkan/bin/llama-server";
 
 #[tokio::main]
 async fn main() {
@@ -51,16 +51,28 @@ async fn main() {
     for (mut model_configuration, json_file) in
         model_configurations.iter_mut().zip(json_files.iter())
     {
-        if let Some(alias_must_contain) = FILTER_MODEL_KEY {
-            if !(model_configuration.alias.contains(alias_must_contain)) {
-                println!(
-                    "skipping jsonfile {}: model-alias '{}' does not contain '{}'",
-                    json_file.file_name().unwrap().display(),
-                    model_configuration.alias,
-                    alias_must_contain
-                );
-                continue;
-            }
+        if let Some(alias_must_contain) = FILTER_MODEL_KEY_MUST_CONTAIN
+            && !(model_configuration.alias.contains(alias_must_contain))
+        {
+            println!(
+                "skipping jsonfile {}: model-alias '{}' does not contain '{}'",
+                json_file.file_name().unwrap().display(),
+                model_configuration.alias,
+                alias_must_contain
+            );
+            continue;
+        }
+
+        if let Some(alias_must_not_contain) = FILTER_MODEL_KEY_MUST_NOT_CONTAIN
+            && model_configuration.alias.contains(alias_must_not_contain)
+        {
+            println!(
+                "skipping jsonfile {}: model-alias '{}' does contain '{}'",
+                json_file.file_name().unwrap().display(),
+                model_configuration.alias,
+                alias_must_not_contain
+            );
+            continue;
         }
 
         // check if paths exist locally and ignore configuration if not
@@ -127,13 +139,12 @@ async fn update_model_configuration(
             n_gpu_layers: model_configuration.n_gpu_layers,
             jinja: model_configuration.jinja,
             ctx_size: Some(inference_backends::ContextSize::T8192),
-            no_mmap: model_configuration.no_mmap,
+            load_mode: model_configuration.load_mode,
             no_warmup: model_configuration.no_warmup,
             flash_attn: model_configuration.flash_attn.clone(),
             fit: model_configuration.fit.clone(),
             batch_size: model_configuration.batch_size,
             ubatch_size: model_configuration.ubatch_size,
-            mlock: model_configuration.mlock,
             cache_ram: model_configuration.cache_ram,
             cache_reuse: model_configuration.cache_reuse,
             spec_type: model_configuration.spec_type.clone(),

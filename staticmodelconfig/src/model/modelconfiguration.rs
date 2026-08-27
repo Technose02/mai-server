@@ -1,5 +1,5 @@
 use crate::{Error, Result};
-use inference_backends::{ContextSize, OnOffAutoValue};
+use inference_backends::{ContextSize, LoadMode, OnOffAutoValue};
 use serde::{Deserialize, Serialize};
 use std::path::{Path, PathBuf};
 
@@ -64,22 +64,25 @@ pub struct ModelConfiguration {
     pub top_k: Option<u16>,
     #[serde(skip_serializing_if = "Option::is_none", default = "Option::default")]
     pub top_p: Option<f32>,
+    #[serde(skip_serializing_if = "Option::is_none", default = "Option::default")]
+    pub load_mode: Option<LoadMode>,
 
     #[serde(
         skip_serializing_if = "std::ops::Not::not",
         default = "default_to_false"
     )]
     pub jinja: bool,
-    #[serde(
-        skip_serializing_if = "std::ops::Not::not",
-        default = "default_to_false"
-    )]
-    pub no_mmap: bool,
-    #[serde(
-        skip_serializing_if = "std::ops::Not::not",
-        default = "default_to_false"
-    )]
-    pub mlock: bool,
+
+    //#[serde(
+    //    skip_serializing_if = "std::ops::Not::not",
+    //    default = "default_to_false"
+    //)]
+    //pub no_mmap: bool,
+    //#[serde(
+    //    skip_serializing_if = "std::ops::Not::not",
+    //    default = "default_to_false"
+    //)]
+    //pub mlock: bool,
     #[serde(
         skip_serializing_if = "std::ops::Not::not",
         default = "default_to_false"
