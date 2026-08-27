@@ -1,5 +1,5 @@
 {
-  "alias": "qwen3.8-27b-thinking-fast-4",
+  "alias": "qwen3.8-27b-thinking-fast-5",
   "model-path": "/model_data/huggingface/unsloth/Qwen3.8-27B-GGUF/Qwen3.8-27B-UD-Q4_K_XL.gguf",
   "max-ctx-size": 262144,
   "vocab-type": 2,

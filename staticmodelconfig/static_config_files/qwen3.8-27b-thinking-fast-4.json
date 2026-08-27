@@ -13,7 +13,7 @@
     "multimodal"
   ],
   "mmproj-path": "/model_data/huggingface/unsloth/Qwen3.8-27B-GGUF/mmproj-BF16.gguf",
-  "n-gpu-layers": 99,
+  "n-gpu-layers": 999,
   "flash-attn": "on",
   "batch-size": 2048,
   "ubatch-size": 512,
@@ -29,5 +29,5 @@
   "top-k": 20,
   "top-p": 0.95,
   "jinja": true,
-  "mlock": true
+  "load-mode": "mmap+mlock"
 }
