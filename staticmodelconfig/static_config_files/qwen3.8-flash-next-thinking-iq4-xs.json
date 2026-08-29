@@ -1,0 +1,28 @@
+{
+  "alias": "qwen3.8-flash-next-thinking-iq4-xs",
+  "model-path": "/model_data/huggingface/unsloth/Qwen3.8-Flash-Next-GGUF/UD-IQ4_XS/Qwen3.8-Flash-Next-UD-IQ4_XS-00001-of-00003.gguf",
+  "max-ctx-size": 262144,
+  "vocab-type": 2,
+  "n-vocab": 248320,
+  "n-ctx-train": 262144,
+  "n-embd": 5120,
+  "n-params": 27320697856,
+  "size": 31446994944,
+  "capabilities": [
+    "completion",
+    "multimodal"
+  ],
+  "mmproj-path": "/model_data/huggingface/unsloth/Qwen3.8-Flash-Next-GGUF/mmproj-BF16.gguf",
+  "n-gpu-layers": 99,
+  "flash-attn": "on",
+  "batch-size": 2048,
+  "ubatch-size": 512,
+  "cache-reuse": 256,
+  "temp": 1.0,
+  "repeat-penalty": 1.0,
+  "presence-penalty": 0.0,
+  "min-p": 0.0,
+  "top-k": 20,
+  "top-p": 0.95,
+  "jinja": true
+}
