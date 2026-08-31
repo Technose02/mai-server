@@ -10,8 +10,7 @@ use axum::{
     routing::{Router, post},
 };
 use managed_process::ProcessState;
-use std::{sync::Arc, time::Duration};
-use tracing::error;
+use std::sync::Arc;
 
 pub fn create_router(
     config: Arc<dyn ApplicationConfig>,
@@ -31,7 +30,7 @@ async fn post_stablediffusion_request(
     Path(sd_config): Path<String>,
     Json(prompt_dto): Json<StableDiffusionPromptDto>,
 ) -> Result<Response<Body>, StatusCode> {
-    let previously_running_model = match application_config
+    let _previously_running_model = match application_config
         .languagemodelmanager_service()
         .get_llamacpp_state()
         .await
@@ -56,7 +55,7 @@ async fn post_stablediffusion_request(
                 .stop_llamacpp_process()
                 .await;
             ocfg
-        }        
+        }
         _ => None,
     };
 
@@ -65,7 +64,8 @@ async fn post_stablediffusion_request(
         .process_prompt(&sd_config, prompt_dto)
         .await;
 
-    if let Some(llm) = previously_running_model
+    // WRONG: STABLE DIFFUSION PROCESSES ASYNC, YOU MAY NO RELEAD OLD MODEL HERE, YET
+    /*if let Some(llm) = previously_running_model
         && application_config
             .models_service()
             .ensure_requested_languagemodel_is_served(
@@ -77,6 +77,7 @@ async fn post_stablediffusion_request(
             .is_err()
     {
         error!("failed to restart model {}", llm.args_handle.alias);
-    }
+    }*/
+
     res
 }
