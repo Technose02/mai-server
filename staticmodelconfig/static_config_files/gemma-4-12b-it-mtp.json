@@ -24,6 +24,6 @@
   "temp": 1.0,
   "top-k": 64,
   "top-p": 0.95,
-  "load-mode": "mmap+mlock",
+  "load-mode": "mlock",
   "jinja": true
 }

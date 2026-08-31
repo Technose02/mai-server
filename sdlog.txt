@@ -1,0 +1,714 @@
+GenerationStarted
+StdOutLine {
+    text: "[DEBUG] main.cpp:696  - version: stable-diffusion.cpp version master-830-50d6405-1-gbe0e344, commit be0e344",
+}
+StdErrLine {
+    text: "ggml_vulkan: Found 1 Vulkan devices:",
+}
+StdErrLine {
+    text: "ggml_vulkan: 0 = AMD Radeon Graphics (RADV STRIX_HALO) (radv) | uma: 1 | fp16: dot2 | bf16: 0 | fp4: 0 | warp size: 64 | shared memory: 65536 | int dot: 0 | matrix cores: KHR_coopmat",
+}
+StdOutLine {
+    text: "[DEBUG] main.cpp:697  - System Info: ",
+}
+StdOutLine {
+    text: "   SSE3 = 1 |    SSSE3 = 1 |    AVX = 1 |    AVX_VNNI = 1 |    AVX2 = 1 |    F16C = 1 |    FMA = 1 |    BMI2 = 1 |    AVX512 = 1 |    AVX512_VBMI = 1 |    AVX512_VNNI = 1 |    AVX512_BF16 = 1 |    OPENMP = 1 |    REPACK = 1 | ",
+}
+StdOutLine {
+    text: "[DEBUG] main.cpp:698  - SDCliParams {",
+}
+StdOutLine {
+    text: "  mode: img_gen,",
+}
+StdOutLine {
+    text: "  output_path: \"sd_temp_out.png\",",
+}
+StdOutLine {
+    text: "  image_path: \"\",",
+}
+StdOutLine {
+    text: "  metadata_format: \"text\",",
+}
+StdOutLine {
+    text: "  verbose: true,",
+}
+StdOutLine {
+    text: "  color: false,",
+}
+StdOutLine {
+    text: "  canny_preprocess: false,",
+}
+StdOutLine {
+    text: "  convert_name: false,",
+}
+StdOutLine {
+    text: "  preview_method: none,",
+}
+StdOutLine {
+    text: "  preview_interval: 1,",
+}
+StdOutLine {
+    text: "  preview_path: \"preview.png\",",
+}
+StdOutLine {
+    text: "  preview_fps: 16,",
+}
+StdOutLine {
+    text: "  taesd_preview: false,",
+}
+StdOutLine {
+    text: "  preview_noisy: false,",
+}
+StdOutLine {
+    text: "  imatrix_out: \"\",",
+}
+StdOutLine {
+    text: "  metadata_raw: false,",
+}
+StdOutLine {
+    text: "  metadata_brief: false,",
+}
+StdOutLine {
+    text: "  metadata_all: false",
+}
+StdOutLine {
+    text: "}",
+}
+StdOutLine {
+    text: "[DEBUG] main.cpp:699  - SDContextParams {",
+}
+StdOutLine {
+    text: "  n_threads: 8,",
+}
+StdOutLine {
+    text: "  model_path: \"\",",
+}
+StdOutLine {
+    text: "  clip_l_path: \"\",",
+}
+StdOutLine {
+    text: "  clip_g_path: \"\",",
+}
+StdOutLine {
+    text: "  clip_vision_path: \"\",",
+}
+StdOutLine {
+    text: "  t5xxl_path: \"\",",
+}
+StdOutLine {
+    text: "  llm_path: \"/model_data/huggingface/Comfy-Org/z_image/split_files/text_encoders/qwen_3_4b.safetensors\",",
+}
+StdOutLine {
+    text: "  llm_vision_path: \"\",",
+}
+StdOutLine {
+    text: "  diffusion_model_path: \"/model_data/comfyui-model-base/diffusion_models/z_image_turbo_bf16.safetensors\",",
+}
+StdOutLine {
+    text: "  high_noise_diffusion_model_path: \"\",",
+}
+StdOutLine {
+    text: "  uncond_diffusion_model_path: \"\",",
+}
+StdOutLine {
+    text: "  embeddings_connectors_path: \"\",",
+}
+StdOutLine {
+    text: "  vae_path: \"/model_data/huggingface/Comfy-Org/z_image/split_files/vae/ae.safetensors\",",
+}
+StdOutLine {
+    text: "  vae_format: \"auto\",",
+}
+StdOutLine {
+    text: "  audio_vae_path: \"\",",
+}
+StdOutLine {
+    text: "  taesd_path: \"\",",
+}
+StdOutLine {
+    text: "  esrgan_path: \"\",",
+}
+StdOutLine {
+    text: "  control_net_path: \"\",",
+}
+StdOutLine {
+    text: "  embedding_dir: \"\",",
+}
+StdOutLine {
+    text: "  embeddings: {",
+}
+StdOutLine {
+    text: "  }",
+}
+StdOutLine {
+    text: "  wtype: NONE,",
+}
+StdOutLine {
+    text: "  tensor_type_rules: \"\",",
+}
+StdOutLine {
+    text: "  lora_model_dir: \".\",",
+}
+StdOutLine {
+    text: "  hires_upscalers_dir: \"\",",
+}
+StdOutLine {
+    text: "  photo_maker_path: \"\",",
+}
+StdOutLine {
+    text: "  rng_type: cuda,",
+}
+StdOutLine {
+    text: "  sampler_rng_type: NONE,",
+}
+StdOutLine {
+    text: "  offload_params_to_cpu: true,",
+}
+StdOutLine {
+    text: "  max_vram: \"0\",",
+}
+StdOutLine {
+    text: "  stream_layers: false,",
+}
+StdOutLine {
+    text: "  eager_load: false,",
+}
+StdOutLine {
+    text: "  backend: \"\",",
+}
+StdOutLine {
+    text: "  params_backend: \"\",",
+}
+StdOutLine {
+    text: "  split_mode: \"\",",
+}
+StdOutLine {
+    text: "  model_args: \"\",",
+}
+StdOutLine {
+    text: "  auto_fit: false,",
+}
+StdOutLine {
+    text: "  enable_mmap: false,",
+}
+StdOutLine {
+    text: "  control_net_cpu: false,",
+}
+StdOutLine {
+    text: "  clip_on_cpu: false,",
+}
+StdOutLine {
+    text: "  vae_on_cpu: false,",
+}
+StdOutLine {
+    text: "  flash_attn: false,",
+}
+StdOutLine {
+    text: "  diffusion_flash_attn: false,",
+}
+StdOutLine {
+    text: "  diffusion_conv_direct: false,",
+}
+StdOutLine {
+    text: "  vae_conv_direct: false,",
+}
+StdOutLine {
+    text: "  prediction: NONE,",
+}
+StdOutLine {
+    text: "  lora_apply_mode: auto,",
+}
+StdOutLine {
+    text: "  force_sdxl_vae_conv_scale: false",
+}
+StdOutLine {
+    text: "}",
+}
+StdOutLine {
+    text: "[DEBUG] main.cpp:700  - SDGenerationParams {",
+}
+StdOutLine {
+    text: "  loras: \"{",
+}
+StdOutLine {
+    text: "  }\",",
+}
+StdOutLine {
+    text: "  high_noise_loras: \"{",
+}
+StdOutLine {
+    text: "  }\",",
+}
+StdOutLine {
+    text: "  prompt: \"an exhausted rust developer who just fell asleep while hacking another crate\",",
+}
+StdOutLine {
+    text: "  negative_prompt: \"\",",
+}
+StdOutLine {
+    text: "  ad_model_path: \"\",",
+}
+StdOutLine {
+    text: "  ad_prompt: \"\",",
+}
+StdOutLine {
+    text: "  ad_negative_prompt: \"\",",
+}
+StdOutLine {
+    text: "  extra_ad_args: \"\",",
+}
+StdOutLine {
+    text: "  clip_skip: -1,",
+}
+StdOutLine {
+    text: "  width: 1024,",
+}
+StdOutLine {
+    text: "  height: 1024,",
+}
+StdOutLine {
+    text: "  batch_count: 1,",
+}
+StdOutLine {
+    text: "  qwen_image_layers: 3,",
+}
+StdOutLine {
+    text: "  init_image_path: \"\",",
+}
+StdOutLine {
+    text: "  end_image_path: \"\",",
+}
+StdOutLine {
+    text: "  mask_image_path: \"\",",
+}
+StdOutLine {
+    text: "  control_image_path: \"\",",
+}
+StdOutLine {
+    text: "  ref_image_paths: [],",
+}
+StdOutLine {
+    text: "  ref_video_paths: [],",
+}
+StdOutLine {
+    text: "  ref_video_audio_paths: [],",
+}
+StdOutLine {
+    text: "  ref_audio_paths: [],",
+}
+StdOutLine {
+    text: "  control_video_path: \"\",",
+}
+StdOutLine {
+    text: "  auto_resize_ref_image: true,",
+}
+StdOutLine {
+    text: "  increase_ref_index: false,",
+}
+StdOutLine {
+    text: "  pm_id_images_dir: \"\",",
+}
+StdOutLine {
+    text: "  pm_id_embed_path: \"\",",
+}
+StdOutLine {
+    text: "  pm_style_strength: 20,",
+}
+StdOutLine {
+    text: "  skip_layers: [7, 8, 9],",
+}
+StdOutLine {
+    text: "  sample_params: (txt_cfg: 1.00, img_cfg: 1.00, distilled_guidance: 3.50, slg.layer_count: 0, slg.layer_start: 0.01, slg.layer_end: 0.20, slg.scale: 0.00, scheduler: simple, sample_method: euler, sample_steps: 8, eta: inf, shifted_timestep: 0, flow_shift: inf, extra_sample_args: ),",
+}
+StdOutLine {
+    text: "  high_noise_skip_layers: [7, 8, 9],",
+}
+StdOutLine {
+    text: "  high_noise_sample_params: (txt_cfg: 7.00, img_cfg: 7.00, distilled_guidance: 3.50, slg.layer_count: 0, slg.layer_start: 0.01, slg.layer_end: 0.20, slg.scale: 0.00, scheduler: NONE, sample_method: NONE, sample_steps: 20, eta: inf, shifted_timestep: 0, flow_shift: inf, extra_sample_args: ),",
+}
+StdOutLine {
+    text: "  custom_sigmas: [],",
+}
+StdOutLine {
+    text: "  cache_mode: \"\",",
+}
+StdOutLine {
+    text: "  cache_option: \"\",",
+}
+StdOutLine {
+    text: "  cache: disabled (threshold=inf, start=0.15, end=0.95),",
+}
+StdOutLine {
+    text: "  moe_boundary: 0.875,",
+}
+StdOutLine {
+    text: "  video_frames: 1,",
+}
+StdOutLine {
+    text: "  fps: 16,",
+}
+StdOutLine {
+    text: "  vace_strength: 1,",
+}
+StdOutLine {
+    text: "  strength: 0.75,",
+}
+StdOutLine {
+    text: "  control_strength: 0.9,",
+}
+StdOutLine {
+    text: "  seed: 3833821053,",
+}
+StdOutLine {
+    text: "  upscale_repeats: 1,",
+}
+StdOutLine {
+    text: "  upscale_tile_size: 128,",
+}
+StdOutLine {
+    text: "  hires: { enabled: false, upscaler: \"Latent\", model_path: \"\", scale: 2, target_width: 0, target_height: 0, steps: 0, denoising_strength: 0.7, custom_sigmas: [], upscale_tile_size: 128 },",
+}
+StdOutLine {
+    text: "  vae_tiling_params: { 0, 0, 0, 0, 0.5, 0, 0, \"\" },",
+}
+StdOutLine {
+    text: "}",
+}
+StdOutLine {
+    text: "[DEBUG] model_loader.cpp:168  - using 8 threads for model loading",
+}
+StdOutLine {
+    text: "[INFO ] stable-diffusion.cpp:720  - loading diffusion model from '/model_data/comfyui-model-base/diffusion_models/z_image_turbo_bf16.safetensors'",
+}
+StdOutLine {
+    text: "[INFO ] model_loader.cpp:182  - load /model_data/comfyui-model-base/diffusion_models/z_image_turbo_bf16.safetensors using safetensors format",
+}
+StdOutLine {
+    text: "[DEBUG] model_loader.cpp:256  - init from '/model_data/comfyui-model-base/diffusion_models/z_image_turbo_bf16.safetensors', prefix = 'model.diffusion_model.'",
+}
+StdOutLine {
+    text: "[INFO ] stable-diffusion.cpp:777  - loading llm from '/model_data/huggingface/Comfy-Org/z_image/split_files/text_encoders/qwen_3_4b.safetensors'",
+}
+StdOutLine {
+    text: "[INFO ] model_loader.cpp:182  - load /model_data/huggingface/Comfy-Org/z_image/split_files/text_encoders/qwen_3_4b.safetensors using safetensors format",
+}
+StdOutLine {
+    text: "[DEBUG] model_loader.cpp:256  - init from '/model_data/huggingface/Comfy-Org/z_image/split_files/text_encoders/qwen_3_4b.safetensors', prefix = 'text_encoders.llm.'",
+}
+StdOutLine {
+    text: "[INFO ] stable-diffusion.cpp:791  - loading vae from '/model_data/huggingface/Comfy-Org/z_image/split_files/vae/ae.safetensors'",
+}
+StdOutLine {
+    text: "[INFO ] model_loader.cpp:182  - load /model_data/huggingface/Comfy-Org/z_image/split_files/vae/ae.safetensors using safetensors format",
+}
+StdOutLine {
+    text: "[DEBUG] model_loader.cpp:256  - init from '/model_data/huggingface/Comfy-Org/z_image/split_files/vae/ae.safetensors', prefix = 'vae.'",
+}
+StdOutLine {
+    text: "[INFO ] stable-diffusion.cpp:908  - Version: Z-Image ",
+}
+StdOutLine {
+    text: "[DEBUG] ggml_extend_backend.cpp:545  - Found 2 backend devices:",
+}
+StdOutLine {
+    text: "[DEBUG] ggml_extend_backend.cpp:548  - #0: Vulkan0",
+}
+StdOutLine {
+    text: "[DEBUG] ggml_extend_backend.cpp:548  - #1: CPU",
+}
+StdOutLine {
+    text: "[DEBUG] ggml_extend_backend.cpp:395  - Initializing backend: Vulkan0",
+}
+StdOutLine {
+    text: "[DEBUG] ggml_extend_backend.cpp:395  - Initializing backend: CPU",
+}
+StdOutLine {
+    text: "[INFO ] stable-diffusion.cpp:959  - Weight type stat:                      f32: 244  |    bf16: 851  ",
+}
+StdOutLine {
+    text: "[INFO ] stable-diffusion.cpp:960  - Conditioner weight type stat:         bf16: 398  ",
+}
+StdOutLine {
+    text: "[INFO ] stable-diffusion.cpp:961  - Diffusion model weight type stat:     bf16: 453  ",
+}
+StdOutLine {
+    text: "[INFO ] stable-diffusion.cpp:962  - VAE weight type stat:                  f32: 244  ",
+}
+StdOutLine {
+    text: "[DEBUG] stable-diffusion.cpp:964  - ggml tensor size = 432 bytes",
+}
+StdOutLine {
+    text: "[DEBUG] qwen2_tokenizer.cpp:14   - merges size 151387",
+}
+StdOutLine {
+    text: "[DEBUG] qwen2_tokenizer.cpp:39   - vocab size: 151674",
+}
+StdOutLine {
+    text: "[DEBUG] llm.hpp:290  - llm: num_layers = 36, vocab_size = 151936, hidden_size = 2560, intermediate_size = 9728",
+}
+StdOutLine {
+    text: "[DEBUG] z_image.hpp:110  - z_image: num_layers = 30, num_refiner_layers = 2, hidden_size = 3840, num_heads = 30, num_kv_heads = 30, in_channels = 16, out_channels = 16",
+}
+StdOutLine {
+    text: "[INFO ] stable-diffusion.cpp:1512 - using VAE for encoding / decoding",
+}
+StdOutLine {
+    text: "[INFO ] auto_encoder_kl.hpp:527  - vae decoder: ch = 128",
+}
+StdOutLine {
+    text: "[DEBUG] stable-diffusion.cpp:1645 - validating model metadata",
+}
+StdOutLine {
+    text: "[DEBUG] stable-diffusion.cpp:1704 - model metadata validated; weights will be prepared lazily",
+}
+StdOutLine {
+    text: "[INFO ] stable-diffusion.cpp:1745 - total params memory size = 20317.52MB (VRAM 0.00MB, RAM 20317.52MB): text_encoders 8414.50MB(RAM), diffusion_model 11743.02MB(RAM), vae 160.00MB(RAM), controlnet 0.00MB(N/A), extensions 0.00MB(N/A)",
+}
+StdOutLine {
+    text: "[INFO ] stable-diffusion.cpp:1864 - running in FLOW mode",
+}
+StdOutLine {
+    text: "[INFO ] stable-diffusion.cpp:5634 - generate_image 1024x1024",
+}
+StdOutLine {
+    text: "[INFO ] stable-diffusion.cpp:3174 - Using 'z_image_omni' preset for reference images",
+}
+StdOutLine {
+    text: "[INFO ] denoiser.hpp:1079 - get_sigmas with Simple scheduler",
+}
+StdOutLine {
+    text: "[INFO ] stable-diffusion.cpp:4386 - sampling using Euler method",
+}
+StdOutLine {
+    text: "[DEBUG] conditioner.hpp:1987 - parse '<|im_start|>user",
+}
+StdOutLine {
+    text: "an exhausted rust developer who just fell asleep while hacking another crate<|im_end|>",
+}
+StdOutLine {
+    text: "<|im_start|>assistant",
+}
+StdOutLine {
+    text: "' to [['<|im_start|>user",
+}
+StdOutLine {
+    text: "', 1], ['an exhausted rust developer who just fell asleep while hacking another crate', 1], ['<|im_end|>",
+}
+StdOutLine {
+    text: "<|im_start|>assistant",
+}
+StdOutLine {
+    text: "', 1], ]",
+}
+StdOutLine {
+    text: "[DEBUG] bpe_tokenizer.cpp:208  - split prompt \"<|im_start|>user",
+}
+StdOutLine {
+    text: "\" to 3 tokens [\"<|im_start|>\", \"user\", \"Ċ\", ]",
+}
+StdOutLine {
+    text: "[DEBUG] bpe_tokenizer.cpp:208  - split prompt \"an exhausted rust developer who just fell asleep while hacking another crate\" to 12 tokens [\"an\", \"Ġexhausted\", \"Ġrust\", \"Ġdeveloper\", \"Ġwho\", \"Ġjust\", \"Ġfell\", \"Ġasleep\", \"Ġwhile\", \"Ġhacking\", \"Ġanother\", \"Ġcrate\", ]",
+}
+StdOutLine {
+    text: "[DEBUG] bpe_tokenizer.cpp:208  - split prompt \"<|im_end|>",
+}
+StdOutLine {
+    text: "<|im_start|>assistant",
+}
+StdOutLine {
+    text: "\" to 5 tokens [\"<|im_end|>\", \"Ċ\", \"<|im_start|>\", \"assistant\", \"Ċ\", ]",
+}
+StdOutLine {
+    text: "[DEBUG] model_loader.cpp:980  - loading 386/398 tensors from /model_data/huggingface/Comfy-Org/z_image/split_files/text_encoders/qwen_3_4b.safetensors",
+}
+StdOutLine {
+    text: "  |#                                                 | 4/386 - 0.00MB/s\u{1b}[K",
+}
+StdOutLine {
+    text: "  |########                                          | 56/386 - 3.74GB/s\u{1b}[K",
+}
+StdOutLine {
+    text: "  |############                                      | 92/386 - 3.31GB/s\u{1b}[K",
+}
+StdOutLine {
+    text: "  |#################                                 | 126/386 - 3.18GB/s\u{1b}[K",
+}
+StdOutLine {
+    text: "  |#######################                           | 177/386 - 3.47GB/s\u{1b}[K",
+}
+StdOutLine {
+    text: "  |##############################                    | 229/386 - 3.62GB/s\u{1b}[K",
+}
+StdOutLine {
+    text: "  |#####################################             | 278/386 - 3.76GB/s\u{1b}[K",
+}
+StdOutLine {
+    text: "  |###########################################       | 331/386 - 3.86GB/s\u{1b}[K",
+}
+StdOutLine {
+    text: "  |##################################################| 386/386 - 3.69GB/s\u{1b}[K",
+}
+StdOutLine {
+    text: "[INFO ] model_loader.cpp:1238 - loading tensors completed, taking 1.98s (read: 1.52s, memcpy: 0.00s, convert: 0.05s, copy_to_backend: 0.00s)",
+}
+StdOutLine {
+    text: "[DEBUG] model_manager.cpp:406  - model manager prepared params backend buffer (1007.50 MB, 33 tensors, RAM)",
+}
+StdOutLine {
+    text: "[DEBUG] model_manager.cpp:406  - model manager prepared params backend buffer (1007.50 MB, 33 tensors, RAM)",
+}
+StdOutLine {
+    text: "[DEBUG] model_manager.cpp:406  - model manager prepared params backend buffer (985.00 MB, 34 tensors, RAM)",
+}
+StdOutLine {
+    text: "[DEBUG] model_manager.cpp:406  - model manager prepared params backend buffer (1007.50 MB, 33 tensors, RAM)",
+}
+StdOutLine {
+    text: "[DEBUG] model_manager.cpp:406  - model manager prepared params backend buffer (192.50 MB, 7 tensors, RAM)",
+}
+StdOutLine {
+    text: "[DEBUG] model_manager.cpp:406  - model manager prepared params backend buffer (1483.75 MB, 1 tensors, RAM)",
+}
+StdOutLine {
+    text: "[DEBUG] model_manager.cpp:406  - model manager prepared params backend buffer (1020.45 MB, 101 tensors, RAM)",
+}
+StdOutLine {
+    text: "[DEBUG] model_manager.cpp:406  - model manager prepared params backend buffer (1015.44 MB, 98 tensors, RAM)",
+}
+StdOutLine {
+    text: "[DEBUG] model_manager.cpp:406  - model manager prepared params backend buffer (502.70 MB, 46 tensors, RAM)",
+}
+StdOutLine {
+    text: "[DEBUG] model_manager.cpp:502  - model manager staged compute params (8221.97 MB, 386 tensors) to Vulkan0, taking 5.03s",
+}
+StdOutLine {
+    text: "[DEBUG] ggml_extend.hpp:2241 - qwen3 compute buffer size: 2.19 MB(VRAM)",
+}
+StdOutLine {
+    text: "[DEBUG] model_manager.cpp:935  - model manager releasing compute params (8221.97 MB, 386 tensors) from Vulkan0",
+}
+StdOutLine {
+    text: "[DEBUG] conditioner.hpp:2882 - computing condition graph completed, taking 10055 ms",
+}
+StdOutLine {
+    text: "[INFO ] stable-diffusion.cpp:5302 - get_learned_condition completed, taking 10.06s",
+}
+StdOutLine {
+    text: "[INFO ] stable-diffusion.cpp:5685 - generating image: 1/1 - seed 3833821053",
+}
+StdOutLine {
+    text: "[DEBUG] model_loader.cpp:980  - loading 452/453 tensors from /model_data/comfyui-model-base/diffusion_models/z_image_turbo_bf16.safetensors",
+}
+StdOutLine {
+    text: "  |#                                                 | 6/452 - 0.00MB/s\u{1b}[K",
+}
+StdOutLine {
+    text: "  |######                                            | 53/452 - 3.59GB/s\u{1b}[K",
+}
+StdOutLine {
+    text: "  |########                                          | 65/452 - 2.46GB/s\u{1b}[K",
+}
+StdOutLine {
+    text: "  |###########                                       | 91/452 - 2.76GB/s\u{1b}[K",
+}
+StdOutLine {
+    text: "  |###############                                   | 130/452 - 3.33GB/s\u{1b}[K",
+}
+StdOutLine {
+    text: "  |##################                                | 158/452 - 3.44GB/s\u{1b}[K",
+}
+StdOutLine {
+    text: "  |######################                            | 192/452 - 3.56GB/s\u{1b}[K",
+}
+StdOutLine {
+    text: "  |###########################                       | 236/452 - 3.90GB/s\u{1b}[K",
+}
+StdOutLine {
+    text: "  |#############################                     | 262/452 - 3.83GB/s\u{1b}[K",
+}
+StdOutLine {
+    text: "  |###################################               | 314/452 - 4.16GB/s\u{1b}[K",
+}
+StdOutLine {
+    text: "  |########################################          | 361/452 - 4.32GB/s\u{1b}[K",
+}
+StdOutLine {
+    text: "  |############################################      | 391/452 - 4.30GB/s\u{1b}[K",
+}
+StdOutLine {
+    text: "  |################################################  | 430/452 - 4.37GB/s\u{1b}[K",
+}
+StdOutLine {
+    text: "  |##################################################| 452/452 - 4.40GB/s\u{1b}[K",
+}
+StdOutLine {
+    text: "[INFO ] model_loader.cpp:1238 - loading tensors completed, taking 2.60s (read: 2.50s, memcpy: 0.00s, convert: 0.00s, copy_to_backend: 0.00s)",
+}
+StdOutLine {
+    text: "[DEBUG] model_manager.cpp:406  - model manager prepared params backend buffer (966.56 MB, 16 tensors, RAM)",
+}
+StdOutLine {
+    text: "[DEBUG] model_manager.cpp:406  - model manager prepared params backend buffer (1021.88 MB, 15 tensors, RAM)",
+}
+StdOutLine {
+    text: "[DEBUG] model_manager.cpp:406  - model manager prepared params backend buffer (975.00 MB, 15 tensors, RAM)",
+}
+StdOutLine {
+    text: "[DEBUG] model_manager.cpp:406  - model manager prepared params backend buffer (975.00 MB, 15 tensors, RAM)",
+}
+StdOutLine {
+    text: "[DEBUG] model_manager.cpp:406  - model manager prepared params backend buffer (965.62 MB, 15 tensors, RAM)",
+}
+StdOutLine {
+    text: "[DEBUG] model_manager.cpp:406  - model manager prepared params backend buffer (1021.88 MB, 15 tensors, RAM)",
+}
+StdOutLine {
+    text: "[DEBUG] model_manager.cpp:406  - model manager prepared params backend buffer (975.00 MB, 15 tensors, RAM)",
+}
+StdOutLine {
+    text: "[DEBUG] model_manager.cpp:406  - model manager prepared params backend buffer (975.00 MB, 15 tensors, RAM)",
+}
+StdOutLine {
+    text: "[DEBUG] model_manager.cpp:406  - model manager prepared params backend buffer (956.43 MB, 30 tensors, RAM)",
+}
+StdOutLine {
+    text: "[DEBUG] model_manager.cpp:406  - model manager prepared params backend buffer (1016.27 MB, 98 tensors, RAM)",
+}
+StdOutLine {
+    text: "[DEBUG] model_manager.cpp:406  - model manager prepared params backend buffer (991.55 MB, 108 tensors, RAM)",
+}
+StdOutLine {
+    text: "[DEBUG] model_manager.cpp:406  - model manager prepared params backend buffer (903.20 MB, 95 tensors, RAM)",
+}
+StdOutLine {
+    text: "[DEBUG] model_manager.cpp:502  - model manager staged compute params (11743.00 MB, 452 tensors) to Vulkan0, taking 5.11s",
+}
+StdOutLine {
+    text: "[DEBUG] ggml_extend.hpp:2241 - z_image compute buffer size: 4364.11 MB(VRAM)",
+}
+GenerationStarted
+GenerationStarted
+GenerationStarted
+GenerationStarted
+GenerationStarted
+GenerationStarted
+GenerationStarted
+StdOutLine {
+    text: "  |======>                                           | 1/8 - 47.13s/it\u{1b}[K",
+}
+Progress {
+    step: 1,
+    nsteps: 8,
+}
+Progress {
+    step: 1,
+    nsteps: 8,
+}
+Progress {
+    step: 1,
+    nsteps: 8,
+}
+Progress {
+    step: 1,
+    nsteps: 8,
+}

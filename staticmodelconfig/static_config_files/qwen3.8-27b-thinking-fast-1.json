@@ -30,5 +30,5 @@
   "top-p": 0.95,
   "jinja": true,
   "no-cont-batching": false,
-  "load-mode": "mmap+mlock"
+  "load-mode": "mlock"
 }

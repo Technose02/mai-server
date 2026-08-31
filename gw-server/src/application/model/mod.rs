@@ -324,3 +324,28 @@ pub async fn try_map_request_body_to_create_embedding_request(
         StatusCode::UNPROCESSABLE_ENTITY
     })
 }
+
+#[derive(Serialize, Deserialize, Debug, Clone, Default)]
+#[serde(rename_all = "kebab-case")]
+pub struct StableDiffusionPromptDto {
+    pub prompt: String,
+    pub width: usize,
+    pub height: usize,
+    #[serde(skip_serializing_if = "Option::is_none", default = "Option::default")]
+    pub steps: Option<usize>,
+    #[serde(skip_serializing_if = "Option::is_none", default = "Option::default")]
+    pub cfg_scale: Option<f32>,
+    #[serde(skip_serializing_if = "Option::is_none", default = "Option::default")]
+    pub guidance: Option<f32>,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub enum StableDiffusionSse {
+    GenerationStarted,
+    Progress { step: usize, nsteps: usize },
+    StdOutLine { text: String },
+    StdErrLine { text: String },
+    Error { message: String },
+    GenerationFinished { b64_encoded_image: String },
+    Killed,
+}

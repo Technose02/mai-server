@@ -16,6 +16,7 @@ use tokio::{
     },
     time::Instant,
 };
+use tracing::warn;
 
 type ProcessKillerHandle = (
     OneShotSender<OneShotSender<()>>,
@@ -119,6 +120,7 @@ impl StableDiffusionCppConfig {
         let seed = job.seed().unwrap_or(rand::random::<u32>());
 
         let tmp_output = "sd_temp_out.png";
+        let init_image = "sd_init.png";
         let ref_image_1 = "sd_ref_input_01.png";
         let ref_image_2 = "sd_ref_input_02.png";
         let ref_image_3 = "sd_ref_input_03.png";
@@ -143,13 +145,12 @@ impl StableDiffusionCppConfig {
                     .file_prefix()
                     .unwrap_or_else(|| panic!("unable to resolve filename of lora-path"))
                     .to_string_lossy();
-                lora_dir.add_softlink(&path);
+                lora_dir.add_softlink(path);
                 prompt.push_str(&format!("<lora:{filename_base}:{weight:.2}>"));
             }
             cmd.arg("--lora-model-dir")
                 .arg(AsRef::<Path>::as_ref(&lora_dir).to_string_lossy().as_ref());
         }
-
         cmd.current_dir(&temp_dir);
         cmd.arg("--diffusion-model").arg(job.diffusion_model());
         cmd.arg("--vae").arg(job.vae());
@@ -162,6 +163,7 @@ impl StableDiffusionCppConfig {
             }
             ClipModel::None => panic!("no textencoder set [NONE]"),
         };
+        cmd.arg("-t").arg("16");
 
         cmd.arg("--cfg-scale")
             .arg(format!("{:.1}", job.cfg_scale()));
@@ -174,6 +176,19 @@ impl StableDiffusionCppConfig {
         cmd.arg("--output").arg(tmp_output);
         cmd.arg("--scheduler").arg(job.scheduler());
         cmd.arg("--sampling-method").arg(job.sampling_method());
+        cmd.arg("--verbose");
+
+        if let Some(ref_image_args) = job.ref_image_args() {
+            cmd.arg("--ref-image-args").arg(ref_image_args);
+        }
+
+        if let Some(init_image_data) = job.init_image() {
+            let init_image_path = temp_dir.join(init_image);
+            std::fs::write(&init_image_path, init_image_data)
+                .expect("failed writing temporary file '{init_image_path:#?}'");
+            cmd.arg("--init-img")
+                .arg(format!("{}", init_image_path.to_string_lossy()));
+        }
 
         if let Some(ref_image_data) = job.ref_image_1() {
             let ref_image_path = temp_dir.join(ref_image_1);
@@ -209,7 +224,9 @@ impl StableDiffusionCppConfig {
             FlashAttentionMode::DiffusionOnly => {
                 cmd.arg("--diffusion-fa");
             }
-            _ => {}
+            _ => {
+                warn!("not using any flash-attention - this will be slow")
+            }
         }
 
         if job.vae_tiling() {
@@ -217,6 +234,7 @@ impl StableDiffusionCppConfig {
         }
 
         if job.offload_to_cpu() {
+            warn!("setting flag '--offload-to-cpu' as requested - this will be slow");
             cmd.arg("--offload-to-cpu");
         }
 

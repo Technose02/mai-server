@@ -18,7 +18,6 @@ async fn main() {
     let job = MageFlowTurboJob::default()
                 .with_steps(4)
                 .with_cfg_scale(1.0)
-                .with_offload_to_cpu(true)
                 .with_flash_attention_mode(FlashAttentionMode::Full)
                 .with_scheduler(Scheduler::Simple)
                 .with_sampling_method(SamplingMethod::Euler)

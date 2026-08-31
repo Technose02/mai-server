@@ -211,6 +211,11 @@ async fn post_chat_completions_impl(
     )
     .unwrap_or(chat_completions_request.model.clone());
 
+    application_config
+        .stable_diffusion_service()
+        .abort_all()
+        .await;
+
     if let Some(parallel_backend_requests_to_set) = optional_parallel_backend_requests_to_set {
         application_config
             .models_service()

@@ -18,7 +18,6 @@ async fn main() {
     let job = FluxDevJob::default()
         .with_steps(20)
         .with_cfg_scale(1.0)
-        .with_offload_to_cpu(true)
         .with_flash_attention_mode(FlashAttentionMode::Full)
         .with_scheduler(Scheduler::Simple)
         .with_sampling_method(SamplingMethod::Euler)

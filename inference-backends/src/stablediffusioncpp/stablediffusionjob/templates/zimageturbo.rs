@@ -1,5 +1,5 @@
 use crate::stablediffusioncpp::{
-    StableDiffusionJob,
+    FlashAttentionMode, StableDiffusionJob,
     stablediffusionjob::{ClipModel, HasBaseJob, JobBase},
 };
 
@@ -16,7 +16,8 @@ impl Default for ZImageTurboJob {
             height: 1024,
             cfg_scale: 1.0,
             guidance: 3.5,
-            offload_to_cpu: true,
+            flash_attention_mode: FlashAttentionMode::Full,
+            offload_to_cpu: false,
             prompt: "A Logo in white on black background saying 'Z Image Turbo' in capitals using a classic computer terminal font. Text is centered horizontally and vertically".into(),
             ..Default::default()
         })

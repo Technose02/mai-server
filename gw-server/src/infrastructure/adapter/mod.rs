@@ -6,3 +6,6 @@ pub use llamacppcontrolleradapter::LlamaCppControllerAdapter;
 
 mod staticmodelloader;
 pub use staticmodelloader::StaticModelLoader;
+
+mod stablediffustionconfigrunneradapter;
+pub use stablediffustionconfigrunneradapter::StableDiffusionConfigRunnerAdapter;

@@ -3,6 +3,8 @@ pub use animaturbo::AnimaTurboJob;
 
 mod krea2turbo;
 pub use krea2turbo::Krea2TurboJob;
+mod krea2turboedit;
+pub use krea2turboedit::Krea2TurboEditJob;
 
 mod zimage;
 pub use zimage::ZImageJob;

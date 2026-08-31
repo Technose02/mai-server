@@ -27,9 +27,11 @@ tracing-subscriber = { workspace = true }
 futures = "0.3.32"
 tokio-util = "0.7.18"
 async-stream = "0.3.6"
+base64 = { workspace = true }
+
 
 [dev-dependencies]
-base64 = "0.22.1"
 dotenv = "0.15.0"
+eventsource-stream = "0.2.3"
 image = "0.25.10"
 rig-core = "0.39.0"

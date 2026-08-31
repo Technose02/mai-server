@@ -16,7 +16,6 @@ impl Default for ZImageJob {
             height: 1024,
             cfg_scale: 7.0,
             guidance: 3.5,
-            offload_to_cpu: true,
             prompt: "A Logo in white on black background saying 'Z Image' in capitals using a classic computer terminal font. Text is centered horizontally and vertically".into(),
             ..Default::default()
         })

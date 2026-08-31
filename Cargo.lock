@@ -1050,6 +1050,7 @@ dependencies = [
  "axum-server",
  "base64",
  "dotenv",
+ "eventsource-stream",
  "flate2",
  "futures",
  "futures-util",
@@ -1425,6 +1426,7 @@ name = "inference-backends"
 version = "0.1.0"
 dependencies = [
  "chrono",
+ "image",
  "managed-process",
  "rand 0.9.2",
  "regex",

@@ -5,14 +5,16 @@ use gw_server::{
     domain::{
         ports::{
             ModelManagerServiceInPort, ModelsServiceInPort, OpenAiRequestForwardPServiceInPort,
+            StableDiffusionServiceInPort,
         },
         service::{
-            DefaultModelsService, InferenceBackendModelManagerService,
-            OpenAiClientRequestForwardService,
+            DefaultModelsService, DefaultStableDiffusionService,
+            InferenceBackendModelManagerService, OpenAiClientRequestForwardService,
         },
     },
     infrastructure::adapter::{
-        LlamaCppControllerAdapter, LocalLlamaCppClientAdapter, StaticModelLoader,
+        LlamaCppControllerAdapter, LocalLlamaCppClientAdapter, StableDiffusionConfigRunnerAdapter,
+        StaticModelLoader,
     },
     model::{ApplicationConfig, SecurityConfig},
 };
@@ -28,20 +30,27 @@ const RANDOM_APIKEY_LEN: u8 = 25;
 const LLAMACPP_LLM_PORT: u16 = 11440;
 const LLAMACPP_LLM_TIMEOUT_SECS: u16 = 60000;
 const LLAMACPP_EMBEDDINGS_PORT: u16 = 11441;
-const LLAMACPP_EXECDIR: &str = "/data0/inference/llama.cpp/";
+const LLAMACPP_EXECDIR: &str = "/data0/inference/llama.cpp";
+const STABLEDIFFUSIONCPP_EXEDIR: &str = "/data0/inference/stable-diffusion.cpp";
 
 #[derive(Default)]
-enum LlamaCppBackend {
+enum AcceleratorBackend {
     Vulkan,
     #[default]
     RocM,
 }
 
-impl LlamaCppBackend {
+impl AcceleratorBackend {
     pub fn llamacpp_command(&self) -> &'static str {
         match self {
-            LlamaCppBackend::RocM => "./build-rocm/bin/llama-server",
-            LlamaCppBackend::Vulkan => "./build-vulkan/bin/llama-server",
+            AcceleratorBackend::RocM => "./build-rocm/bin/llama-server",
+            AcceleratorBackend::Vulkan => "./build-vulkan/bin/llama-server",
+        }
+    }
+    pub fn stablediffusioncpp_command(&self) -> &'static str {
+        match self {
+            AcceleratorBackend::RocM => "build-rocm/bin/sd-cli",
+            AcceleratorBackend::Vulkan => "build-vulkan/bin/sd-cli",
         }
     }
 }
@@ -52,6 +61,7 @@ struct MyAppState {
     languagemodelmanager_service: Arc<dyn ModelManagerServiceInPort>,
     embeddingmodelmanager_service: Arc<dyn ModelManagerServiceInPort>,
     models_service: Arc<dyn ModelsServiceInPort>,
+    stable_diffusion_service: Arc<dyn StableDiffusionServiceInPort>,
 }
 
 impl ApplicationConfig for MyAppState {
@@ -74,6 +84,10 @@ impl ApplicationConfig for MyAppState {
     fn models_service(&self) -> Arc<dyn ModelsServiceInPort> {
         self.models_service.clone()
     }
+
+    fn stable_diffusion_service(&self) -> Arc<dyn StableDiffusionServiceInPort> {
+        self.stable_diffusion_service.clone()
+    }
 }
 
 struct MySecurityConfig {
@@ -92,7 +106,7 @@ async fn create_app(
     provided_apikey: Option<String>,
     localhost: bool,
     log_request_info: bool,
-    llamacpp_backend: LlamaCppBackend,
+    accelerator_backend: AcceleratorBackend,
 ) -> Router {
     let security_config = match provided_apikey {
         None if localhost => Arc::new(MySecurityConfig { apikey: None }),
@@ -128,14 +142,14 @@ async fn create_app(
     let llamacpp_llm_backend_controller = LlamaCppControllerAdapter::create_adapter(
         LLAMACPP_LLM_PORT,
         Some(LLAMACPP_LLM_TIMEOUT_SECS),
-        llamacpp_backend.llamacpp_command(),
+        accelerator_backend.llamacpp_command(),
         LLAMACPP_EXECDIR,
     )
     .await;
     let llamacpp_embeddings_backend_controller = LlamaCppControllerAdapter::create_adapter(
         LLAMACPP_EMBEDDINGS_PORT,
         None,
-        llamacpp_backend.llamacpp_command(),
+        accelerator_backend.llamacpp_command(),
         LLAMACPP_EXECDIR,
     )
     .await;
@@ -188,6 +202,13 @@ async fn create_app(
     let embeddingmodelmanager_service =
         InferenceBackendModelManagerService::create_service(llamacpp_embeddings_backend_controller);
 
+    let path_to_stablediffusioncpp = PathBuf::from(STABLEDIFFUSIONCPP_EXEDIR)
+        .join(accelerator_backend.stablediffusioncpp_command());
+    let stable_diffusion_config_runner =
+        StableDiffusionConfigRunnerAdapter::create_adapter(path_to_stablediffusioncpp);
+    let stable_diffusion_service =
+        DefaultStableDiffusionService::create_service(stable_diffusion_config_runner);
+
     // build configuration(s)
     let config = Arc::new(MyAppState {
         openai_chat_completions_service,
@@ -195,10 +216,15 @@ async fn create_app(
         languagemodelmanager_service,
         embeddingmodelmanager_service,
         models_service,
+        stable_diffusion_service,
     });
 
     let router = Router::new()
         .merge(application::open_ai_router(
+            config.clone(),
+            security_config.clone(),
+        ))
+        .merge(application::stable_diffusion_router(
             config.clone(),
             security_config.clone(),
         ))
@@ -245,7 +271,7 @@ async fn main() {
         let mut llama_cpp_chatui = false;
         let mut no_https = false;
         let mut override_host = None;
-        let mut llamacpp_backend = LlamaCppBackend::default();
+        let mut llamacpp_backend = AcceleratorBackend::default();
 
         while let Some(a) = args.next() {
             if port.is_none() && (a == "--port" || a == "-p") {
@@ -300,11 +326,11 @@ async fn main() {
             }
 
             if a == "--rocm" {
-                llamacpp_backend = LlamaCppBackend::RocM;
+                llamacpp_backend = AcceleratorBackend::RocM;
             }
 
             if a == "--vulkan" {
-                llamacpp_backend = LlamaCppBackend::Vulkan;
+                llamacpp_backend = AcceleratorBackend::Vulkan;
             }
         }
         let port = match port {

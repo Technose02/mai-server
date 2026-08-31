@@ -24,5 +24,6 @@
   "min-p": 0.0,
   "presence-penalty": 1.5,
   "repeat-penalty": 1.0,
-  "jinja": true
+  "jinja": true,
+  "load-mode": "mlock"
 }

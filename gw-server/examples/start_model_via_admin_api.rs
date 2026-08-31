@@ -39,7 +39,7 @@ async fn main() {
         "top-k": 20,
         "top-p": 0.95,
         "jinja": true,
-        "mlock": true,
+        "load-mode": "mlock",
         "chat-template-kwargs": "{\"preserve_thinking\":\"true\"}",
         "reasoning": "off"
     })).build().unwrap();

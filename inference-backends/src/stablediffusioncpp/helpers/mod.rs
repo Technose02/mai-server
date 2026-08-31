@@ -6,15 +6,11 @@ use chrono::NaiveTime;
 use std::fmt::Display;
 use tracing::level_filters::LevelFilter;
 
-pub enum LogSetting {
-    Nothing,
-    Err(LevelFilter),
-    Out(LevelFilter),
-    Both {
-        err_level: LevelFilter,
-        out_level: LevelFilter,
-    },
-}
+mod logsetting;
+pub use logsetting::LogSetting;
+
+mod rescalc;
+pub use rescalc::Rescalc;
 
 pub async fn simple_generation<J: StableDiffusionJob>(
     config: &mut StableDiffusionCppConfig,

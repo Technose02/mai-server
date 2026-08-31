@@ -13,8 +13,9 @@ mod jobbase;
 pub(super) use jobbase::{HasBaseJob, JobBase};
 mod clipmodel;
 pub use clipmodel::ClipModel;
-
+mod refimageargs;
 use crate::stablediffusioncpp::{StableDiffusionError, StableDiffusionResult};
+pub use refimageargs::RefImageArgs;
 
 pub mod templates;
 
@@ -125,6 +126,22 @@ pub trait StableDiffusionJob: HasBaseJob {
     }
     fn with_sampling_method(mut self, sampling_method: SamplingMethod) -> Self {
         self.base_mut().sampling_method = sampling_method;
+        self
+    }
+
+    fn ref_image_args(&self) -> &Option<RefImageArgs> {
+        &self.base().ref_image_args
+    }
+    fn with_ref_image_args(mut self, ref_image_args: RefImageArgs) -> Self {
+        self.base_mut().ref_image_args = Some(ref_image_args);
+        self
+    }
+
+    fn init_image(&self) -> &Option<Vec<u8>> {
+        &self.base().init_image
+    }
+    fn with_init_image(mut self, init_image_data: Vec<u8>) -> Self {
+        self.base_mut().init_image = Some(init_image_data);
         self
     }
 

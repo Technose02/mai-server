@@ -1,10 +1,14 @@
+use crate::application::model::StableDiffusionPromptDto;
 use async_openai::types::{chat::CreateChatCompletionRequest, embeddings::CreateEmbeddingRequest};
 use async_trait::async_trait;
 use axum::{extract::Request, http::StatusCode, response::Response};
-use inference_backends::{LlamaCppConfigArgs, LlamaCppProcessState, LlamaCppRunConfig};
-use staticmodelconfig::ModelConfiguration;
-use staticmodelconfig::ModelList;
+use inference_backends::{
+    LlamaCppConfigArgs, LlamaCppProcessState, LlamaCppRunConfig,
+    stablediffusioncpp::StableDiffusionEvent,
+};
+use staticmodelconfig::{ModelConfiguration, ModelList};
 use std::{sync::Arc, time::Duration};
+use tokio::sync::mpsc::Receiver;
 
 /// IN-PORTS
 
@@ -70,6 +74,17 @@ pub trait ModelsServiceInPort: Send + Sync + 'static {
     fn set_parallel_backend_requests(&self, parallel_backend_requests: u8);
 }
 
+#[async_trait]
+pub trait StableDiffusionServiceInPort: Send + Sync + 'static {
+    async fn process_prompt(
+        &self,
+        sd_config: &str,
+        prompt_dto: StableDiffusionPromptDto,
+    ) -> Result<Response, StatusCode>;
+
+    async fn abort_all(&self);
+}
+
 /// OUT-PORTS
 
 #[async_trait]
@@ -99,4 +114,14 @@ pub trait LlamaCppControllerOutPort: Send + Sync + 'static {
 pub trait ModelLoaderOutPort: Send + Sync + 'static {
     fn get_static_model_configurations(&self) -> Vec<ModelConfiguration>;
     async fn get_model_configuration(&self, alias: &str) -> Result<Arc<LlamaCppConfigArgs>, ()>;
+}
+
+#[async_trait]
+pub trait StableDiffusionConfigRunnerOutPort: Send + Sync + 'static {
+    async fn abort_all(&self);
+    async fn create_and_run_job(
+        &self,
+        sd_config: &str,
+        prompt_dto: StableDiffusionPromptDto,
+    ) -> Result<Receiver<StableDiffusionEvent>, StatusCode>;
 }

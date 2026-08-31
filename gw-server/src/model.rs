@@ -1,5 +1,6 @@
 use crate::domain::ports::{
     ModelManagerServiceInPort, ModelsServiceInPort, OpenAiRequestForwardPServiceInPort,
+    StableDiffusionServiceInPort,
 };
 use std::{borrow::Cow, sync::Arc};
 
@@ -13,4 +14,5 @@ pub trait ApplicationConfig: Send + Sync + 'static {
     fn languagemodelmanager_service(&self) -> Arc<dyn ModelManagerServiceInPort>;
     fn embeddingmodelmanager_service(&self) -> Arc<dyn ModelManagerServiceInPort>;
     fn models_service(&self) -> Arc<dyn ModelsServiceInPort>;
+    fn stable_diffusion_service(&self) -> Arc<dyn StableDiffusionServiceInPort>;
 }

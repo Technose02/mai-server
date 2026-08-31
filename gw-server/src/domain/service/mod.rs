@@ -4,3 +4,5 @@ mod inferencebackendmodelmanagerservice;
 pub use inferencebackendmodelmanagerservice::InferenceBackendModelManagerService;
 mod defaultmodelsservice;
 pub use defaultmodelsservice::DefaultModelsService;
+mod defaultstablediffusionservice;
+pub use defaultstablediffusionservice::DefaultStableDiffusionService;

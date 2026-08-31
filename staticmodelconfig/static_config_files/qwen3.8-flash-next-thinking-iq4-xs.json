@@ -24,5 +24,6 @@
   "min-p": 0.0,
   "top-k": 20,
   "top-p": 0.95,
-  "jinja": true
+  "jinja": true,
+  "load-mode": "mlock"
 }

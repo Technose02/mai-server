@@ -7,6 +7,8 @@ pub mod model;
 mod modelmanagerrouter;
 mod openairouter;
 
+mod stablediffusionrouter;
+
 pub fn open_ai_router(
     config: Arc<dyn ApplicationConfig>,
     security_config: Arc<dyn SecurityConfig>,
@@ -19,4 +21,11 @@ pub fn model_manager_router(
     security_config: Arc<dyn SecurityConfig>,
 ) -> Router {
     modelmanagerrouter::create_router(config, security_config)
+}
+
+pub fn stable_diffusion_router(
+    config: Arc<dyn ApplicationConfig>,
+    security_config: Arc<dyn SecurityConfig>,
+) -> Router {
+    stablediffusionrouter::create_router(config, security_config)
 }

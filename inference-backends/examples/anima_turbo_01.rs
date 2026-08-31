@@ -19,7 +19,6 @@ async fn main() {
                 .with_steps(8)
                 .with_cfg_scale(1.0)
                 .with_guidance(0.0)
-                .with_offload_to_cpu(true)
                 .with_flash_attention_mode(FlashAttentionMode::DiffusionOnly)
                 .with_scheduler(Scheduler::Simple)
                 .with_sampling_method(SamplingMethod::Euler)

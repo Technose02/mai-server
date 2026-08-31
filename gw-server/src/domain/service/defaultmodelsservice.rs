@@ -172,7 +172,8 @@ impl ModelsServiceInPort for DefaultModelsService {
     }
 
     fn get_default_languagemodel_alias(&self) -> String {
-        "ornith1.5-35b-a3b-fast-1-large".into()
+        //"ornith1.5-35b-a3b-fast-1-large".into()
+        "qwen3.8-27b-thinking-fast-4-moderate".into()
     }
 
     async fn ensure_requested_embeddingmodel_is_served(

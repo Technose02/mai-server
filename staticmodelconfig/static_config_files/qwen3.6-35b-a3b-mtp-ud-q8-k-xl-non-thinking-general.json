@@ -26,6 +26,6 @@
   "top-k": 20,
   "top-p": 0.8,
   "jinja": true,
-    "load-mode": "mmap+mlock",
+    "load-mode": "mlock",
   "reasoning": "off"
 }
