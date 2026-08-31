@@ -10,7 +10,7 @@ fn softlink(original: impl AsRef<Path>, link: impl AsRef<Path>) {
 }
 
 #[cfg(target_os = "windows")]
-fn softlink_w(original: impl AsRef<Path>, link: impl AsRef<Path>) {
+fn softlink(original: impl AsRef<Path>, link: impl AsRef<Path>) {
     std::os::windows::fs::symlink_file(original, link).expect("error creating symlink to lora");
 }
 
