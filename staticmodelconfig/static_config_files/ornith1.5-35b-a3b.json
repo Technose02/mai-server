@@ -1,6 +1,6 @@
 {
   "alias": "ornith1.5-35b-a3b",
-  "model-path": "/model_data/huggingface/ornith-ai/Ornith-1.5-35B-A3B-GGUF/Ornith-1.5-35B-BF16.gguf",
+  "model-path": "/data0/model_archive/Ornith-1.5-35B-BF16.gguf",
   "max-ctx-size": 262144,
   "vocab-type": 2,
   "n-vocab": 248320,
