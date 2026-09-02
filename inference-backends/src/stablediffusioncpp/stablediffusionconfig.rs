@@ -108,9 +108,9 @@ impl StableDiffusionCppConfig {
         Ok(s)
     }
 
-    pub fn run<J: StableDiffusionJob>(
+    pub fn run(
         &mut self,
-        job: &J,
+        job: &StableDiffusionJob,
         //        event_sender: mpsc::Sender<StableDiffusionEvent>,
     ) -> Result<Receiver<StableDiffusionEvent>, StableDiffusionError> {
         let mut cmd = tokio::process::Command::new(&self.path_to_executable);
@@ -495,7 +495,7 @@ mod test {
         let mut sdcfg =
             StableDiffusionCppConfig::init_with_temp_dir(path_to_executable, "/tmp").unwrap();
 
-        let job = crate::stablediffusioncpp::Krea2TurboJob::default()
+        let job = StableDiffusionJob::krea2_turbo_job()
             .with_width(1280)
             .with_height(720)
             .with_steps(12)

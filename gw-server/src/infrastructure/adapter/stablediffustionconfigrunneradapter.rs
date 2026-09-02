@@ -4,9 +4,7 @@ use crate::{
 use async_trait::async_trait;
 use axum::http::StatusCode;
 use inference_backends::stablediffusioncpp::StableDiffusionCppConfig;
-use inference_backends::stablediffusioncpp::{
-    StableDiffusionEvent, StableDiffusionJob, ZImageTurboJob,
-};
+use inference_backends::stablediffusioncpp::{StableDiffusionEvent, StableDiffusionJob};
 use std::{path::PathBuf, sync::Arc};
 use tokio::sync::{Mutex, mpsc::Receiver};
 use tracing::error;
@@ -41,7 +39,7 @@ impl StableDiffusionConfigRunnerOutPort for StableDiffusionConfigRunnerAdapter {
         prompt_dto: StableDiffusionPromptDto,
     ) -> Result<Receiver<StableDiffusionEvent>, axum::http::StatusCode> {
         let mut job = match sd_config {
-            "zimageturbo" => Ok(ZImageTurboJob::default()),
+            "zimageturbo" => Ok(StableDiffusionJob::z_image_turbo_job()),
             _ => Err(StatusCode::NOT_FOUND),
         }?;
 

@@ -1,6 +1,5 @@
 use inference_backends::stablediffusioncpp::{
-    FlashAttentionMode, Krea2TurboEditJob, SamplingMethod, Scheduler, StableDiffusionCppConfig,
-    StableDiffusionJob,
+    FlashAttentionMode, SamplingMethod, Scheduler, StableDiffusionCppConfig, StableDiffusionJob,
     helpers::{LogSetting, simple_generation},
 };
 use tracing::level_filters::LevelFilter;
@@ -20,7 +19,7 @@ async fn main() {
     let ref_img = std::fs::read("/home/technose02/Pictures/uli_poster/reference_images_for_description/IMG_20260725_053533531_HDR.jpg")
         .expect("failed to read ref_image");
 
-    let job = Krea2TurboEditJob::default()
+    let job = StableDiffusionJob::krea2_turbo_edit_job()
         .with_steps(8)
         .with_cfg_scale(1.0)
         .with_guidance(3.5)

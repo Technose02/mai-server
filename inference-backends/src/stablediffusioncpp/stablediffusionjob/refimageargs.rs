@@ -1,5 +1,6 @@
 use std::ffi::OsStr;
 
+#[derive(Debug)]
 pub enum RefImageArgs {
     PresetKrea2Edit,
     Custom(String),

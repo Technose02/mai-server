@@ -1,5 +1,5 @@
 use inference_backends::stablediffusioncpp::{
-    Krea2TurboJob, StableDiffusionCppConfig, StableDiffusionEvent,
+    StableDiffusionCppConfig, StableDiffusionEvent, StableDiffusionJob,
 };
 use std::time::Duration;
 use tracing::level_filters::LevelFilter;
@@ -19,7 +19,7 @@ async fn main() {
         StableDiffusionCppConfig::init_with_temp_dir(VALID_PATH_TO_EXECUTABLE, "/tmp").unwrap();
 
     // run job
-    let mut event_receiver = sdcfg.run(&Krea2TurboJob::default()).unwrap();
+    let mut event_receiver = sdcfg.run(&StableDiffusionJob::krea2_turbo_job()).unwrap();
 
     // delayed async stop-request to sdcfg
     tokio::spawn(async move {

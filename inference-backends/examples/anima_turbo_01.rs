@@ -1,6 +1,5 @@
 use inference_backends::stablediffusioncpp::{
-    AnimaTurboJob, FlashAttentionMode, SamplingMethod, Scheduler, StableDiffusionCppConfig,
-    StableDiffusionJob,
+    FlashAttentionMode, SamplingMethod, Scheduler, StableDiffusionCppConfig, StableDiffusionJob,
     helpers::{LogSetting, simple_generation},
 };
 use tracing::level_filters::LevelFilter;
@@ -15,16 +14,16 @@ async fn main() {
         .with_max_level(LevelFilter::INFO)
         .init();
 
-    let job = AnimaTurboJob::default()
-                .with_steps(8)
-                .with_cfg_scale(1.0)
-                .with_guidance(0.0)
-                .with_flash_attention_mode(FlashAttentionMode::DiffusionOnly)
-                .with_scheduler(Scheduler::Simple)
-                .with_sampling_method(SamplingMethod::Euler)
-                .with_width(1024)
-                .with_height(1024)
-                .with_prompt(r#"
+    let job = StableDiffusionJob::anima_turbo_job()
+    .with_steps(8)
+    .with_cfg_scale(1.0)
+    .with_guidance(0.0)
+    .with_flash_attention_mode(FlashAttentionMode::DiffusionOnly)
+    .with_scheduler(Scheduler::Simple)
+    .with_sampling_method(SamplingMethod::Euler)
+    .with_width(1024)
+    .with_height(1024)
+    .with_prompt(r#"
 Professional 3D character design sheet of an adorable, fluffy baby owl in Disney Pixar art style.
 The character, Uli, features extremely soft, voluminous light-brown taupe fur with messy, cute tufts
 on top of his head, large expressive glistening dark eyes, and small dark brown rounded feet.

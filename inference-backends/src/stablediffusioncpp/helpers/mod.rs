@@ -12,9 +12,9 @@ pub use logsetting::LogSetting;
 mod rescalc;
 pub use rescalc::Rescalc;
 
-pub async fn simple_generation<J: StableDiffusionJob>(
+pub async fn simple_generation(
     config: &mut StableDiffusionCppConfig,
-    job: &J,
+    job: &StableDiffusionJob,
     filename: impl Display,
     log_setting: LogSetting,
 ) -> StableDiffusionResult<()> {

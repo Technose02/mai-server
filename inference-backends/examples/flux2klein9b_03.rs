@@ -6,8 +6,7 @@ use image::{
     imageops::FilterType::Lanczos3,
 };
 use inference_backends::stablediffusioncpp::{
-    FlashAttentionMode, Flux2Klein9bJob, SamplingMethod, Scheduler, StableDiffusionCppConfig,
-    StableDiffusionJob,
+    FlashAttentionMode, SamplingMethod, Scheduler, StableDiffusionCppConfig, StableDiffusionJob,
     helpers::{LogSetting, Rescalc, simple_generation},
 };
 use tracing::level_filters::LevelFilter;
@@ -63,7 +62,7 @@ async fn main() {
         c.into_inner()
     };
 
-    let job = Flux2Klein9bJob::default()
+    let job = StableDiffusionJob::flux2_klein_9b_job()
         .with_steps(4)
         .with_cfg_scale(1.0)
         .with_guidance(3.5)

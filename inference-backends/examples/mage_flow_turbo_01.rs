@@ -1,6 +1,5 @@
 use inference_backends::stablediffusioncpp::{
-    FlashAttentionMode, MageFlowTurboJob, SamplingMethod, Scheduler, StableDiffusionCppConfig,
-    StableDiffusionJob,
+    FlashAttentionMode, SamplingMethod, Scheduler, StableDiffusionCppConfig, StableDiffusionJob,
     helpers::{LogSetting, simple_generation},
 };
 use tracing::level_filters::LevelFilter;
@@ -15,7 +14,7 @@ async fn main() {
         .with_max_level(LevelFilter::INFO)
         .init();
 
-    let job = MageFlowTurboJob::default()
+    let job = StableDiffusionJob::mage_flow_turbo_job()
                 .with_steps(4)
                 .with_cfg_scale(1.0)
                 .with_flash_attention_mode(FlashAttentionMode::Full)

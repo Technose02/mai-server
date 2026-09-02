@@ -1,6 +1,6 @@
 use std::ffi::OsStr;
 
-#[derive(Clone, Copy, Default)]
+#[derive(Debug, Clone, Copy, Default)]
 pub enum SamplingMethod {
     #[default]
     Euler,

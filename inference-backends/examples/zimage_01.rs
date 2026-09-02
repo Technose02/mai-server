@@ -1,6 +1,5 @@
 use inference_backends::stablediffusioncpp::{
     FlashAttentionMode, SamplingMethod, Scheduler, StableDiffusionCppConfig, StableDiffusionJob,
-    ZImageJob,
     helpers::{LogSetting, simple_generation},
 };
 use tracing::level_filters::LevelFilter;
@@ -15,7 +14,7 @@ async fn main() {
         .with_max_level(LevelFilter::INFO)
         .init();
 
-    let job = ZImageJob::default()
+    let job = StableDiffusionJob::z_image_job()
                 .with_steps(28)
                 .with_cfg_scale(4.0)
                 .with_guidance(3.5)

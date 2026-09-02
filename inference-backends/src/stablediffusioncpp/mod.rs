@@ -4,10 +4,6 @@ pub use stablediffusionconfig::{StableDiffusionCppConfig, StableDiffusionEvent};
 mod stablediffusionjob;
 pub use stablediffusionjob::{
     FlashAttentionMode, RefImageArgs, SamplingMethod, Scheduler, StableDiffusionJob,
-    templates::{
-        AnimaTurboJob, Flux2Klein9bJob, FluxDevJob, FluxSchnellJob, Krea2TurboEditJob,
-        Krea2TurboJob, MageFlowTurboJob, ZImageJob, ZImageTurboJob,
-    },
 };
 
 mod loradir;
