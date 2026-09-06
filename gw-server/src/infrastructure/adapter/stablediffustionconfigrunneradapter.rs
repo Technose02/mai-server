@@ -39,6 +39,12 @@ impl StableDiffusionConfigRunnerOutPort for StableDiffusionConfigRunnerAdapter {
         prompt_dto: StableDiffusionPromptDto,
     ) -> Result<Receiver<StableDiffusionEvent>, axum::http::StatusCode> {
         let mut job = match sd_config {
+            "animaturbo" => Ok(StableDiffusionJob::anima_turbo_job()),
+            "flux2klein9b" => Ok(StableDiffusionJob::flux2_klein_9b_job()),
+            "fluxdev" => Ok(StableDiffusionJob::flux_dev_job()),
+            "fluxschnell" => Ok(StableDiffusionJob::flux_schnell_job()),
+            "krea2turbo" => Ok(StableDiffusionJob::krea2_turbo_job()),
+            "mageflowturbo" => Ok(StableDiffusionJob::mage_flow_turbo_job()),
             "zimageturbo" => Ok(StableDiffusionJob::z_image_turbo_job()),
             _ => Err(StatusCode::NOT_FOUND),
         }?;
