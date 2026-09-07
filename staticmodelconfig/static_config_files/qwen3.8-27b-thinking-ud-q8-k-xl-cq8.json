@@ -1,5 +1,5 @@
 {
-  "alias": "qwen3.8-27b-thinking-fast-1",
+  "alias": "qwen3.8-27b-thinking-ud-q8-k-xl-cq8",
   "model-path": "/model_data/huggingface/unsloth/Qwen3.8-27B-GGUF/Qwen3.8-27B-UD-Q8_K_XL.gguf",
   "max-ctx-size": 262144,
   "vocab-type": 2,
@@ -29,6 +29,5 @@
   "top-k": 20,
   "top-p": 0.95,
   "jinja": true,
-  "no-cont-batching": false,
   "load-mode": "mlock"
 }
