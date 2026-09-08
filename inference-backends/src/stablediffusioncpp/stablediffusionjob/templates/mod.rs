@@ -7,3 +7,4 @@ mod krea2turboedit;
 mod mageflowturbo;
 mod zimage;
 mod zimageturbo;
+mod booguimageturbo;

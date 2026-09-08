@@ -40,6 +40,7 @@ impl StableDiffusionConfigRunnerOutPort for StableDiffusionConfigRunnerAdapter {
     ) -> Result<Receiver<StableDiffusionEvent>, axum::http::StatusCode> {
         let mut job = match sd_config {
             "animaturbo" => Ok(StableDiffusionJob::anima_turbo_job()),
+            "booguimageturbo" => Ok(StableDiffusionJob::boogu_image_turbo_job()),
             "flux2klein9b" => Ok(StableDiffusionJob::flux2_klein_9b_job()),
             "fluxdev" => Ok(StableDiffusionJob::flux_dev_job()),
             "fluxschnell" => Ok(StableDiffusionJob::flux_schnell_job()),

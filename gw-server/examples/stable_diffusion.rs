@@ -8,11 +8,12 @@ use rig_core::http_client::ReqwestClient;
 const BASE_URL: &str = "https://mai-server.ipv64.net:8080";
 
 //const T2IMODEL: &str = "animaturbo";
+const T2IMODEL: &str = "booguimageturbo";
 //const T2IMODEL: &str = "flux2klein9b";
 //const T2IMODEL: &str = "fluxdev";
 //const T2IMODEL: &str = "fluxschnell";
 //const T2IMODEL: &str = "krea2turbo";
-const T2IMODEL: &str = "mageflowturbo";
+//const T2IMODEL: &str = "mageflowturbo";
 //const T2IMODEL: &str = "zimageturbo";
 
 const PROMPT: &str = r#"an exhausted german software developer who just fell asleep while hacking together a new crate (lib) for the rust programming language"#;
