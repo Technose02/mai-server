@@ -5,6 +5,7 @@ use axum::{
     extract::Request,
     http::{StatusCode, header},
 };
+use base64::prelude::{BASE64_STANDARD, Engine};
 use http_body_util::BodyExt;
 use inference_backends::{
     ContextSize, LlamaCppConfigArgs, LlamaCppRunConfig, LoadMode, OnOffAutoValue,
@@ -337,6 +338,27 @@ pub struct StableDiffusionPromptDto {
     pub cfg_scale: Option<f32>,
     #[serde(skip_serializing_if = "Option::is_none", default = "Option::default")]
     pub guidance: Option<f32>,
+    #[serde(skip_serializing_if = "Option::is_none", default = "Option::default")]
+    pub ref_png_1: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none", default = "Option::default")]
+    pub ref_png_2: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none", default = "Option::default")]
+    pub ref_png_3: Option<String>,
+}
+
+impl StableDiffusionPromptDto {
+    pub fn with_ref_png_1_data(mut self, ref_png_1_data: Vec<u8>) -> Self {
+        self.ref_png_1 = Some(BASE64_STANDARD.encode(ref_png_1_data));
+        self
+    }
+    pub fn with_ref_png_2_data(mut self, ref_png_2_data: Vec<u8>) -> Self {
+        self.ref_png_2 = Some(BASE64_STANDARD.encode(ref_png_2_data));
+        self
+    }
+    pub fn with_ref_png_3_data(mut self, ref_png_3_data: Vec<u8>) -> Self {
+        self.ref_png_3 = Some(BASE64_STANDARD.encode(ref_png_3_data));
+        self
+    }
 }
 
 #[derive(Serialize, Deserialize, Debug)]

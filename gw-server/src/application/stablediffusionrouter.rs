@@ -4,9 +4,8 @@ use crate::{
 };
 use axum::{
     body::Body,
-    extract::{Json, Path, State},
-    http::Response,
-    http::StatusCode,
+    extract::{DefaultBodyLimit, Json, Path, State},
+    http::{Response, StatusCode},
     routing::{Router, post},
 };
 use managed_process::ProcessState;
@@ -22,6 +21,7 @@ pub fn create_router(
             security_config.clone(),
             check_auth,
         ))
+        .layer(DefaultBodyLimit::max(usize::MAX))
         .with_state(config)
 }
 

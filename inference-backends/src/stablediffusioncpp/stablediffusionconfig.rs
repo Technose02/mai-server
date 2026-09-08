@@ -182,7 +182,7 @@ impl StableDiffusionCppConfig {
             cmd.arg("--ref-image-args").arg(ref_image_args);
         }
 
-        if let Some(init_image_data) = job.init_image() {
+        if let Some(init_image_data) = job.init_png() {
             let init_image_path = temp_dir.join(init_image);
             std::fs::write(&init_image_path, init_image_data)
                 .expect("failed writing temporary file '{init_image_path:#?}'");
@@ -190,7 +190,7 @@ impl StableDiffusionCppConfig {
                 .arg(format!("{}", init_image_path.to_string_lossy()));
         }
 
-        if let Some(ref_image_data) = job.ref_image_1() {
+        if let Some(ref_image_data) = job.ref_png_1() {
             let ref_image_path = temp_dir.join(ref_image_1);
             std::fs::write(&ref_image_path, ref_image_data)
                 .expect("failed writing temporary file '{ref_image_path:#?}'");
@@ -198,7 +198,7 @@ impl StableDiffusionCppConfig {
                 .arg(format!("{}", ref_image_path.to_string_lossy()));
         }
 
-        if let Some(ref_image_data) = job.ref_image_2() {
+        if let Some(ref_image_data) = job.ref_png_2() {
             let ref_image_path = temp_dir.join(ref_image_2);
             std::fs::write(&ref_image_path, ref_image_data)
                 .expect("failed writing temporary file '{ref_image_path:#?}'");
@@ -206,7 +206,7 @@ impl StableDiffusionCppConfig {
                 .arg(format!("{}", ref_image_path.to_string_lossy()));
         }
 
-        if let Some(ref_image_data) = job.ref_image_3() {
+        if let Some(ref_image_data) = job.ref_png_3() {
             let ref_image_path = temp_dir.join(ref_image_3);
             std::fs::write(&ref_image_path, ref_image_data)
                 .expect("failed writing temporary file '{ref_image_path:#?}'");

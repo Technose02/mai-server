@@ -71,8 +71,8 @@ async fn main() {
         .with_sampling_method(SamplingMethod::Euler)
         .with_width(w_base as usize)
         .with_height(h_base as usize)
-        .with_ref_image_1(base_image)
-        .with_ref_image_2(reference_image)
+        .with_ref_png_1(base_image)
+        .with_ref_png_2(reference_image)
         .with_prompt(
             r#"
 replace the owl in image1 with the owl in image_2

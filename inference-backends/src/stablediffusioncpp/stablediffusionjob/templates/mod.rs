@@ -1,4 +1,5 @@
 mod animaturbo;
+mod booguimageturbo;
 mod flux2klein9b;
 mod fluxdev;
 mod fluxschnell;
@@ -7,4 +8,3 @@ mod krea2turboedit;
 mod mageflowturbo;
 mod zimage;
 mod zimageturbo;
-mod booguimageturbo;

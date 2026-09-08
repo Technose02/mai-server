@@ -21,5 +21,5 @@ impl StableDiffusionJob {
             prompt: "A Logo in white on black background saying 'Flux Schnell' in capitals using a classic computer terminal font. Text is centered horizontally and vertically".into(),
             ..Default::default()
         }
-    }    
+    }
 }

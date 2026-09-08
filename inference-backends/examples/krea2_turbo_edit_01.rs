@@ -26,7 +26,7 @@ async fn main() {
                 .with_sampling_method(SamplingMethod::Euler)
                 .with_width(1232)
                 .with_height(1600)
-                .with_ref_image_1(ref_img_1_data)
+                .with_ref_png_1(ref_img_1_data)
                 .with_prompt(r#"
 create an image of the stuffed owl from the image sitting on a rustic wooden table in a cozy, warm autumn coffeeshop. The owl is drinking a small ceramic cappuccino with latte art, holding the cup using a "cuddle grip," clamping the vessel securely between the soft fold of its shaggy wing-flap and its plump, mottled chest, with the cup deeply recessed into the fur. It is wearing the dark autumn-green ribbed knit scarf, tied in a soft, chunky knot at the front with the brownish-taupe ends draping asymmetrically over the cream-and-brown chest fur. The scene is captured in a sophisticated, relaxed adult aesthetic with warm golden-hour lighting, soft bokeh of a rain-streaked window in the background showing fallen orange leaves, and a color palette of deep ambers, forest greens, and muted taupes. High-fidelity textures on the glossy plastic eyes and the tactile, ribbed yarn of the scarf.
 "#);

@@ -3,6 +3,7 @@ use crate::{
 };
 use async_trait::async_trait;
 use axum::http::StatusCode;
+use base64::prelude::{BASE64_STANDARD, Engine};
 use inference_backends::stablediffusioncpp::StableDiffusionCppConfig;
 use inference_backends::stablediffusioncpp::{StableDiffusionEvent, StableDiffusionJob};
 use std::{path::PathBuf, sync::Arc};
@@ -54,6 +55,39 @@ impl StableDiffusionConfigRunnerOutPort for StableDiffusionConfigRunnerAdapter {
             .with_width(prompt_dto.width)
             .with_height(prompt_dto.height)
             .with_prompt(prompt_dto.prompt);
+
+        if let Some(ref_png_b64_data) = prompt_dto.ref_png_1 {
+            match BASE64_STANDARD.decode(ref_png_b64_data) {
+                Ok(ref_png_data) => {
+                    job = job.with_ref_png_1(ref_png_data);
+                }
+                Err(_) => {
+                    return Err(StatusCode::BAD_REQUEST);
+                }
+            }
+        }
+
+        if let Some(ref_png_b64_data) = prompt_dto.ref_png_2 {
+            match BASE64_STANDARD.decode(ref_png_b64_data) {
+                Ok(ref_png_data) => {
+                    job = job.with_ref_png_2(ref_png_data);
+                }
+                Err(_) => {
+                    return Err(StatusCode::BAD_REQUEST);
+                }
+            }
+        }
+
+        if let Some(ref_png_b64_data) = prompt_dto.ref_png_3 {
+            match BASE64_STANDARD.decode(ref_png_b64_data) {
+                Ok(ref_png_data) => {
+                    job = job.with_ref_png_3(ref_png_data);
+                }
+                Err(_) => {
+                    return Err(StatusCode::BAD_REQUEST);
+                }
+            }
+        }
 
         if let Some(cfg_scale) = prompt_dto.cfg_scale {
             job = job.with_cfg_scale(cfg_scale);

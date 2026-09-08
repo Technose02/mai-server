@@ -28,8 +28,8 @@ async fn main() {
         .with_sampling_method(SamplingMethod::Euler)
         .with_width(1232)
         .with_height(1600)
-        .with_init_image(base_img)
-        .with_ref_image_1(ref_img)
+        .with_init_png(base_img)
+        .with_ref_png_1(ref_img)
         .with_prompt(
             r#"
 replace the owl with the cappuchino with the owl held in the hand

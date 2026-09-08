@@ -80,8 +80,8 @@ high quality photo of a boreal owl sitting on a table inside a stylish coffee sh
         .with_sampling_method(SamplingMethod::Euler)
         .with_width(1024)
         .with_height(1024)
-        .with_ref_image_1(generated_image_data)
-        .with_ref_image_2(uli_reference_image)
+        .with_ref_png_1(generated_image_data)
+        .with_ref_png_2(uli_reference_image)
         .with_prompt(
             r#"
 replace the owl with the owl character from reference image 2 preserving everything else.
