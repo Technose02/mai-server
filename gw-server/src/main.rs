@@ -53,6 +53,42 @@ impl AcceleratorBackend {
             AcceleratorBackend::Vulkan => "build-vulkan/bin/sd-cli",
         }
     }
+    pub fn environment_args(&self) -> HashMap<String, String> {
+        let mut environment_args = HashMap::new();
+
+        match self {
+            AcceleratorBackend::RocM => {
+                // Zwingend nötig: Erzwingt den korrekten RDNA 3.5 Pfad (gfx1151)
+                environment_args.insert("HSA_OVERRIDE_GFX_VERSION".into(), "11.5.1".into());
+                
+                // Erlaubt llama.cpp, den gemeinsamen Systemspeicher der APU nativ anzusprechen
+                environment_args.insert("GGML_HIP_ENABLE_UNIFIED_MEMORY".into(), "1".into());
+
+                // Verhindert Stream-Asynchronitäten beim schnellen Single-Token-Decoding
+                environment_args.insert("HIP_LAUNCH_BLOCKING".into(), "1".into());
+
+                // Der VMM-Kompromiss:
+                // Testen Sie es im ersten Durchlauf OHNE "GGML_HIP_NO_VMM".
+                // Durch das korrekte "ROCWMMA_FATTN" und den symmetrischen Q8_0-Cache ist die Speicherstruktur
+                // jetzt mathematisch sauber ausgerichtet. Sollte das Modell beim Start dennoch hängenbleiben,
+                // fügen Sie die Zeile wieder ein – mit dem neuen Compiler-Build bremst sie das Decoding nicht mehr so stark aus.
+            }
+            AcceleratorBackend::Vulkan => {
+                // Schaltet die interne Shader-Optimierung frei – extrem wichtig für RDNA3/3.5-APUs,
+                // da es das zeitaufwendige Zwischenspeichern (Spilling) im Grafikspeicher blockiert.
+                environment_args.insert("RADV_PERFTEST".into(), "nogttspill".into());
+
+                // Zwingt llama.cpp, die integrierte iGPU (Radeon 8060S) direkt als primäres
+                // Rechengerät anzusprechen (hilfreich, falls die CPU fälschlicherweise als Device 0 gelistet wird).
+                environment_args.insert("GGML_VK_VISIBLE_DEVICES".into(), "0".into());
+
+                // Optimiert die Befehlswarteschlange (Queue Execution) in neueren llama.cpp-Versionen,
+                // um Latenzen bei sequenziellen Vektoroperationen (Decoding) zu minimieren.
+                environment_args.insert("GGML_VK_NODES_PER_SUBMIT".into(), "2".into());
+            }
+        }
+        environment_args
+    }
 }
 
 struct MyAppState {
@@ -164,13 +200,6 @@ async fn create_app(
     let parallel_llamacpp_requests = 1_u8;
     let number_of_llamacpp_threads = 8_i8;
     let number_of_llamacpp_batch_threads = 32_i8;
-    let environment_args = {
-        let mut environment_args = HashMap::new();
-        environment_args.insert("GGML_HIP_NO_VMM".into(), "1".into()); // Behebt VMM-Hänger bei großen Allokationen
-        environment_args.insert("HSA_OVERRIDE_GFX_VERSION".into(), "11.5.1".into()); // Erzwingt korrekten RDNA 3.5 Pfad
-        environment_args.insert("GGML_HIP_ENABLE_UNIFIED_MEMORY".into(), "1".into());
-        environment_args
-    };
 
     let openai_chat_completions_service =
         OpenAiClientRequestForwardService::create_service(llamacpp_llm_client);
@@ -183,7 +212,7 @@ async fn create_app(
         parallel_llamacpp_requests,
         number_of_llamacpp_threads,
         number_of_llamacpp_batch_threads,
-        environment_args,
+        accelerator_backend.environment_args(),
     );
 
     {
