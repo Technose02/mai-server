@@ -19,7 +19,7 @@ impl StableDiffusionJob {
             prompt: "A Logo in white on black background saying 'Krea2 Turbo' in capitals using a classic computer terminal font. Text is centered horizontally and vertically".into(),
             ..Default::default()
         };
-        
+
         job.with_ref_image_args(RefImageArgs::PresetKrea2Edit)
         .with_lora("/model_data/huggingface/conradlocke/krea2-identity-edit/krea2_identity_edit_v1_2.safetensors", 1.0)
         .expect("failed to add krea2_identity_edit_v1_2")

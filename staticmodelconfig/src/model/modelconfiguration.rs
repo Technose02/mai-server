@@ -66,6 +66,8 @@ pub struct ModelConfiguration {
     pub top_p: Option<f32>,
     #[serde(skip_serializing_if = "Option::is_none", default = "Option::default")]
     pub load_mode: Option<LoadMode>,
+    #[serde(skip_serializing_if = "Option::is_none", default = "Option::default")]
+    pub reasoning_effort: Option<String>,
 
     #[serde(
         skip_serializing_if = "std::ops::Not::not",

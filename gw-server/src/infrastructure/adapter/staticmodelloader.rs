@@ -83,6 +83,7 @@ impl ModelLoaderOutPort for StaticModelLoader {
                 reasoning_budget: model_configuration.reasoning_budget,
                 embeddings: model_configuration.embeddings,
                 no_cache_prompt: model_configuration.no_cache_prompt,
+                reasoning_effort: model_configuration.reasoning_effort.clone(),
             }))
         } else {
             error!("no model-configuration found for alias '{model_key}'");

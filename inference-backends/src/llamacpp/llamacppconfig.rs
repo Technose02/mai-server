@@ -287,6 +287,7 @@ pub struct LlamaCppConfigArgs {
     pub reasoning_budget: Option<i16>,
     pub embeddings: bool,
     pub no_cache_prompt: bool,
+    pub reasoning_effort: Option<String>,
 }
 
 impl LlamaCppConfigArgs {
@@ -457,6 +458,18 @@ impl LlamaCppConfigArgs {
         if let Some(chat_template_kwargs) = &self.chat_template_kwargs {
             cmd.arg("--chat-template-kwargs");
             cmd.arg(chat_template_kwargs);
+        }
+
+        /*
+        --reasoning-effort LEVEL                reasoning effort level given to the chat template: 'default' to keep
+                                        the template default,
+                                        or a level such as 'minimal', 'low', 'medium', 'high', 'xhigh' or
+                                        'max' (default: default)
+                                        (env: LLAMA_ARG_REASONING_EFFORT)
+        */
+        if let Some(reasoning_effort) = &self.reasoning_effort {
+            cmd.arg("--reasoning-effort");
+            cmd.arg(reasoning_effort);
         }
     }
 }

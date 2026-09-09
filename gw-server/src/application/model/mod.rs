@@ -112,6 +112,8 @@ pub struct LlamaCppRunConfigDto {
     pub top_p: Option<f32>,
     #[serde(skip_serializing_if = "Option::is_none", default = "Option::default")]
     pub load_mode: Option<LoadMode>,
+    #[serde(skip_serializing_if = "Option::is_none", default = "Option::default")]
+    pub reasoning_effort: Option<String>,
 
     #[serde(
         skip_serializing_if = "std::ops::Not::not",
@@ -199,6 +201,7 @@ impl LlamaCppRunConfigDto {
                 reasoning_budget: self.reasoning_budget,
                 no_cache_prompt: self.no_cache_prompt,
                 embeddings: self.embeddings,
+                reasoning_effort: self.reasoning_effort.clone(),
             }),
         }
     }
@@ -245,6 +248,7 @@ impl From<LlamaCppRunConfig> for LlamaCppRunConfigDto {
             reasoning_budget: value.args_handle.reasoning_budget,
             no_cache_prompt: value.args_handle.no_cache_prompt,
             embeddings: value.args_handle.embeddings,
+            reasoning_effort: value.args_handle.reasoning_effort.clone(),
         }
     }
 }

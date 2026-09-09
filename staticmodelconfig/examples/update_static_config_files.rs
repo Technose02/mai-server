@@ -166,6 +166,7 @@ async fn update_model_configuration(
             reasoning_budget: None,
             no_cache_prompt: false,
             embeddings: model_configuration.embeddings,
+            reasoning_effort: model_configuration.reasoning_effort.clone(),
         }),
     };
 

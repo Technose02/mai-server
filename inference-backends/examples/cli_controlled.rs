@@ -73,6 +73,7 @@ async fn main() {
             reasoning_budget: None,
             embeddings: false,
             no_cache_prompt: false,
+            reasoning_effort: None
         }
         .into()
     };
@@ -119,6 +120,7 @@ async fn main() {
             reasoning_budget: None,
             embeddings: false,
             no_cache_prompt: false,
+            reasoning_effort: None,
         }
         .into(),
     };
