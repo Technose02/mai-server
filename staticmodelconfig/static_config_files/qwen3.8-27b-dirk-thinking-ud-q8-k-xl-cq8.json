@@ -1,6 +1,6 @@
 {
-  "alias": "qwen3.8-27b-low-thinking-fast-4",
-  "model-path": "/model_data/huggingface/unsloth/Qwen3.8-27B-GGUF/Qwen3.8-27B-UD-Q4_K_XL.gguf",
+  "alias": "qwen3.8-27b-dirk-thinking-ud-q8-k-xl-cq8",
+  "model-path": "/model_data/huggingface/npario/Dirk-Qwen3.8-27B-GGUF/Dirk-Qwen3.8-27B-UD-Q8_K_XL.gguf",
   "max-ctx-size": 262144,
   "vocab-type": 2,
   "n-vocab": 248320,
@@ -13,11 +13,12 @@
     "multimodal"
   ],
   "mmproj-path": "/model_data/huggingface/unsloth/Qwen3.8-27B-GGUF/mmproj-BF16.gguf",
-  "n-gpu-layers": 999,
+  "n-gpu-layers": 99,
   "flash-attn": "on",
   "batch-size": 2048,
   "ubatch-size": 512,
   "cache-type-v": "q8_0",
+  "cache-type-k": "q8_0",
   "cache-reuse": 256,
   "spec-type": "draft-mtp",
   "spec-draft-n-max": 3,
@@ -28,6 +29,5 @@
   "top-k": 20,
   "top-p": 0.95,
   "jinja": true,
-  "load-mode": "mlock",
-  "chat-template-kwargs": "{\"reasoning_effort\":\"low\"}"
+  "load-mode": "mlock"
 }

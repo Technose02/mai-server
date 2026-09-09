@@ -28,5 +28,5 @@
   "top-p": 0.95,
   "jinja": true,
   "load-mode": "mlock",
-  "chat-template-kwargs": "{\"reasoning_effort\":\"low\"}"
+  "reasoning-effort": "low"
 }

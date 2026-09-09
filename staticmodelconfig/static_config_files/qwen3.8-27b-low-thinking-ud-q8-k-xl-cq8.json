@@ -1,6 +1,6 @@
 {
-  "alias": "qwen3.8-27b-low-thinking-fast-3",
-  "model-path": "/model_data/huggingface/unsloth/Qwen3.8-27B-GGUF/Qwen3.8-27B-UD-Q6_K_XL.gguf",
+  "alias": "qwen3.8-27b-low-thinking-ud-q8-k-xl-cq8",
+  "model-path": "/model_data/huggingface/unsloth/Qwen3.8-27B-GGUF/Qwen3.8-27B-UD-Q8_K_XL.gguf",
   "max-ctx-size": 262144,
   "vocab-type": 2,
   "n-vocab": 248320,
@@ -30,5 +30,5 @@
   "top-p": 0.95,
   "jinja": true,
   "load-mode": "mlock",
-  "chat-template-kwargs": "{\"reasoning_effort\":\"low\"}"
+  "reasoning-effort": "low"
 }

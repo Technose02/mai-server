@@ -1,5 +1,5 @@
 {
-  "alias": "qwen3.8-27b-low-thinking-ud-q4-k-xl",
+  "alias": "qwen3.8-27b-medium-thinking-ud-q4-k-xl",
   "model-path": "/model_data/huggingface/unsloth/Qwen3.8-27B-GGUF/Qwen3.8-27B-UD-Q4_K_XL.gguf",
   "max-ctx-size": 262144,
   "vocab-type": 2,
@@ -28,5 +28,5 @@
   "top-p": 0.95,
   "jinja": true,
   "load-mode": "mlock",
-  "reasoning-effort": "low"
+  "reasoning-effort": "medium"
 }
