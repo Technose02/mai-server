@@ -60,7 +60,7 @@ impl AcceleratorBackend {
             AcceleratorBackend::RocM => {
                 // Zwingend nötig: Erzwingt den korrekten RDNA 3.5 Pfad (gfx1151)
                 environment_args.insert("HSA_OVERRIDE_GFX_VERSION".into(), "11.5.1".into());
-                
+
                 // Erlaubt llama.cpp, den gemeinsamen Systemspeicher der APU nativ anzusprechen
                 environment_args.insert("GGML_HIP_ENABLE_UNIFIED_MEMORY".into(), "1".into());
 
