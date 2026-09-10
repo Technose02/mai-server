@@ -42,10 +42,13 @@ impl StableDiffusionConfigRunnerOutPort for StableDiffusionConfigRunnerAdapter {
         let mut job = match sd_config {
             "animaturbo" => Ok(StableDiffusionJob::anima_turbo_job()),
             "booguimageturbo" => Ok(StableDiffusionJob::boogu_image_turbo_job()),
+            "booguimageeditturbo" => Ok(StableDiffusionJob::boogu_image_edit_turbo_job()),
+            "fireredimageedit" => Ok(StableDiffusionJob::firered_image_edit_8steps_job()),
             "flux2klein9b" => Ok(StableDiffusionJob::flux2_klein_9b_job()),
             "fluxdev" => Ok(StableDiffusionJob::flux_dev_job()),
             "fluxschnell" => Ok(StableDiffusionJob::flux_schnell_job()),
             "krea2turbo" => Ok(StableDiffusionJob::krea2_turbo_job()),
+            "krea2turboedit" => Ok(StableDiffusionJob::krea2_turbo_edit_job()),
             "mageflowturbo" => Ok(StableDiffusionJob::mage_flow_turbo_job()),
             "zimageturbo" => Ok(StableDiffusionJob::z_image_turbo_job()),
             _ => Err(StatusCode::NOT_FOUND),
@@ -55,6 +58,17 @@ impl StableDiffusionConfigRunnerOutPort for StableDiffusionConfigRunnerAdapter {
             .with_width(prompt_dto.width)
             .with_height(prompt_dto.height)
             .with_prompt(prompt_dto.prompt);
+
+        if let Some(init_png_b64_data) = prompt_dto.init_png {
+            match BASE64_STANDARD.decode(init_png_b64_data) {
+                Ok(init_png_data) => {
+                    job = job.with_init_png(init_png_data);
+                }
+                Err(_) => {
+                    return Err(StatusCode::BAD_REQUEST);
+                }
+            }
+        }
 
         if let Some(ref_png_b64_data) = prompt_dto.ref_png_1 {
             match BASE64_STANDARD.decode(ref_png_b64_data) {

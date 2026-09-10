@@ -1,5 +1,7 @@
 mod animaturbo;
+mod booguimageeditturbo;
 mod booguimageturbo;
+mod fireredimageedit;
 mod flux2klein9b;
 mod fluxdev;
 mod fluxschnell;

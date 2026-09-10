@@ -209,10 +209,21 @@ impl StableDiffusionJob {
             (true, false) => Err(StableDiffusionError::Custom(format!(
                 "lora-weight must not be negative; got '{weight}'"
             ))),
-            _ => {
+            (true, true)
+                if path
+                    .file_name()
+                    .unwrap()
+                    .to_ascii_lowercase()
+                    .to_str()
+                    .unwrap()
+                    .ends_with(".safetensors") =>
+            {
                 self.lora_models.insert(path, weight);
                 Ok(self)
             }
+            _ => Err(StableDiffusionError::Custom(
+                "currently lora-files must end with \".safetensors\"".to_string(),
+            )),
         }
     }
 }

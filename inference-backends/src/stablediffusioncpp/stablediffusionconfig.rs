@@ -142,9 +142,12 @@ impl StableDiffusionCppConfig {
         if !job.lora_models().is_empty() {
             for (path, weight) in job.lora_models() {
                 let filename_base = path
-                    .file_prefix()
+                    .file_name()
                     .unwrap_or_else(|| panic!("unable to resolve filename of lora-path"))
-                    .to_string_lossy();
+                    .to_string_lossy()
+                    .strip_suffix(".safetensors")
+                    .unwrap_or_else(|| panic!("lora-file not ending with \".safetensors\""))
+                    .to_string();
                 lora_dir.add_softlink(path);
                 prompt.push_str(&format!("<lora:{filename_base}:{weight:.2}>"));
             }
