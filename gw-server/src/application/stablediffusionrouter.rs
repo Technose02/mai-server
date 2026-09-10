@@ -17,11 +17,11 @@ pub fn create_router(
 ) -> Router {
     Router::new()
         .route("/api/sd/{sd_config}", post(post_stablediffusion_request))
+        .layer(DefaultBodyLimit::max(usize::MAX))
         .layer(axum::middleware::from_fn_with_state(
             security_config.clone(),
             check_auth,
         ))
-        .layer(DefaultBodyLimit::max(usize::MAX))
         .with_state(config)
 }
 
