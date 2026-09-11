@@ -64,6 +64,7 @@ impl RunBackendProcess for LlamaCppBackend {
         cmd.kill_on_drop(true);
 
         // spawn process
+        info!("spawning llama-server with command: {:#?}", cmd);
         let mut proc_handle = cmd.spawn().unwrap();
 
         // spawn std-out observing task
