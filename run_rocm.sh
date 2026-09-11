@@ -1,4 +1,5 @@
 #!/bin/bash
+rm log.txt
 source .env
 RUST_LOG=reqwest=info \
 MAISERVER_LOG=info \

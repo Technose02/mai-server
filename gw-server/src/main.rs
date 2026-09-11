@@ -23,7 +23,7 @@ use rustls::pki_types::{IpAddr, Ipv4Addr};
 use std::{
     borrow::Cow, collections::HashMap, net::SocketAddr, path::PathBuf, sync::Arc, time::Duration,
 };
-use tracing::{Level, info};
+use tracing::info;
 
 const MAISERVER_LOG_KEY: &str = "MAISERVER_LOG";
 const RANDOM_APIKEY_LEN: u8 = 25;
@@ -268,8 +268,48 @@ async fn create_app(
     }
 }
 
+fn init_logging() {
+    use std::fs::File;
+    use tracing_subscriber::{Registry, filter::LevelFilter, fmt, prelude::*};
+
+    // 1. Log-Level als `LevelFilter` ermitteln
+    let max_level = if let Ok(max_log_level) = std::env::var(MAISERVER_LOG_KEY) {
+        match max_log_level.to_lowercase().as_str() {
+            "info" => LevelFilter::INFO,
+            "trace" => LevelFilter::TRACE,
+            "debug" => LevelFilter::DEBUG,
+            "error" => LevelFilter::ERROR,
+            "warn" => LevelFilter::WARN,
+            _ => LevelFilter::ERROR,
+        }
+    } else {
+        LevelFilter::INFO
+    };
+
+    println!("max-level: {max_level}");
+
+    // 2. Datei-Writer erstellen
+    let file = File::options()
+        .append(true)
+        .create(true)
+        .open("./log.txt")
+        .expect("Konnte Logdatei nicht erstellen oder öffnen");
+
+    // 3. Die Layer definieren
+    let stdout_layer = fmt::layer().with_writer(std::io::stdout);
+    let file_layer = fmt::layer().with_writer(file).with_ansi(false);
+
+    // 4. Layer mit dem globalen LevelFilter kombinieren und initialisieren
+    Registry::default()
+        .with(stdout_layer)
+        .with(file_layer)
+        .with(max_level) // LevelFilter implementiert das `Layer`-Trait korrekt
+        .init();
+}
+
 #[tokio::main]
 async fn main() {
+    /*
     if let Ok(max_log_level) = std::env::var(MAISERVER_LOG_KEY) {
         let max_level = match max_log_level.to_lowercase().as_str() {
             "info" => Level::INFO,
@@ -283,6 +323,8 @@ async fn main() {
     } else {
         tracing_subscriber::fmt().init();
     }
+    */
+    init_logging();
 
     let mut args = std::env::args();
     let (
