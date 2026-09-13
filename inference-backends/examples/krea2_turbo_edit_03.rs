@@ -1,0 +1,51 @@
+use inference_backends::stablediffusioncpp::{
+    FlashAttentionMode, SamplingMethod, Scheduler, StableDiffusionCppConfig, StableDiffusionJob,
+    helpers::{LogSetting, simple_generation},
+};
+use tracing::level_filters::LevelFilter;
+
+const VALID_PATH_TO_EXECUTABLE: &str =
+    "/data0/inference/stable-diffusion.cpp/build-rocm/bin/sd-cli";
+//"/data0/inference/stable-diffusion.cpp/build-vulkan/bin/sd-cli";
+
+#[tokio::main]
+async fn main() {
+    tracing_subscriber::fmt()
+        .with_max_level(LevelFilter::INFO)
+        .init();
+
+    let base_img = std::fs::read("/home/technose02/Pictures/uli_poster/20260913/base.png")
+        .expect("failed to read ref_image");
+    let ref_img = std::fs::read("/home/technose02/Pictures/uli_poster/20260913/uli_ref_a.png")
+        .expect("failed to read ref_image");
+
+    let job = StableDiffusionJob::krea2_turbo_edit_job()
+        .with_steps(8)
+        .with_cfg_scale(1.0)
+        .with_guidance(3.5)
+        .with_flash_attention_mode(FlashAttentionMode::Full)
+        .with_scheduler(Scheduler::Simple)
+        .with_sampling_method(SamplingMethod::Euler)
+        .with_width(1232)
+        .with_height(1600)
+        .with_init_png(base_img)
+        .with_ref_png_1(ref_img)
+        .with_prompt(
+            r#"
+Replace the owl sitting on the round wooden table stuffed toy owl from the reference image.
+"#,
+        );
+
+    let mut sdcfg =
+        StableDiffusionCppConfig::init_with_temp_dir(VALID_PATH_TO_EXECUTABLE, "/tmp").unwrap();
+    for outfile in (0..=100).map(|n| format!("krea2_turbo_edit_3_{:02}", n)) {
+        simple_generation(
+            &mut sdcfg,
+            &job,
+            outfile,
+            LogSetting::Err(LevelFilter::INFO),
+        )
+        .await
+        .unwrap()
+    }
+}
