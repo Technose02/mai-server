@@ -20,7 +20,7 @@ pub mod templates;
 #[derive(Debug, Default)]
 pub struct StableDiffusionJob {
     pub path_to_model: PathBuf,
-    pub textencoder: ClipModel,
+    pub clip_encoder: ClipModel,
     pub path_to_vae: PathBuf,
     pub prompt: String,
     pub width: usize,
@@ -47,8 +47,8 @@ impl StableDiffusionJob {
         &self.path_to_model
     }
 
-    pub fn textencoder(&self) -> &ClipModel {
-        &self.textencoder
+    pub fn clip_encoder(&self) -> &ClipModel {
+        &self.clip_encoder
     }
 
     pub fn vae(&self) -> &Path {

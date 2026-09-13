@@ -8,7 +8,7 @@ impl StableDiffusionJob {
         Self {
             path_to_model: "/model_data/comfyui-model-base/unet/flux1-schnell-Q8_0.gguf".into(),
             path_to_vae: "/model_data/comfyui-model-base/vae/flux-vae.safetensors".into(),
-            textencoder: ClipModel::clipl_and_t5xxl(
+            clip_encoder: ClipModel::clipl_and_t5xxl(
                 "/model_data/comfyui-model-base/clip/clip_l.safetensors",
                 "/model_data/comfyui-model-base/clip/t5xxl_fp8_e4m3fn.safetensors",
             ),

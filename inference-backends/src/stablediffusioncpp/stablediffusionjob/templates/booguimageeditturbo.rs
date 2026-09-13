@@ -7,7 +7,7 @@ impl StableDiffusionJob {
     pub fn boogu_image_turbo_job() -> Self {
         Self {
             path_to_model: "/model_data/huggingface/Comfy-Org/Boogu-Image/diffusion_models/boogu_image_turbo_bf16.safetensors".into(),
-            textencoder: ClipModel::llm("/model_data/huggingface/Comfy-Org/Ideogram-4/text_encoders/qwen3vl_8b_fp8_scaled.safetensors"),
+            clip_encoder: ClipModel::llm("/model_data/huggingface/Comfy-Org/Ideogram-4/text_encoders/qwen3vl_8b_fp8_scaled.safetensors"),
             path_to_vae: "/model_data/huggingface/Comfy-Org/Boogu-Image/vae/flux1_vae_bf16.safetensors".into(),            
             steps: 4,
             width: 1024,

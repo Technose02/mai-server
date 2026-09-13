@@ -159,11 +159,12 @@ impl StableDiffusionCppConfig {
         cmd.arg("--vae").arg(job.vae());
 
         // apply textencoder
-        match job.textencoder() {
+        match job.clip_encoder() {
             ClipModel::Llm(path) => cmd.arg("--llm").arg(path),
             ClipModel::CliplAndT5XXL { clip_l, t5xxl } => {
                 cmd.arg("--clip_l").arg(clip_l).arg("--t5xxl").arg(t5xxl)
-            }
+            },
+            ClipModel::LlmVision(path) => cmd.arg("--llm_vision").arg(path),
             ClipModel::None => panic!("no textencoder set [NONE]"),
         };
         cmd.arg("-t").arg("16");

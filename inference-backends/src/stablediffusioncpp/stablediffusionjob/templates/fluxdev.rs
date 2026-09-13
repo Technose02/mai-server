@@ -7,7 +7,7 @@ impl StableDiffusionJob {
     pub fn flux_dev_job() -> Self {
         Self {
             path_to_model: "/model_data/comfyui-model-base/diffusion_models/flux1-dev.safetensors".into(),
-            textencoder: ClipModel::clipl_and_t5xxl("/model_data/comfyui-model-base/clip/clip_l.safetensors",
+            clip_encoder: ClipModel::clipl_and_t5xxl("/model_data/comfyui-model-base/clip/clip_l.safetensors",
             "/model_data/comfyui-model-base/clip/umt5_xxl_fp8_e4m3fn_scaled.safetensors"),
             path_to_vae: "/model_data/comfyui-model-base/vae/flux-vae.safetensors".into(),
             steps: 20,

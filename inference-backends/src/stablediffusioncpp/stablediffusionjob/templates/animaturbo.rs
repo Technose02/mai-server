@@ -8,7 +8,7 @@ impl StableDiffusionJob {
         Self {
             path_to_model: "/model_data/huggingface/circlestone-labs/Anima/split_files/diffusion_models/anima-turbo-v1.0.safetensors".into(),
             path_to_vae: "/model_data/huggingface/circlestone-labs/Anima/split_files/vae/qwen_image_vae.safetensors".into(),
-            textencoder: ClipModel::llm("/model_data/huggingface/circlestone-labs/Anima/split_files/text_encoders/qwen_3_06b_base.safetensors"),
+            clip_encoder: ClipModel::llm("/model_data/huggingface/circlestone-labs/Anima/split_files/text_encoders/qwen_3_06b_base.safetensors"),
             steps: 8,
             width: 1024,
             height: 1024,

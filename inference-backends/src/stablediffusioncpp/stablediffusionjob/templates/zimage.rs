@@ -8,7 +8,7 @@ impl StableDiffusionJob {
         Self {
             path_to_model: "/model_data/huggingface/Comfy-Org/z_image/split_files/diffusion_models/z_image_bf16.safetensors".into(),
             path_to_vae: "/model_data/huggingface/Comfy-Org/z_image/split_files/vae/ae.safetensors".into(),
-            textencoder: ClipModel::llm("/model_data/huggingface/Comfy-Org/z_image/split_files/text_encoders/qwen_3_4b.safetensors"),
+            clip_encoder: ClipModel::llm("/model_data/huggingface/Comfy-Org/z_image/split_files/text_encoders/qwen_3_4b.safetensors"),
             steps: 28,
             width: 1024,
             height: 1024,

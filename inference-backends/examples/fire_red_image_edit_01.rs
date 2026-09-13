@@ -14,14 +14,14 @@ async fn main() {
         .with_max_level(LevelFilter::INFO)
         .init();
 
-    let base_img = std::fs::read("/home/technose02/Pictures/uli_poster/20260913/base_924_1200.png")
+    let base_img = std::fs::read("/home/technose02/Pictures/uli_poster/20260913/base_672_864.png")
         .expect("failed to read ref_image");
     let ref_img = std::fs::read("/home/technose02/Pictures/uli_poster/20260913/uli_ref_a.png")
         .expect("failed to read ref_image");
 
     let job = StableDiffusionJob::firered_image_edit_8steps_job()
-                .with_width(924)
-                .with_height(1200)
+                .with_width(672)
+                .with_height(864)
                 .with_ref_png_1(base_img)
                 .with_ref_png_2(ref_img)
                 .with_prompt("Replace the owl sitting on the round wooden table stuffed toy owl from image 2.");

@@ -7,7 +7,7 @@ impl StableDiffusionJob {
     pub fn flux2_klein_9b_job() -> Self {
         Self {
             path_to_model: "/model_data/huggingface/unsloth/FLUX.2-klein-9B-GGUF/flux-2-klein-9b-BF16.gguf".into(),
-            textencoder: ClipModel::llm("/model_data/huggingface/Comfy-Org/flux2-klein-9B/split_files/text_encoders/qwen_3_8b.safetensors"),
+            clip_encoder: ClipModel::llm("/model_data/huggingface/Comfy-Org/flux2-klein-9B/split_files/text_encoders/qwen_3_8b.safetensors"),
             path_to_vae: "/model_data/huggingface/Comfy-Org/flux2-klein-4B/split_files/vae/flux2-vae.safetensors".into(),            
             steps: 4,
             width: 1024,
