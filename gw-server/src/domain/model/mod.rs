@@ -1,0 +1,2 @@
+mod stablediffusionjobresolver;
+pub use stablediffusionjobresolver::StableDiffusionJobResolver;

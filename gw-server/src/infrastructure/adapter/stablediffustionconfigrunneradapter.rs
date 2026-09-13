@@ -1,9 +1,6 @@
-use crate::{
-    application::model::StableDiffusionPromptDto, domain::ports::StableDiffusionConfigRunnerOutPort,
-};
+use crate::domain::ports::StableDiffusionConfigRunnerOutPort;
 use async_trait::async_trait;
 use axum::http::StatusCode;
-use base64::prelude::{BASE64_STANDARD, Engine};
 use inference_backends::stablediffusioncpp::StableDiffusionCppConfig;
 use inference_backends::stablediffusioncpp::{StableDiffusionEvent, StableDiffusionJob};
 use std::{path::PathBuf, sync::Arc};
@@ -34,87 +31,10 @@ impl StableDiffusionConfigRunnerOutPort for StableDiffusionConfigRunnerAdapter {
         }
     }
 
-    async fn create_and_run_job(
+    async fn run_job(
         &self,
-        sd_config: &str,
-        prompt_dto: StableDiffusionPromptDto,
+        job: StableDiffusionJob,
     ) -> Result<Receiver<StableDiffusionEvent>, axum::http::StatusCode> {
-        let mut job = match sd_config {
-            "animaturbo" => Ok(StableDiffusionJob::anima_turbo_job()),
-            "booguimageturbo" => Ok(StableDiffusionJob::boogu_image_turbo_job()),
-            "booguimageeditturbo" => Ok(StableDiffusionJob::boogu_image_edit_turbo_job()),
-            "fireredimageedit" => Ok(StableDiffusionJob::firered_image_edit_8steps_job()),
-            "flux2klein9b" => Ok(StableDiffusionJob::flux2_klein_9b_job()),
-            "fluxdev" => Ok(StableDiffusionJob::flux_dev_job()),
-            "fluxschnell" => Ok(StableDiffusionJob::flux_schnell_job()),
-            "krea2turbo" => Ok(StableDiffusionJob::krea2_turbo_job()),
-            "krea2turboedit" => Ok(StableDiffusionJob::krea2_turbo_edit_job()),
-            "mageflowturbo" => Ok(StableDiffusionJob::mage_flow_turbo_job()),
-            "zimageturbo" => Ok(StableDiffusionJob::z_image_turbo_job()),
-            _ => Err(StatusCode::NOT_FOUND),
-        }?;
-
-        job = job
-            .with_width(prompt_dto.width)
-            .with_height(prompt_dto.height)
-            .with_prompt(prompt_dto.prompt);
-
-        if let Some(init_png_b64_data) = prompt_dto.init_png {
-            match BASE64_STANDARD.decode(init_png_b64_data) {
-                Ok(init_png_data) => {
-                    job = job.with_init_png(init_png_data);
-                }
-                Err(_) => {
-                    return Err(StatusCode::BAD_REQUEST);
-                }
-            }
-        }
-
-        if let Some(ref_png_b64_data) = prompt_dto.ref_png_1 {
-            match BASE64_STANDARD.decode(ref_png_b64_data) {
-                Ok(ref_png_data) => {
-                    job = job.with_ref_png_1(ref_png_data);
-                }
-                Err(_) => {
-                    return Err(StatusCode::BAD_REQUEST);
-                }
-            }
-        }
-
-        if let Some(ref_png_b64_data) = prompt_dto.ref_png_2 {
-            match BASE64_STANDARD.decode(ref_png_b64_data) {
-                Ok(ref_png_data) => {
-                    job = job.with_ref_png_2(ref_png_data);
-                }
-                Err(_) => {
-                    return Err(StatusCode::BAD_REQUEST);
-                }
-            }
-        }
-
-        if let Some(ref_png_b64_data) = prompt_dto.ref_png_3 {
-            match BASE64_STANDARD.decode(ref_png_b64_data) {
-                Ok(ref_png_data) => {
-                    job = job.with_ref_png_3(ref_png_data);
-                }
-                Err(_) => {
-                    return Err(StatusCode::BAD_REQUEST);
-                }
-            }
-        }
-
-        if let Some(cfg_scale) = prompt_dto.cfg_scale {
-            job = job.with_cfg_scale(cfg_scale);
-        }
-
-        if let Some(steps) = prompt_dto.steps {
-            job = job.with_steps(steps);
-        }
-
-        if let Some(guidance) = prompt_dto.guidance {
-            job = job.with_guidance(guidance);
-        }
-
         self.abort_all().await;
 
         let mut sdcfg =

@@ -1,6 +1,9 @@
 use crate::{
     application::model::{StableDiffusionPromptDto, StableDiffusionSse},
-    domain::ports::{StableDiffusionConfigRunnerOutPort, StableDiffusionServiceInPort},
+    domain::{
+        model::StableDiffusionJobResolver,
+        ports::{StableDiffusionConfigRunnerOutPort, StableDiffusionServiceInPort},
+    },
 };
 use async_stream::stream;
 use async_trait::async_trait;
@@ -10,6 +13,7 @@ use axum::{
 };
 use base64::prelude::{BASE64_STANDARD, Engine};
 use inference_backends::stablediffusioncpp::StableDiffusionEvent;
+use serde_json::Value;
 use std::sync::Arc;
 
 pub struct DefaultStableDiffusionService {
@@ -32,15 +36,79 @@ impl StableDiffusionServiceInPort for DefaultStableDiffusionService {
         self.stable_diffusion_config_runner.abort_all().await;
     }
 
+    async fn list_apis(&self) -> Result<Value, StatusCode> {
+        Ok(StableDiffusionJobResolver::sd_apis())
+    }
+
     async fn process_prompt(
         &self,
         sd_config: &str,
         prompt_dto: StableDiffusionPromptDto,
     ) -> Result<Response, StatusCode> {
-        let mut receiver = self
-            .stable_diffusion_config_runner
-            .create_and_run_job(sd_config, prompt_dto)
-            .await?;
+        let mut job = StableDiffusionJobResolver::create_job(sd_config)?;
+
+        job = job
+            .with_width(prompt_dto.width)
+            .with_height(prompt_dto.height)
+            .with_prompt(prompt_dto.prompt);
+
+        if let Some(init_png_b64_data) = prompt_dto.init_png {
+            match BASE64_STANDARD.decode(init_png_b64_data) {
+                Ok(init_png_data) => {
+                    job = job.with_init_png(init_png_data);
+                }
+                Err(_) => {
+                    return Err(StatusCode::BAD_REQUEST);
+                }
+            }
+        }
+
+        if let Some(ref_png_b64_data) = prompt_dto.ref_png_1 {
+            match BASE64_STANDARD.decode(ref_png_b64_data) {
+                Ok(ref_png_data) => {
+                    job = job.with_ref_png_1(ref_png_data);
+                }
+                Err(_) => {
+                    return Err(StatusCode::BAD_REQUEST);
+                }
+            }
+        }
+
+        if let Some(ref_png_b64_data) = prompt_dto.ref_png_2 {
+            match BASE64_STANDARD.decode(ref_png_b64_data) {
+                Ok(ref_png_data) => {
+                    job = job.with_ref_png_2(ref_png_data);
+                }
+                Err(_) => {
+                    return Err(StatusCode::BAD_REQUEST);
+                }
+            }
+        }
+
+        if let Some(ref_png_b64_data) = prompt_dto.ref_png_3 {
+            match BASE64_STANDARD.decode(ref_png_b64_data) {
+                Ok(ref_png_data) => {
+                    job = job.with_ref_png_3(ref_png_data);
+                }
+                Err(_) => {
+                    return Err(StatusCode::BAD_REQUEST);
+                }
+            }
+        }
+
+        if let Some(cfg_scale) = prompt_dto.cfg_scale {
+            job = job.with_cfg_scale(cfg_scale);
+        }
+
+        if let Some(steps) = prompt_dto.steps {
+            job = job.with_steps(steps);
+        }
+
+        if let Some(guidance) = prompt_dto.guidance {
+            job = job.with_guidance(guidance);
+        }
+
+        let mut receiver = self.stable_diffusion_config_runner.run_job(job).await?;
 
         let stream = stream! {
 

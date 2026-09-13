@@ -6,9 +6,10 @@ use axum::{
     body::Body,
     extract::{DefaultBodyLimit, Json, Path, State},
     http::{Response, StatusCode},
-    routing::{Router, post},
+    routing::{Router, get, post},
 };
 use managed_process::ProcessState;
+use serde_json::Value;
 use std::sync::Arc;
 
 pub fn create_router(
@@ -22,7 +23,18 @@ pub fn create_router(
             security_config.clone(),
             check_auth,
         ))
+        .route("/api/sd", get(get_sd_info))
         .with_state(config)
+}
+
+async fn get_sd_info(
+    State(application_config): State<Arc<dyn ApplicationConfig>>,
+) -> Result<Json<Value>, StatusCode> {
+    application_config
+        .stable_diffusion_service()
+        .list_apis()
+        .await
+        .map(|v| Json(v))
 }
 
 async fn post_stablediffusion_request(

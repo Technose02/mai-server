@@ -4,8 +4,9 @@ use async_trait::async_trait;
 use axum::{extract::Request, http::StatusCode, response::Response};
 use inference_backends::{
     LlamaCppConfigArgs, LlamaCppProcessState, LlamaCppRunConfig,
-    stablediffusioncpp::StableDiffusionEvent,
+    stablediffusioncpp::{StableDiffusionEvent, StableDiffusionJob},
 };
+use serde_json::Value;
 use staticmodelconfig::{ModelConfiguration, ModelList};
 use std::{sync::Arc, time::Duration};
 use tokio::sync::mpsc::Receiver;
@@ -82,6 +83,8 @@ pub trait StableDiffusionServiceInPort: Send + Sync + 'static {
         prompt_dto: StableDiffusionPromptDto,
     ) -> Result<Response, StatusCode>;
 
+    async fn list_apis(&self) -> Result<Value, StatusCode>;
+
     async fn abort_all(&self);
 }
 
@@ -119,9 +122,8 @@ pub trait ModelLoaderOutPort: Send + Sync + 'static {
 #[async_trait]
 pub trait StableDiffusionConfigRunnerOutPort: Send + Sync + 'static {
     async fn abort_all(&self);
-    async fn create_and_run_job(
+    async fn run_job(
         &self,
-        sd_config: &str,
-        prompt_dto: StableDiffusionPromptDto,
+        job: StableDiffusionJob,
     ) -> Result<Receiver<StableDiffusionEvent>, StatusCode>;
 }

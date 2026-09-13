@@ -13,13 +13,17 @@ const BASE_URL: &str = "https://mai-server.ipv64.net:8080";
 const I2IMODEL: &str = "krea2turboedit";
 
 const PROMPT: &str = r#"
-Replace the man with an adorable, photorealistic groundhog wearing the identical gray knit cardigan over
-a red plaid flannel shirt and the same round eyeglasses, replicating the man's exact pose, gesture, and
-posture: head tilted to the side resting on the bent forearm, one paw placed on the open notebook, leaning
-forward over the wooden desk, with a cozy, sleepy, content and endearing expression. Keep the entire attic
-study scene perfectly unchanged, including the computer monitor displaying code, the brass desk lamp, the
-cream coffee mug, the stacked books, the sloped wooden beams, the skylight showing the full moon, the warm
-lighting, and the original camera angle.
+Replace the man at the desk with a photorealistic adult groundhog of natural, anatomically correct proportions, with a plump
+rounded rodent body and a true-to-life head, snout, and limbs, covered from the top of the head to the lower body in dense,
+soft, finely textured agouti fur, with small rounded ears set into the fur and fine whiskers radiating from the snout. Dress
+the groundhog in the identical outfit: the same gray knit cardigan buttoned over the same red plaid flannel shirt, with both
+sleeves and cuffs ending exactly at the forepaws, both arms terminating in fully furred groundhog forepaws with small dark
+paw pads, one paw raised and propped under the cheek to support the head tilted to the side, the other paw resting flat on
+the open notebook. Fit the same round tortoiseshell eyeglasses onto the snout with a cozy, sleepy, content expression and
+gently relaxed dark eyes behind the lenses. Keep the entire attic study scene perfectly unchanged, preserving the CRT monitor
+displaying lines of code, the brass desk lamp and its warm glow, the cream coffee mug with rising steam, the stacked books,
+the open notebook and keyboard on the wooden desk, the sloped wooden beams, the bookshelves, the skylight showing the full
+moon, the visible moonlit light shafts, the warm ambient lighting, and the original camera angle and composition.
 "#;
 
 fn read_png(path: impl AsRef<std::path::Path>) -> Vec<u8> {
