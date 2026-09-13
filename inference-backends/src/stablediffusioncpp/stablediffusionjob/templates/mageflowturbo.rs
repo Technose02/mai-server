@@ -1,6 +1,6 @@
 use crate::stablediffusioncpp::{
     StableDiffusionJob,
-    stablediffusionjob::{ClipModel, FlashAttentionMode},
+    stablediffusionjob::{FlashAttentionMode, TextEncoder},
 };
 
 impl StableDiffusionJob {
@@ -8,7 +8,7 @@ impl StableDiffusionJob {
         Self {
             path_to_model: "/model_data/huggingface/mage-flow-community/Mage-Flow-Turbo/transformer/diffusion_pytorch_model.safetensors".into(),
             path_to_vae: "/model_data/huggingface/mage-flow-community/Mage-Flow-Turbo/vae/diffusion_pytorch_model.safetensors".into(),
-            clip_encoder: ClipModel::llm("/home/technose02/Downloads/Qwen3-VL-4B-Instruct-Uncensored.Q8_0.gguf"),
+            text_encoder: TextEncoder::llm("/home/technose02/Downloads/Qwen3-VL-4B-Instruct-Uncensored.Q8_0.gguf"),
             steps: 4,
             width: 1024,
             height: 1024,

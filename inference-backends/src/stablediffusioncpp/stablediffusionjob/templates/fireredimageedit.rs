@@ -1,13 +1,13 @@
 use crate::stablediffusioncpp::{
     SamplingMethod, StableDiffusionJob,
-    stablediffusionjob::{ClipModel, FlashAttentionMode},
+    stablediffusionjob::{FlashAttentionMode, TextEncoder},
 };
 
 impl StableDiffusionJob {
     pub fn fire_red_image_edit_8steps_job() -> Self {
         let job = Self {
             path_to_model: "/model_data/huggingface/FireRedTeam/FireRed-Image-Edit-1.1-ComfyUI/FireRed-Image-Edit-1.1-transformer.safetensors".into(),
-            clip_encoder: ClipModel::llm("/model_data/comfyui-model-base/text_encoders/qwen_2.5_vl_7b_fp8_scaled.safetensors"),
+            text_encoder: TextEncoder::llm("/model_data/comfyui-model-base/text_encoders/qwen_2.5_vl_7b_fp8_scaled.safetensors"),
             path_to_vae: "/model_data/comfyui-model-base/vae/firered-image-edit-1.1-vae.safetensors".into(),            
             steps: 8,
             width: 1024,

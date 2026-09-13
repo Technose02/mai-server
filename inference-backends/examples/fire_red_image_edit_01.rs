@@ -20,11 +20,11 @@ async fn main() {
         .expect("failed to read ref_image");
 
     let job = StableDiffusionJob::fire_red_image_edit_8steps_job()
-                .with_width(672)
-                .with_height(864)
-                .with_ref_png_1(base_img)
-                .with_ref_png_2(ref_img)
-                .with_prompt("Replace the owl sitting on the round wooden table in image 1 with the stuffed toy owl shown in image 2.");
+        .with_width(672)
+        .with_height(864)
+        .with_ref_png_1(base_img)
+        .with_ref_png_2(ref_img)
+        .with_prompt("Replace the owl in image1 with the owl in image2.");
 
     let mut sdcfg =
         StableDiffusionCppConfig::init_with_temp_dir(VALID_PATH_TO_EXECUTABLE, "/tmp").unwrap();

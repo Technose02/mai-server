@@ -1,7 +1,7 @@
 use std::path::PathBuf;
 
 #[derive(Clone, Debug, Default)]
-pub enum ClipModel {
+pub enum TextEncoder {
     #[default]
     None,
     Llm(PathBuf),
@@ -9,10 +9,9 @@ pub enum ClipModel {
         clip_l: PathBuf,
         t5xxl: PathBuf,
     },
-    LlmVision(PathBuf),
 }
 
-impl ClipModel {
+impl TextEncoder {
     pub fn llm(path: impl Into<PathBuf>) -> Self {
         Self::Llm(path.into())
     }
@@ -21,8 +20,5 @@ impl ClipModel {
             clip_l: clip_l_path.into(),
             t5xxl: t5xx_path.into(),
         }
-    }
-    pub fn llm_vision(vision_llm_path: impl Into<PathBuf>) -> Self {
-        Self::LlmVision(vision_llm_path.into())
     }
 }

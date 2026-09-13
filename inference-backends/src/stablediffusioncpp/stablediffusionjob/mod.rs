@@ -9,8 +9,10 @@ mod scheduler;
 pub use scheduler::Scheduler;
 mod samplingmethod;
 pub use samplingmethod::SamplingMethod;
-mod clipmodel;
-pub use clipmodel::ClipModel;
+mod textencoder;
+pub use textencoder::TextEncoder;
+mod visionencoder;
+pub use visionencoder::VisionEncoder;
 mod refimageargs;
 use crate::stablediffusioncpp::{StableDiffusionError, StableDiffusionResult};
 pub use refimageargs::RefImageArgs;
@@ -20,7 +22,8 @@ pub mod templates;
 #[derive(Debug, Default)]
 pub struct StableDiffusionJob {
     pub path_to_model: PathBuf,
-    pub clip_encoder: ClipModel,
+    pub text_encoder: TextEncoder,
+    pub vision_encoder: VisionEncoder,
     pub path_to_vae: PathBuf,
     pub prompt: String,
     pub width: usize,
@@ -47,8 +50,12 @@ impl StableDiffusionJob {
         &self.path_to_model
     }
 
-    pub fn clip_encoder(&self) -> &ClipModel {
-        &self.clip_encoder
+    pub fn text_encoder(&self) -> &TextEncoder {
+        &self.text_encoder
+    }
+
+    pub fn vision_encoder(&self) -> &VisionEncoder {
+        &self.vision_encoder
     }
 
     pub fn vae(&self) -> &Path {
