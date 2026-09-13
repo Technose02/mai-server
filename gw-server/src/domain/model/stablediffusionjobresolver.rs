@@ -70,7 +70,7 @@ impl SDApi {
             SDApi::AnimaTurbo => StableDiffusionJob::anima_turbo_job(),
             SDApi::BooguImageTurbo => StableDiffusionJob::boogu_image_turbo_job(),
             SDApi::BooguImageEditTurbo => StableDiffusionJob::boogu_image_edit_turbo_job(),
-            SDApi::FireRedImageEditTurbo => StableDiffusionJob::firered_image_edit_8steps_job(),
+            SDApi::FireRedImageEditTurbo => StableDiffusionJob::fire_red_image_edit_8steps_job(),
             SDApi::Flux2Klein9b => StableDiffusionJob::flux2_klein_9b_job(),
             SDApi::FluxDev => StableDiffusionJob::flux_dev_job(),
             SDApi::FluxSchnell => StableDiffusionJob::flux_schnell_job(),

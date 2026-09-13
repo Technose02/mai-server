@@ -9,7 +9,7 @@ pub enum ClipModel {
         clip_l: PathBuf,
         t5xxl: PathBuf,
     },
-    LlmVision(PathBuf)
+    LlmVision(PathBuf),
 }
 
 impl ClipModel {

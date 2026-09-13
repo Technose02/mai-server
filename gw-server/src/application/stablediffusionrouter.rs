@@ -34,7 +34,7 @@ async fn get_sd_info(
         .stable_diffusion_service()
         .list_apis()
         .await
-        .map(|v| Json(v))
+        .map(Json)
 }
 
 async fn post_stablediffusion_request(

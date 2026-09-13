@@ -19,12 +19,12 @@ async fn main() {
     let ref_img = std::fs::read("/home/technose02/Pictures/uli_poster/20260913/uli_ref_a.png")
         .expect("failed to read ref_image");
 
-    let job = StableDiffusionJob::firered_image_edit_8steps_job()
+    let job = StableDiffusionJob::fire_red_image_edit_8steps_job()
                 .with_width(672)
                 .with_height(864)
                 .with_ref_png_1(base_img)
                 .with_ref_png_2(ref_img)
-                .with_prompt("Replace the owl sitting on the round wooden table stuffed toy owl from image 2.");
+                .with_prompt("Replace the owl sitting on the round wooden table in image 1 with the stuffed toy owl shown in image 2.");
 
     let mut sdcfg =
         StableDiffusionCppConfig::init_with_temp_dir(VALID_PATH_TO_EXECUTABLE, "/tmp").unwrap();

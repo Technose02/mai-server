@@ -1,10 +1,10 @@
 use crate::stablediffusioncpp::{
-    StableDiffusionJob,
+    SamplingMethod, StableDiffusionJob,
     stablediffusionjob::{ClipModel, FlashAttentionMode},
 };
 
 impl StableDiffusionJob {
-    pub fn firered_image_edit_8steps_job() -> Self {
+    pub fn fire_red_image_edit_8steps_job() -> Self {
         let job = Self {
             path_to_model: "/model_data/huggingface/FireRedTeam/FireRed-Image-Edit-1.1-ComfyUI/FireRed-Image-Edit-1.1-transformer.safetensors".into(),
             clip_encoder: ClipModel::llm("/model_data/comfyui-model-base/text_encoders/qwen_2.5_vl_7b_fp8_scaled.safetensors"),
@@ -14,6 +14,7 @@ impl StableDiffusionJob {
             height: 1024,
             cfg_scale: 1.0,
             offload_to_cpu: false,
+            sampling_method: SamplingMethod::Euler,
             flash_attention_mode: FlashAttentionMode::Full,
             prompt: "A Logo in white on black background saying 'Boogu Image Turbo' in capitals using a classic computer terminal font. Text is centered horizontally and vertically".into(),
             ..Default::default()
