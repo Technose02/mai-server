@@ -25,6 +25,9 @@ use std::{
 };
 use tracing::info;
 
+const SERVER_DOMAIN: &str = "mai-server.ipv64.net";
+//const SERVER_DOMAIN: &str = "w0zteduifhh6rjyc.myfritz.net";
+
 const MAISERVER_LOG_KEY: &str = "MAISERVER_LOG";
 const RANDOM_APIKEY_LEN: u8 = 25;
 const LLAMACPP_LLM_PORT: u16 = 11440;
@@ -439,10 +442,10 @@ async fn main() {
         // configure certificate and private key used by https
         let config = RustlsConfig::from_pem_file(
             PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-                .join("letsencrypt/mai-server.ipv64.net")
+                .join(format!("letsencrypt/{SERVER_DOMAIN}"))
                 .join("fullchain.pem"),
             PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-                .join("letsencrypt/mai-server.ipv64.net")
+                .join(format!("letsencrypt/{SERVER_DOMAIN}"))
                 .join("privkey.pem"),
         )
         .await
