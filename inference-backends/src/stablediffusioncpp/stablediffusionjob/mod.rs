@@ -19,7 +19,7 @@ pub use refimageargs::RefImageArgs;
 
 pub mod templates;
 
-#[derive(Debug, Default)]
+#[derive(Debug, Default, Clone)]
 pub struct StableDiffusionJob {
     pub path_to_model: PathBuf,
     pub text_encoder: TextEncoder,

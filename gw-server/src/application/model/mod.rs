@@ -1,5 +1,4 @@
-use std::{collections::HashMap, sync::Arc};
-
+use std::{collections::HashMap, sync::Arc, path::PathBuf};
 use async_openai::types::{chat::CreateChatCompletionRequest, embeddings::CreateEmbeddingRequest};
 use axum::{
     extract::Request,
@@ -8,7 +7,7 @@ use axum::{
 use base64::prelude::{BASE64_STANDARD, Engine};
 use http_body_util::BodyExt;
 use inference_backends::{
-    ContextSize, LlamaCppConfigArgs, LlamaCppRunConfig, LoadMode, OnOffAutoValue,
+    ContextSize, LlamaCppConfigArgs, LlamaCppRunConfig, LoadMode, OnOffAutoValue,stablediffusioncpp::{Scheduler,SamplingMethod,RefImageArgs}
 };
 use serde::{Deserialize, Serialize};
 use tracing::{error, trace};
@@ -381,6 +380,23 @@ pub enum StableDiffusionSse {
     StdOutLine { text: String },
     StdErrLine { text: String },
     Error { message: String },
-    GenerationFinished { b64_encoded_image: String },
+    GenerationFinished {
+        b64_encoded_image: String,
+        prompt: String,
+        width: usize,
+        height: usize,
+        cfg_scale: f32,
+        guidance: f32,
+        seed: Option<u32>,
+        steps: usize,
+        scheduler: Scheduler,
+        sampling_method: SamplingMethod,
+        ref_image_args: Option<RefImageArgs>,
+        init_png: Option<Vec<u8>>,
+        ref_png_1: Option<Vec<u8>>,
+        ref_png_2: Option<Vec<u8>>,
+        ref_png_3: Option<Vec<u8>>,
+        lora_models: Box<HashMap<PathBuf, f32>>,
+    },
     Killed,
 }

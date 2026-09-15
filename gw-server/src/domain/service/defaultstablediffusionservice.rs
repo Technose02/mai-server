@@ -108,7 +108,7 @@ impl StableDiffusionServiceInPort for DefaultStableDiffusionService {
             job = job.with_guidance(guidance);
         }
 
-        let mut receiver = self.stable_diffusion_config_runner.run_job(job).await?;
+        let mut receiver = self.stable_diffusion_config_runner.run_job(job.clone()).await?;
 
         let stream = stream! {
 
@@ -175,7 +175,24 @@ impl StableDiffusionServiceInPort for DefaultStableDiffusionService {
                                 },
                                 StableDiffusionEvent::GenerationFinished{boxed_data, duration:_} => {
                                     let b64_encoded_image = BASE64_STANDARD.encode(*boxed_data);
-                                    if let Ok(json) = serde_json::to_string(&StableDiffusionSse::GenerationFinished{b64_encoded_image}) {
+                                    if let Ok(json) = serde_json::to_string(&StableDiffusionSse::GenerationFinished{
+                                        b64_encoded_image,
+                                        cfg_scale: job.cfg_scale(),
+                                        width: job.width(),
+                                        height: job.height(),
+                                        prompt: job.prompt().into(),
+                                        guidance: job.guidance(),
+                                        seed: job.seed(),
+                                        steps: job.steps(),
+                                        scheduler: job.scheduler(),
+                                        sampling_method: job.sampling_method(),
+                                        ref_image_args: job.ref_image_args().clone(),
+                                        init_png: job.init_png().clone(),
+                                        ref_png_1: job.ref_png_1().clone(),
+                                        ref_png_2: job.ref_png_2().clone(),
+                                        ref_png_3: job.ref_png_3().clone(),
+                                        lora_models: Box::new(job.lora_models().clone()),
+                                    }) {
                                         yield Ok::<_, std::convert::Infallible>(Event::default().data(json))
                                     } else {
                                         yield Ok(Event::default().event("error").data("error serializing StableDiffusionSse::GenerationFinished"))
