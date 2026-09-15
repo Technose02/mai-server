@@ -387,7 +387,7 @@ pub enum StableDiffusionSse {
         height: usize,
         cfg_scale: f32,
         guidance: f32,
-        seed: Option<u32>,
+        seed: u32,
         steps: usize,
         scheduler: Scheduler,
         sampling_method: SamplingMethod,

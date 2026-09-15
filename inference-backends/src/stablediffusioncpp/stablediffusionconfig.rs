@@ -118,7 +118,7 @@ impl StableDiffusionCppConfig {
 
         let (event_sender, event_receiver) = channel::<StableDiffusionEvent>(1);
 
-        let seed = job.seed().unwrap_or(rand::random::<u32>());
+        let seed = job.seed();
 
         let tmp_output = "sd_temp_out.png";
         let init_image = "sd_init.png";

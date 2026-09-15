@@ -1,6 +1,5 @@
 use std::{
-    collections::HashMap,
-    path::{Path, PathBuf},
+    collections::HashMap, path::{Path, PathBuf},
 };
 
 mod flashattentionmode;
@@ -19,6 +18,14 @@ pub use refimageargs::RefImageArgs;
 
 pub mod templates;
 
+#[derive(Debug, Clone)]
+struct Seed(u32);
+impl Default for Seed {
+    fn default() -> Self {
+        Seed(rand::random::<u32>())
+    }
+}
+
 #[derive(Debug, Default, Clone)]
 pub struct StableDiffusionJob {
     pub path_to_model: PathBuf,
@@ -33,7 +40,7 @@ pub struct StableDiffusionJob {
     pub vae_tiling: bool,
     pub offload_to_cpu: bool,
     pub flash_attention_mode: FlashAttentionMode,
-    pub seed: Option<u32>,
+    seed: Seed,
     pub steps: usize,
     pub scheduler: Scheduler,
     pub sampling_method: SamplingMethod,
@@ -135,11 +142,11 @@ impl StableDiffusionJob {
         self
     }
 
-    pub fn seed(&self) -> Option<u32> {
-        self.seed
+    pub fn seed(&self) -> u32 {
+        self.seed.0
     }
     pub fn with_seed(mut self, seed: u32) -> Self {
-        self.seed = Some(seed);
+        self.seed = Seed(seed);
         self
     }
 
