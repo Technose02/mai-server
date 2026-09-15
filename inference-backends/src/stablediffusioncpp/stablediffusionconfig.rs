@@ -188,12 +188,12 @@ impl StableDiffusionCppConfig {
         cmd.arg("--height").arg(job.height().to_string());
         cmd.arg("--prompt").arg(prompt);
         cmd.arg("--output").arg(tmp_output);
-        cmd.arg("--scheduler").arg(job.scheduler());
-        cmd.arg("--sampling-method").arg(job.sampling_method());
+        cmd.arg("--scheduler").arg(job.scheduler().as_ref());
+        cmd.arg("--sampling-method").arg(job.sampling_method().as_ref());
         cmd.arg("--verbose");
 
         if let Some(ref_image_args) = job.ref_image_args() {
-            cmd.arg("--ref-image-args").arg(ref_image_args);
+            cmd.arg("--ref-image-args").arg(ref_image_args.as_ref());
         }
 
         if let Some(init_image_data) = job.init_png() {
