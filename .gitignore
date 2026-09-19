@@ -10,3 +10,4 @@
 .env
 
 log.txt
+ex_*.log
