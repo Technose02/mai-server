@@ -1,4 +1,3 @@
-use std::{collections::HashMap, sync::Arc, path::PathBuf};
 use async_openai::types::{chat::CreateChatCompletionRequest, embeddings::CreateEmbeddingRequest};
 use axum::{
     extract::Request,
@@ -7,9 +6,11 @@ use axum::{
 use base64::prelude::{BASE64_STANDARD, Engine};
 use http_body_util::BodyExt;
 use inference_backends::{
-    ContextSize, LlamaCppConfigArgs, LlamaCppRunConfig, LoadMode, OnOffAutoValue,stablediffusioncpp::{Scheduler,SamplingMethod,RefImageArgs}
+    ContextSize, LlamaCppConfigArgs, LlamaCppRunConfig, LoadMode, OnOffAutoValue,
+    stablediffusioncpp::{RefImageArgs, SamplingMethod, Scheduler},
 };
 use serde::{Deserialize, Serialize};
+use std::{collections::HashMap, path::PathBuf, sync::Arc};
 use tracing::{error, trace};
 
 const DEFAULT_PARALLEL: u8 = 1;
@@ -376,10 +377,19 @@ impl StableDiffusionPromptDto {
 #[derive(Serialize, Deserialize, Debug)]
 pub enum StableDiffusionSse {
     GenerationStarted,
-    Progress { step: usize, nsteps: usize },
-    StdOutLine { text: String },
-    StdErrLine { text: String },
-    Error { message: String },
+    Progress {
+        step: usize,
+        nsteps: usize,
+    },
+    StdOutLine {
+        text: String,
+    },
+    StdErrLine {
+        text: String,
+    },
+    Error {
+        message: String,
+    },
     GenerationFinished {
         b64_encoded_image: String,
         prompt: String,

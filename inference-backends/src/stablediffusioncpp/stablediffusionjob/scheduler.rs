@@ -44,7 +44,7 @@ impl TryFrom<&str> for Scheduler {
             "sgm_uniform" => Ok(Scheduler::SgmUniform),
             "simple" => Ok(Scheduler::Simple),
             "smoothstep" => Ok(Scheduler::Smoothstep),
-            _ => Err(format!("invalid value '{value}' for Scheduler").into())
+            _ => Err(format!("invalid value '{value}' for Scheduler").into()),
         }
     }
 }
@@ -75,7 +75,7 @@ impl AsRef<str> for Scheduler {
 impl Serialize for Scheduler {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
-        S: serde::Serializer
+        S: serde::Serializer,
     {
         serializer.serialize_str(self.as_ref())
     }
@@ -84,7 +84,6 @@ impl Serialize for Scheduler {
 struct SchedulerVisitor;
 
 impl<'de> Visitor<'de> for SchedulerVisitor {
-
     type Value = Scheduler;
 
     fn visit_string<E>(self, v: String) -> Result<Self::Value, E>
@@ -109,7 +108,7 @@ impl<'de> Visitor<'de> for SchedulerVisitor {
 impl<'de> Deserialize<'de> for Scheduler {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
     where
-        D: serde::Deserializer<'de>
+        D: serde::Deserializer<'de>,
     {
         deserializer.deserialize_string(SchedulerVisitor)
     }

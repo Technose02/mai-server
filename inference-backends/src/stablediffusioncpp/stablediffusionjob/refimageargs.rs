@@ -20,16 +20,15 @@ impl TryFrom<&str> for RefImageArgs {
     fn try_from(value: &str) -> Result<Self, Self::Error> {
         match value {
             "preset=krea2_edit" => Ok(Self::PresetKrea2Edit),
-            custom_args => Ok(Self::Custom(custom_args.into()))
+            custom_args => Ok(Self::Custom(custom_args.into())),
         }
     }
 }
 
-
 impl Serialize for RefImageArgs {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
-        S: serde::Serializer
+        S: serde::Serializer,
     {
         serializer.serialize_str(self.as_ref())
     }
@@ -38,7 +37,6 @@ impl Serialize for RefImageArgs {
 struct RefImageArgsVisitor;
 
 impl<'de> Visitor<'de> for RefImageArgsVisitor {
-
     type Value = RefImageArgs;
 
     fn visit_string<E>(self, v: String) -> Result<Self::Value, E>
@@ -63,7 +61,7 @@ impl<'de> Visitor<'de> for RefImageArgsVisitor {
 impl<'de> Deserialize<'de> for RefImageArgs {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
     where
-        D: serde::Deserializer<'de>
+        D: serde::Deserializer<'de>,
     {
         deserializer.deserialize_string(RefImageArgsVisitor)
     }

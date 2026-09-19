@@ -1,4 +1,4 @@
-use serde::{Deserialize, Serialize, de::{Visitor}};
+use serde::{Deserialize, Serialize, de::Visitor};
 
 #[derive(Debug, Clone, Copy, Default)]
 pub enum SamplingMethod {
@@ -51,7 +51,6 @@ impl AsRef<str> for SamplingMethod {
 }
 
 impl TryFrom<&str> for SamplingMethod {
-    
     type Error = Box<dyn core::error::Error>;
 
     fn try_from(value: &str) -> Result<Self, Self::Error> {
@@ -75,7 +74,7 @@ impl TryFrom<&str> for SamplingMethod {
             "res_2s" => Ok(SamplingMethod::Res2s),
             "res_multistep" => Ok(SamplingMethod::ResMultistep),
             "tcd" => Ok(SamplingMethod::Tcd),
-            _ => Err(format!("invalid value '{value}' for SamplingMethod").into())
+            _ => Err(format!("invalid value '{value}' for SamplingMethod").into()),
         }
     }
 }
@@ -83,7 +82,7 @@ impl TryFrom<&str> for SamplingMethod {
 impl Serialize for SamplingMethod {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
-        S: serde::Serializer
+        S: serde::Serializer,
     {
         serializer.serialize_str(self.as_ref())
     }
@@ -92,7 +91,6 @@ impl Serialize for SamplingMethod {
 struct SamplingMethodVisitor;
 
 impl<'de> Visitor<'de> for SamplingMethodVisitor {
-
     type Value = SamplingMethod;
 
     fn visit_string<E>(self, v: String) -> Result<Self::Value, E>
@@ -117,7 +115,7 @@ impl<'de> Visitor<'de> for SamplingMethodVisitor {
 impl<'de> Deserialize<'de> for SamplingMethod {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
     where
-        D: serde::Deserializer<'de>
+        D: serde::Deserializer<'de>,
     {
         deserializer.deserialize_string(SamplingMethodVisitor)
     }

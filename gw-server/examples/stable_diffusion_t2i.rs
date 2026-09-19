@@ -63,7 +63,13 @@ async fn main() {
         match e {
             Ok(event) => {
                 if let Ok(sse) = serde_json::de::from_str::<StableDiffusionSse>(&event.data) {
-                    if let StableDiffusionSse::GenerationFinished { b64_encoded_image, seed, prompt, .. } = sse {
+                    if let StableDiffusionSse::GenerationFinished {
+                        b64_encoded_image,
+                        seed,
+                        prompt,
+                        ..
+                    } = sse
+                    {
                         let data = BASE64_STANDARD.decode(b64_encoded_image).unwrap();
                         std::fs::write("out.png", data).unwrap();
                         println!("generated with prompt: \"{prompt}\"");

@@ -108,7 +108,10 @@ impl StableDiffusionServiceInPort for DefaultStableDiffusionService {
             job = job.with_guidance(guidance);
         }
 
-        let mut receiver = self.stable_diffusion_config_runner.run_job(job.clone()).await?;
+        let mut receiver = self
+            .stable_diffusion_config_runner
+            .run_job(job.clone())
+            .await?;
 
         let stream = stream! {
 
