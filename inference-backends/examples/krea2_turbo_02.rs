@@ -6,7 +6,7 @@ use tracing::level_filters::LevelFilter;
 
 const VALID_PATH_TO_EXECUTABLE: &str =
     "/data0/inference/stable-diffusion.cpp/build-rocm/bin/sd-cli";
-//"/data0/inference/stable-diffusion.cpp/build-vulkan/bin/sd-cli";
+//const VALID_PATH_TO_EXECUTABLE: &str = "/data0/inference/stable-diffusion.cpp/build-vulkan/bin/sd-cli";
 
 #[tokio::main]
 async fn main() {

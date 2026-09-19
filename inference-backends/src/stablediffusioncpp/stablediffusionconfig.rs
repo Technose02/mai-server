@@ -156,6 +156,21 @@ impl StableDiffusionCppConfig {
                 .arg(AsRef::<Path>::as_ref(&lora_dir).to_string_lossy().as_ref());
         }
         cmd.current_dir(&temp_dir);
+
+        if let Some(max_vram) = job.max_vram() {
+            cmd.arg("--max-vram").arg(max_vram.to_string().as_str());
+        } else {
+            cmd.arg("--max-vram").arg("-1");
+        }
+
+        if job.clip_on_cpu() {
+            cmd.arg("--clip-on-cpu");
+        }
+
+        if let Some(backend_arg) = job.backend_routing().to_arg() {
+            cmd.arg("--backend").arg(backend_arg.as_str());
+        }
+
         cmd.arg("--diffusion-model").arg(job.diffusion_model());
         cmd.arg("--vae").arg(job.vae());
 
@@ -166,6 +181,9 @@ impl StableDiffusionCppConfig {
             }
             TextEncoder::CliplAndT5XXL { clip_l, t5xxl } => {
                 cmd.arg("--clip_l").arg(clip_l).arg("--t5xxl").arg(t5xxl);
+            }
+            TextEncoder::T5XXL(path) => {
+                cmd.arg("--t5xxl").arg(path);
             }
             TextEncoder::None => {
                 panic!("no textencoder set [NONE]")
@@ -189,7 +207,8 @@ impl StableDiffusionCppConfig {
         cmd.arg("--prompt").arg(prompt);
         cmd.arg("--output").arg(tmp_output);
         cmd.arg("--scheduler").arg(job.scheduler().as_ref());
-        cmd.arg("--sampling-method").arg(job.sampling_method().as_ref());
+        cmd.arg("--sampling-method")
+            .arg(job.sampling_method().as_ref());
         cmd.arg("--verbose");
 
         if let Some(ref_image_args) = job.ref_image_args() {

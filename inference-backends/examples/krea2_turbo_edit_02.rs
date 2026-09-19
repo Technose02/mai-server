@@ -2,11 +2,12 @@ use inference_backends::stablediffusioncpp::{
     FlashAttentionMode, SamplingMethod, Scheduler, StableDiffusionCppConfig, StableDiffusionJob,
     helpers::{LogSetting, simple_generation},
 };
+use rand::random;
 use tracing::level_filters::LevelFilter;
 
 const VALID_PATH_TO_EXECUTABLE: &str =
     "/data0/inference/stable-diffusion.cpp/build-rocm/bin/sd-cli";
-//"/data0/inference/stable-diffusion.cpp/build-vulkan/bin/sd-cli";
+//const VALID_PATH_TO_EXECUTABLE: &str = "/data0/inference/stable-diffusion.cpp/build-vulkan/bin/sd-cli";
 
 #[tokio::main]
 async fn main() {
@@ -41,7 +42,7 @@ replace the owl with the cappuchino with the owl held in the hand
     for outfile in (0..=100).map(|n| format!("krea2_turbo_edit_2_{:02}", n)) {
         simple_generation(
             &mut sdcfg,
-            &job,
+            &job.clone().with_seed(random()),
             outfile,
             LogSetting::Err(LevelFilter::INFO),
         )

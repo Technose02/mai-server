@@ -1,5 +1,6 @@
 use std::{
-    collections::HashMap, path::{Path, PathBuf},
+    collections::HashMap,
+    path::{Path, PathBuf},
 };
 
 mod flashattentionmode;
@@ -15,6 +16,8 @@ pub use visionencoder::VisionEncoder;
 mod refimageargs;
 use crate::stablediffusioncpp::{StableDiffusionError, StableDiffusionResult};
 pub use refimageargs::RefImageArgs;
+mod backendrouting;
+pub use backendrouting::BackendRouting;
 
 pub mod templates;
 
@@ -50,6 +53,9 @@ pub struct StableDiffusionJob {
     pub ref_png_2: Option<Vec<u8>>,
     pub ref_png_3: Option<Vec<u8>>,
     pub lora_models: HashMap<PathBuf, f32>,
+    pub backend_routing: BackendRouting,
+    pub clip_on_cpu: bool,
+    pub max_vram: Option<u16>,
 }
 
 impl StableDiffusionJob {
@@ -239,5 +245,31 @@ impl StableDiffusionJob {
                 "currently lora-files must end with \".safetensors\"".to_string(),
             )),
         }
+    }
+
+    pub fn clip_on_cpu(&self) -> bool {
+        self.clip_on_cpu
+    }
+
+    pub fn with_clip_on_cpu(mut self, clip_on_cpu: bool) -> Self {
+        self.clip_on_cpu = clip_on_cpu;
+        self
+    }
+
+    pub fn backend_routing(&self) -> &BackendRouting {
+        &self.backend_routing
+    }
+
+    pub fn with_backend_routing(mut self, backend_routing: BackendRouting) -> Self {
+        self.backend_routing = backend_routing;
+        self
+    }
+
+    pub fn max_vram(&self) -> &Option<u16> {
+        &self.max_vram
+    }
+    pub fn with_max_vram(mut self, max_vram: u16) -> Self {
+        self.max_vram = Some(max_vram);
+        self
     }
 }

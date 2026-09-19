@@ -2,6 +2,7 @@ use inference_backends::stablediffusioncpp::{
     FlashAttentionMode, SamplingMethod, Scheduler, StableDiffusionCppConfig, StableDiffusionJob,
     helpers::{LogSetting, simple_generation},
 };
+use rand::random;
 use tracing::level_filters::LevelFilter;
 
 const VALID_PATH_TO_EXECUTABLE: &str =
@@ -41,7 +42,7 @@ Replace the owl sitting on the round wooden table stuffed toy owl from the refer
     for outfile in (0..=100).map(|n| format!("krea2_turbo_edit_3_{:02}", n)) {
         simple_generation(
             &mut sdcfg,
-            &job,
+            &job.clone().with_seed(random()),
             outfile,
             LogSetting::Err(LevelFilter::INFO),
         )

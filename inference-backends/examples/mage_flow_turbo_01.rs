@@ -1,12 +1,13 @@
 use inference_backends::stablediffusioncpp::{
-    FlashAttentionMode, SamplingMethod, Scheduler, StableDiffusionCppConfig, StableDiffusionJob,
+    StableDiffusionCppConfig, StableDiffusionJob,
     helpers::{LogSetting, simple_generation},
 };
+use rand::random;
 use tracing::level_filters::LevelFilter;
 
 const VALID_PATH_TO_EXECUTABLE: &str =
     "/data0/inference/stable-diffusion.cpp/build-rocm/bin/sd-cli";
-//"/data0/inference/stable-diffusion.cpp/build-vulkan/bin/sd-cli";
+//const VALID_PATH_TO_EXECUTABLE: &str = "/data0/inference/stable-diffusion.cpp/build-vulkan/bin/sd-cli";
 
 #[tokio::main]
 async fn main() {
@@ -15,11 +16,6 @@ async fn main() {
         .init();
 
     let job = StableDiffusionJob::mage_flow_turbo_job()
-                .with_steps(4)
-                .with_cfg_scale(1.0)
-                .with_flash_attention_mode(FlashAttentionMode::Full)
-                .with_scheduler(Scheduler::Simple)
-                .with_sampling_method(SamplingMethod::Euler)
                 .with_width(1024)
                 .with_height(1024)
                 .with_prompt(r#"
@@ -38,7 +34,7 @@ no reflections, and no backdrop, completely isolated.
     for outfile in (0..=100).map(|n| format!("mage_flow_1_{:02}", n)) {
         simple_generation(
             &mut sdcfg,
-            &job,
+            &job.clone().with_seed(random()),
             outfile,
             LogSetting::Err(LevelFilter::ERROR),
         )

@@ -6,14 +6,14 @@ use image::{
     imageops::FilterType::Lanczos3,
 };
 use inference_backends::stablediffusioncpp::{
-    FlashAttentionMode, SamplingMethod, Scheduler, StableDiffusionCppConfig, StableDiffusionJob,
+    StableDiffusionCppConfig, StableDiffusionJob,
     helpers::{LogSetting, Rescalc, simple_generation},
 };
 use tracing::level_filters::LevelFilter;
 
 const VALID_PATH_TO_EXECUTABLE: &str =
     "/data0/inference/stable-diffusion.cpp/build-rocm/bin/sd-cli";
-//"/data0/inference/stable-diffusion.cpp/build-vulkan/bin/sd-cli";
+//const VALID_PATH_TO_EXECUTABLE: &str = "/data0/inference/stable-diffusion.cpp/build-vulkan/bin/sd-cli";
 
 const BASE_IMAGE: &str = "/data0/dev/rust/mai-server/krea2_1_03.png";
 const REFERENCE_IMAGE: &str = "/home/technose02/Pictures/uli_poster/reference_images_for_description/IMG_20260725_053533531_HDR.jpg";
@@ -63,12 +63,6 @@ async fn main() {
     };
 
     let job = StableDiffusionJob::flux2_klein_9b_job()
-        .with_steps(4)
-        .with_cfg_scale(1.0)
-        .with_guidance(3.5)
-        .with_flash_attention_mode(FlashAttentionMode::Full)
-        .with_scheduler(Scheduler::Simple)
-        .with_sampling_method(SamplingMethod::Euler)
         .with_width(w_base as usize)
         .with_height(h_base as usize)
         .with_ref_png_1(base_image)

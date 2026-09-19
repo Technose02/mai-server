@@ -15,7 +15,7 @@ async fn main() {
         .with_max_level(LevelFilter::INFO)
         .init();
 
-    let job = StableDiffusionJob::flux_dev_job()
+    let job = StableDiffusionJob::flux_schnell_job()
         .with_width(1024)
         .with_height(1024)
         .with_prompt(
@@ -26,7 +26,7 @@ a lovely cat
 
     let mut sdcfg =
         StableDiffusionCppConfig::init_with_temp_dir(VALID_PATH_TO_EXECUTABLE, "/tmp").unwrap();
-    for outfile in (0..=100).map(|n| format!("fluxdev_1_{:02}", n)) {
+    for outfile in (0..=100).map(|n| format!("fluxschnell_1_{:02}", n)) {
         simple_generation(
             &mut sdcfg,
             &job.clone().with_seed(random()),
