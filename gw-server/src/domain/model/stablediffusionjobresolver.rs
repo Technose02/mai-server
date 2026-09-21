@@ -22,6 +22,7 @@ enum SDApi {
     Krea2Turbo,
     Krea2TurboEdit,
     MageFlowTurbo,
+    QwenImage21,
     ZImageTurbo,
 }
 
@@ -40,6 +41,7 @@ impl TryFrom<&str> for SDApi {
             "krea2turbo" => Ok(SDApi::Krea2Turbo),
             "krea2turboedit" => Ok(SDApi::Krea2TurboEdit),
             "mageflowturbo" => Ok(SDApi::MageFlowTurbo),
+            "qwenimage21" => Ok(SDApi::QwenImage21),
             "zimageturbo" => Ok(SDApi::ZImageTurbo),
             _ => Err(StatusCode::NOT_FOUND),
         }
@@ -59,6 +61,7 @@ impl Display for SDApi {
             SDApi::Krea2Turbo => write!(f, "krea2turbo"),
             SDApi::Krea2TurboEdit => write!(f, "krea2turboedit"),
             SDApi::MageFlowTurbo => write!(f, "mageflowturbo"),
+            SDApi::QwenImage21 => write!(f, "qwenimage21"),
             SDApi::ZImageTurbo => write!(f, "zimageturbo"),
         }
     }
@@ -77,6 +80,7 @@ impl SDApi {
             SDApi::Krea2Turbo => StableDiffusionJob::krea2_turbo_job(),
             SDApi::Krea2TurboEdit => StableDiffusionJob::krea2_turbo_edit_job(),
             SDApi::MageFlowTurbo => StableDiffusionJob::mage_flow_turbo_job(),
+            SDApi::QwenImage21 => StableDiffusionJob::qwen_image_21_job(),
             SDApi::ZImageTurbo => StableDiffusionJob::z_image_turbo_job(),
         }
     }
@@ -93,6 +97,7 @@ impl SDApi {
             SDApi::Krea2Turbo,
             SDApi::Krea2TurboEdit,
             SDApi::MageFlowTurbo,
+            SDApi::QwenImage21,
             SDApi::ZImageTurbo,
         ]
     }
@@ -109,6 +114,7 @@ impl SDApi {
             SDApi::Krea2Turbo => Purpose::T2I,
             SDApi::Krea2TurboEdit => Purpose::I2I,
             SDApi::MageFlowTurbo => Purpose::TI2I,
+            SDApi::QwenImage21 => Purpose::TI2I,
             SDApi::ZImageTurbo => Purpose::T2I,
         }
     }

@@ -8,5 +8,6 @@ mod fluxschnell;
 mod krea2turbo;
 mod krea2turboedit;
 mod mageflowturbo;
+mod qwenimage21;
 mod zimage;
 mod zimageturbo;
