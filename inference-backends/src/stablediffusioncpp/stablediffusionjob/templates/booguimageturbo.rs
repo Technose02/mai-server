@@ -11,7 +11,7 @@ impl StableDiffusionJob {
         Self {
             path_to_model: "/model_data/huggingface/Comfy-Org/Boogu-Image/diffusion_models/boogu_image_turbo_bf16.safetensors".into(),
             text_encoder: TextEncoder::llm("/model_data/comfyui-model-base/text_encoders/Qwen3VL-8B-Instruct-Q8_0.gguf"),
-            path_to_vae: "/model_data/huggingface/Comfy-Org/Boogu-Image/vae/flux1_vae_bf16.safetensors".into(),            
+            path_to_vae: "/model_data/huggingface/Comfy-Org/Boogu-Image/vae/flux1_vae_bf16.safetensors".into(),
             sampling_method: SamplingMethod::Euler,
             scheduler: Scheduler::Simple,
             steps: 4,

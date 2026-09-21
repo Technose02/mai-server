@@ -18,7 +18,7 @@ impl StableDiffusionJob {
             cfg_scale: 1.0,
             offload_to_cpu: false,
             sampling_method: SamplingMethod::Euler,
-            scheduler: Scheduler::Simple,
+            scheduler: Scheduler::Flux,
             flash_attention_mode: FlashAttentionMode::DiffusionOnly,
             backend_routing: BackendRouting::default().te(BackendMode::Cpu),
             steps: 4,
