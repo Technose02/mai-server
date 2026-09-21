@@ -21,8 +21,8 @@ async fn main() {
         .init();
 
     let job = StableDiffusionJob::qwen_image_21_job()
-        .with_width(2048)
-        .with_height(2048)
+        .with_width(512)
+        .with_height(512)
         .with_prompt(
             r#"
 a lovely cat
