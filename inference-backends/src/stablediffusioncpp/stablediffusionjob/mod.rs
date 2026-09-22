@@ -52,6 +52,13 @@ pub struct StableDiffusionJob {
     pub ref_png_1: Option<Vec<u8>>,
     pub ref_png_2: Option<Vec<u8>>,
     pub ref_png_3: Option<Vec<u8>>,
+    pub ref_png_4: Option<Vec<u8>>,
+    pub ref_png_5: Option<Vec<u8>>,
+    pub ref_png_6: Option<Vec<u8>>,
+    pub ref_png_7: Option<Vec<u8>>,
+    pub ref_png_8: Option<Vec<u8>>,
+    pub ref_png_9: Option<Vec<u8>>,
+    pub ref_png_10: Option<Vec<u8>>,
     pub lora_models: HashMap<PathBuf, f32>,
     pub backend_routing: BackendRouting,
     pub clip_on_cpu: bool,
@@ -209,6 +216,62 @@ impl StableDiffusionJob {
     }
     pub fn with_ref_png_3(mut self, ref_png_data: Vec<u8>) -> Self {
         self.ref_png_3 = Some(ref_png_data);
+        self
+    }
+
+    pub fn ref_png_4(&self) -> &Option<Vec<u8>> {
+        &self.ref_png_4
+    }
+    pub fn with_ref_png_4(mut self, ref_png_data: Vec<u8>) -> Self {
+        self.ref_png_4 = Some(ref_png_data);
+        self
+    }
+
+    pub fn ref_png_5(&self) -> &Option<Vec<u8>> {
+        &self.ref_png_5
+    }
+    pub fn with_ref_png_5(mut self, ref_png_data: Vec<u8>) -> Self {
+        self.ref_png_5 = Some(ref_png_data);
+        self
+    }
+
+    pub fn ref_png_6(&self) -> &Option<Vec<u8>> {
+        &self.ref_png_6
+    }
+    pub fn with_ref_png_6(mut self, ref_png_data: Vec<u8>) -> Self {
+        self.ref_png_6 = Some(ref_png_data);
+        self
+    }
+
+    pub fn ref_png_7(&self) -> &Option<Vec<u8>> {
+        &self.ref_png_7
+    }
+    pub fn with_ref_png_7(mut self, ref_png_data: Vec<u8>) -> Self {
+        self.ref_png_7 = Some(ref_png_data);
+        self
+    }
+
+    pub fn ref_png_8(&self) -> &Option<Vec<u8>> {
+        &self.ref_png_8
+    }
+    pub fn with_ref_png_8(mut self, ref_png_data: Vec<u8>) -> Self {
+        self.ref_png_8 = Some(ref_png_data);
+        self
+    }
+
+    pub fn ref_png_9(&self) -> &Option<Vec<u8>> {
+        &self.ref_png_9
+    }
+    pub fn with_ref_png_9(mut self, ref_png_data: Vec<u8>) -> Self {
+        self.ref_png_9 = Some(ref_png_data);
+        self
+    }
+
+    pub fn ref_png_10(&self) -> &Option<Vec<u8>> {
+        &self.ref_png_10
+    }
+    pub fn with_ref_png_10(mut self, ref_png_data: Vec<u8>) -> Self {
+        self.ref_png_10 = Some(ref_png_data);
         self
     }
 

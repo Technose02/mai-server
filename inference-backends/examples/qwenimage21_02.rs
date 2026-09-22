@@ -27,8 +27,8 @@ async fn main() {
     if generated_image_data.is_empty() {
         // 1) generate image of an owl
         let generation_job = StableDiffusionJob::qwen_image_21_job()
-        .with_width(2048)
-        .with_height(2048)
+        .with_width(800)
+        .with_height(600)
         .with_prompt(
             r#"
 high quality photo of a boreal owl sitting on a table inside a stylish coffee shop holding a mug of cappuchino with just its wings.
@@ -69,8 +69,8 @@ high quality photo of a boreal owl sitting on a table inside a stylish coffee sh
     // 2) edit generated image
 
     let edit_job = StableDiffusionJob::qwen_image_21_job()
-        .with_width(2048)
-        .with_height(2048)
+        .with_width(800)
+        .with_height(600)
         .with_ref_png_1(generated_image_data)
         .with_ref_png_2(uli_reference_image)
         .with_prompt(

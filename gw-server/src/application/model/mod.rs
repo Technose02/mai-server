@@ -350,6 +350,20 @@ pub struct StableDiffusionPromptDto {
     pub ref_png_2: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none", default = "Option::default")]
     pub ref_png_3: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none", default = "Option::default")]
+    pub ref_png_4: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none", default = "Option::default")]
+    pub ref_png_5: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none", default = "Option::default")]
+    pub ref_png_6: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none", default = "Option::default")]
+    pub ref_png_7: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none", default = "Option::default")]
+    pub ref_png_8: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none", default = "Option::default")]
+    pub ref_png_9: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none", default = "Option::default")]
+    pub ref_png_10: Option<String>,
 }
 
 impl StableDiffusionPromptDto {
@@ -370,6 +384,41 @@ impl StableDiffusionPromptDto {
 
     pub fn with_ref_png_3_data(mut self, ref_png_3_data: Vec<u8>) -> Self {
         self.ref_png_3 = Some(BASE64_STANDARD.encode(ref_png_3_data));
+        self
+    }
+
+    pub fn with_ref_png_4_data(mut self, ref_png_4_data: Vec<u8>) -> Self {
+        self.ref_png_4 = Some(BASE64_STANDARD.encode(ref_png_4_data));
+        self
+    }
+
+    pub fn with_ref_png_5_data(mut self, ref_png_5_data: Vec<u8>) -> Self {
+        self.ref_png_5 = Some(BASE64_STANDARD.encode(ref_png_5_data));
+        self
+    }
+
+    pub fn with_ref_png_6_data(mut self, ref_png_6_data: Vec<u8>) -> Self {
+        self.ref_png_6 = Some(BASE64_STANDARD.encode(ref_png_6_data));
+        self
+    }
+
+    pub fn with_ref_png_7_data(mut self, ref_png_7_data: Vec<u8>) -> Self {
+        self.ref_png_7 = Some(BASE64_STANDARD.encode(ref_png_7_data));
+        self
+    }
+
+    pub fn with_ref_png_8_data(mut self, ref_png_8_data: Vec<u8>) -> Self {
+        self.ref_png_8 = Some(BASE64_STANDARD.encode(ref_png_8_data));
+        self
+    }
+
+    pub fn with_ref_png_9_data(mut self, ref_png_9_data: Vec<u8>) -> Self {
+        self.ref_png_9 = Some(BASE64_STANDARD.encode(ref_png_9_data));
+        self
+    }
+
+    pub fn with_ref_png_10_data(mut self, ref_png_10_data: Vec<u8>) -> Self {
+        self.ref_png_10 = Some(BASE64_STANDARD.encode(ref_png_10_data));
         self
     }
 }
@@ -402,10 +451,17 @@ pub enum StableDiffusionSse {
         scheduler: Scheduler,
         sampling_method: SamplingMethod,
         ref_image_args: Option<RefImageArgs>,
-        init_png: Option<Vec<u8>>,
-        ref_png_1: Option<Vec<u8>>,
-        ref_png_2: Option<Vec<u8>>,
-        ref_png_3: Option<Vec<u8>>,
+        init_png: Box<Option<Vec<u8>>>,
+        ref_png_1: Box<Option<Vec<u8>>>,
+        ref_png_2: Box<Option<Vec<u8>>>,
+        ref_png_3: Box<Option<Vec<u8>>>,
+        ref_png_4: Box<Option<Vec<u8>>>,
+        ref_png_5: Box<Option<Vec<u8>>>,
+        ref_png_6: Box<Option<Vec<u8>>>,
+        ref_png_7: Box<Option<Vec<u8>>>,
+        ref_png_8: Box<Option<Vec<u8>>>,
+        ref_png_9: Box<Option<Vec<u8>>>,
+        ref_png_10: Box<Option<Vec<u8>>>,
         lora_models: Box<HashMap<PathBuf, f32>>,
     },
     Killed,

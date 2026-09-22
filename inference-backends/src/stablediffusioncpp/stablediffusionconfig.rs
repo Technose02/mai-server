@@ -125,6 +125,13 @@ impl StableDiffusionCppConfig {
         let ref_image_1 = "sd_ref_input_01.png";
         let ref_image_2 = "sd_ref_input_02.png";
         let ref_image_3 = "sd_ref_input_03.png";
+        let ref_image_4 = "sd_ref_input_04.png";
+        let ref_image_5 = "sd_ref_input_05.png";
+        let ref_image_6 = "sd_ref_input_06.png";
+        let ref_image_7 = "sd_ref_input_07.png";
+        let ref_image_8 = "sd_ref_input_08.png";
+        let ref_image_9 = "sd_ref_input_09.png";
+        let ref_image_10 = "sd_ref_input_10.png";
         let temp_dir = if let Some(temp_dir) = &self.temp_dir {
             temp_dir.clone()
         } else {
@@ -241,6 +248,62 @@ impl StableDiffusionCppConfig {
 
         if let Some(ref_image_data) = job.ref_png_3() {
             let ref_image_path = temp_dir.join(ref_image_3);
+            std::fs::write(&ref_image_path, ref_image_data)
+                .expect("failed writing temporary file '{ref_image_path:#?}'");
+            cmd.arg("--ref-image")
+                .arg(format!("{}", ref_image_path.to_string_lossy()));
+        }
+
+        if let Some(ref_image_data) = job.ref_png_4() {
+            let ref_image_path = temp_dir.join(ref_image_4);
+            std::fs::write(&ref_image_path, ref_image_data)
+                .expect("failed writing temporary file '{ref_image_path:#?}'");
+            cmd.arg("--ref-image")
+                .arg(format!("{}", ref_image_path.to_string_lossy()));
+        }
+
+        if let Some(ref_image_data) = job.ref_png_5() {
+            let ref_image_path = temp_dir.join(ref_image_5);
+            std::fs::write(&ref_image_path, ref_image_data)
+                .expect("failed writing temporary file '{ref_image_path:#?}'");
+            cmd.arg("--ref-image")
+                .arg(format!("{}", ref_image_path.to_string_lossy()));
+        }
+
+        if let Some(ref_image_data) = job.ref_png_6() {
+            let ref_image_path = temp_dir.join(ref_image_6);
+            std::fs::write(&ref_image_path, ref_image_data)
+                .expect("failed writing temporary file '{ref_image_path:#?}'");
+            cmd.arg("--ref-image")
+                .arg(format!("{}", ref_image_path.to_string_lossy()));
+        }
+
+        if let Some(ref_image_data) = job.ref_png_7() {
+            let ref_image_path = temp_dir.join(ref_image_7);
+            std::fs::write(&ref_image_path, ref_image_data)
+                .expect("failed writing temporary file '{ref_image_path:#?}'");
+            cmd.arg("--ref-image")
+                .arg(format!("{}", ref_image_path.to_string_lossy()));
+        }
+
+        if let Some(ref_image_data) = job.ref_png_8() {
+            let ref_image_path = temp_dir.join(ref_image_8);
+            std::fs::write(&ref_image_path, ref_image_data)
+                .expect("failed writing temporary file '{ref_image_path:#?}'");
+            cmd.arg("--ref-image")
+                .arg(format!("{}", ref_image_path.to_string_lossy()));
+        }
+
+        if let Some(ref_image_data) = job.ref_png_9() {
+            let ref_image_path = temp_dir.join(ref_image_9);
+            std::fs::write(&ref_image_path, ref_image_data)
+                .expect("failed writing temporary file '{ref_image_path:#?}'");
+            cmd.arg("--ref-image")
+                .arg(format!("{}", ref_image_path.to_string_lossy()));
+        }
+
+        if let Some(ref_image_data) = job.ref_png_10() {
+            let ref_image_path = temp_dir.join(ref_image_10);
             std::fs::write(&ref_image_path, ref_image_data)
                 .expect("failed writing temporary file '{ref_image_path:#?}'");
             cmd.arg("--ref-image")

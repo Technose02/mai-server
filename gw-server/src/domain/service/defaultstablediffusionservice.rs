@@ -96,6 +96,83 @@ impl StableDiffusionServiceInPort for DefaultStableDiffusionService {
             }
         }
 
+        if let Some(ref_png_b64_data) = prompt_dto.ref_png_4 {
+            match BASE64_STANDARD.decode(ref_png_b64_data) {
+                Ok(ref_png_data) => {
+                    job = job.with_ref_png_4(ref_png_data);
+                }
+                Err(_) => {
+                    return Err(StatusCode::BAD_REQUEST);
+                }
+            }
+        }
+
+        if let Some(ref_png_b64_data) = prompt_dto.ref_png_5 {
+            match BASE64_STANDARD.decode(ref_png_b64_data) {
+                Ok(ref_png_data) => {
+                    job = job.with_ref_png_5(ref_png_data);
+                }
+                Err(_) => {
+                    return Err(StatusCode::BAD_REQUEST);
+                }
+            }
+        }
+
+        if let Some(ref_png_b64_data) = prompt_dto.ref_png_6 {
+            match BASE64_STANDARD.decode(ref_png_b64_data) {
+                Ok(ref_png_data) => {
+                    job = job.with_ref_png_6(ref_png_data);
+                }
+                Err(_) => {
+                    return Err(StatusCode::BAD_REQUEST);
+                }
+            }
+        }
+
+        if let Some(ref_png_b64_data) = prompt_dto.ref_png_7 {
+            match BASE64_STANDARD.decode(ref_png_b64_data) {
+                Ok(ref_png_data) => {
+                    job = job.with_ref_png_7(ref_png_data);
+                }
+                Err(_) => {
+                    return Err(StatusCode::BAD_REQUEST);
+                }
+            }
+        }
+
+        if let Some(ref_png_b64_data) = prompt_dto.ref_png_8 {
+            match BASE64_STANDARD.decode(ref_png_b64_data) {
+                Ok(ref_png_data) => {
+                    job = job.with_ref_png_8(ref_png_data);
+                }
+                Err(_) => {
+                    return Err(StatusCode::BAD_REQUEST);
+                }
+            }
+        }
+
+        if let Some(ref_png_b64_data) = prompt_dto.ref_png_9 {
+            match BASE64_STANDARD.decode(ref_png_b64_data) {
+                Ok(ref_png_data) => {
+                    job = job.with_ref_png_9(ref_png_data);
+                }
+                Err(_) => {
+                    return Err(StatusCode::BAD_REQUEST);
+                }
+            }
+        }
+
+        if let Some(ref_png_b64_data) = prompt_dto.ref_png_10 {
+            match BASE64_STANDARD.decode(ref_png_b64_data) {
+                Ok(ref_png_data) => {
+                    job = job.with_ref_png_10(ref_png_data);
+                }
+                Err(_) => {
+                    return Err(StatusCode::BAD_REQUEST);
+                }
+            }
+        }
+
         if let Some(cfg_scale) = prompt_dto.cfg_scale {
             job = job.with_cfg_scale(cfg_scale);
         }
@@ -190,10 +267,17 @@ impl StableDiffusionServiceInPort for DefaultStableDiffusionService {
                                         scheduler: job.scheduler(),
                                         sampling_method: job.sampling_method(),
                                         ref_image_args: job.ref_image_args().clone(),
-                                        init_png: job.init_png().clone(),
-                                        ref_png_1: job.ref_png_1().clone(),
-                                        ref_png_2: job.ref_png_2().clone(),
-                                        ref_png_3: job.ref_png_3().clone(),
+                                        init_png: Box::new(job.init_png().clone()),
+                                        ref_png_1: Box::new(job.ref_png_1().clone()),
+                                        ref_png_2: Box::new(job.ref_png_2().clone()),
+                                        ref_png_3: Box::new(job.ref_png_3().clone()),
+                                        ref_png_4: Box::new(job.ref_png_4().clone()),
+                                        ref_png_5: Box::new(job.ref_png_5().clone()),
+                                        ref_png_6: Box::new(job.ref_png_6().clone()),
+                                        ref_png_7: Box::new(job.ref_png_7().clone()),
+                                        ref_png_8: Box::new(job.ref_png_8().clone()),
+                                        ref_png_9: Box::new(job.ref_png_9().clone()),
+                                        ref_png_10: Box::new(job.ref_png_10().clone()),
                                         lora_models: Box::new(job.lora_models().clone()),
                                     }) {
                                         yield Ok::<_, std::convert::Infallible>(Event::default().data(json))
