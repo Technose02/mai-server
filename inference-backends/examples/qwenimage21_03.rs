@@ -9,8 +9,8 @@ const VALID_PATH_TO_EXECUTABLE: &str =
     "/data0/inference/stable-diffusion.cpp/build-rocm/bin/sd-cli";
 //const VALID_PATH_TO_EXECUTABLE: &str = "/data0/inference/stable-diffusion.cpp/build-vulkan/bin/sd-cli";
 
-const EDITED_IMAGE_FILE: &str = "/data0/dev/rust/mai-server/nsfw_ref_1a_nobg.png";
-const REFERENCE_FILE: &str = "/data0/dev/rust/mai-server/nsfw_ref_1a.png";
+const EDITED_IMAGE_FILE: &str = "/home/technose02/Pictures/uli_poster/20260913/uli_ref_a_nobg.png";
+const REFERENCE_FILE: &str = "/home/technose02/Pictures/uli_poster/20260913/uli_ref_a.png";
 
 #[tokio::main]
 async fn main() {
