@@ -25,8 +25,8 @@ use std::{
 };
 use tracing::info;
 
-const SERVER_DOMAIN: &str = "mai-server.ipv64.net";
-//const SERVER_DOMAIN: &str = "w0zteduifhh6rjyc.myfritz.net";
+//const SERVER_DOMAIN: &str = "mai-server.ipv64.net";
+const SERVER_DOMAIN: &str = "w0zteduifhh6rjyc.myfritz.net";
 
 const MAISERVER_LOG_KEY: &str = "MAISERVER_LOG";
 const RANDOM_APIKEY_LEN: u8 = 25;
