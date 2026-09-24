@@ -170,6 +170,15 @@ impl StableDiffusionCppConfig {
             cmd.arg("--max-vram").arg("-1");
         }
 
+        if !job.sigmas.is_empty() {
+            let sigmas = job.sigmas()
+                    .iter()
+                    .map(|val| format!("{val:.3}"))
+                    .collect::<Vec<String>>()
+                    .join(",");
+            cmd.arg("--sigmas").arg(format!("{sigmas}"));
+        }
+
         if job.clip_on_cpu() {
             cmd.arg("--clip-on-cpu");
         }

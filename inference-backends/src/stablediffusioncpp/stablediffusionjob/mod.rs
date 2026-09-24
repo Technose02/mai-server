@@ -63,6 +63,7 @@ pub struct StableDiffusionJob {
     pub backend_routing: BackendRouting,
     pub clip_on_cpu: bool,
     pub max_vram: Option<u16>,
+    pub sigmas: Vec<f32>,
 }
 
 impl StableDiffusionJob {
@@ -333,6 +334,14 @@ impl StableDiffusionJob {
     }
     pub fn with_max_vram(mut self, max_vram: u16) -> Self {
         self.max_vram = Some(max_vram);
+        self
+    }
+
+    pub fn sigmas(&self) -> &[f32] {
+        self.sigmas.as_slice()
+    }
+    pub fn with_sigmas(mut self, sigmas: &[f32]) -> Self {
+        self.sigmas.extend(sigmas);
         self
     }
 }
