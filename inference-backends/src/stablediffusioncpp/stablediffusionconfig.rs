@@ -171,12 +171,13 @@ impl StableDiffusionCppConfig {
         }
 
         if !job.sigmas.is_empty() {
-            let sigmas = job.sigmas()
-                    .iter()
-                    .map(|val| format!("{val:.3}"))
-                    .collect::<Vec<String>>()
-                    .join(",");
-            cmd.arg("--sigmas").arg(format!("{sigmas}"));
+            let sigmas = job
+                .sigmas()
+                .iter()
+                .map(|val| format!("{val:.3}"))
+                .collect::<Vec<String>>()
+                .join(",");
+            cmd.arg("--sigmas").arg(sigmas);
         }
 
         if job.clip_on_cpu() {
@@ -222,9 +223,13 @@ impl StableDiffusionCppConfig {
         cmd.arg("--height").arg(job.height().to_string());
         cmd.arg("--prompt").arg(prompt);
         cmd.arg("--output").arg(tmp_output);
-        cmd.arg("--scheduler").arg(job.scheduler().as_ref());
-        cmd.arg("--sampling-method")
-            .arg(job.sampling_method().as_ref());
+
+        if job.sigmas().is_empty() {
+            cmd.arg("--scheduler").arg(job.scheduler().as_ref());
+            cmd.arg("--sampling-method")
+                .arg(job.sampling_method().as_ref());
+        }
+
         cmd.arg("--verbose");
 
         if let Some(ref_image_args) = job.ref_image_args() {
