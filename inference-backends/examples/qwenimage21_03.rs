@@ -32,7 +32,7 @@ async fn main() {
         .with_width(reference_image.width() as usize)
         .with_height(reference_image.height() as usize)
         .with_ref_png_1(raw_ref_image)
-        .with_prompt("Extract the woman. Output format: RGBA with transparent background.");
+        .with_prompt("Extract the main subject. Output format: RGBA with transparent background.");
 
     sdcfg.stop().await;
 
