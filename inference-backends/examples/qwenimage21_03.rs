@@ -2,6 +2,7 @@ use image::ImageReader;
 use inference_backends::stablediffusioncpp::{
     StableDiffusionCppConfig, StableDiffusionEvent, StableDiffusionJob,
 };
+use rand::random;
 use std::{fs::read as read_file, io::Cursor};
 use tracing::level_filters::LevelFilter;
 
@@ -32,7 +33,8 @@ async fn main() {
         .with_width(reference_image.width() as usize)
         .with_height(reference_image.height() as usize)
         .with_ref_png_1(raw_ref_image)
-        .with_prompt("Extract the main subject. Output format: RGBA with transparent background.");
+        .with_prompt("This is an RGBA image with transparency. Remove the background of <image1> and extract the main subject. The image has alpha channel and the background is transparent.")
+        .with_seed(random());
 
     sdcfg.stop().await;
 
@@ -48,9 +50,9 @@ async fn main() {
                 println!("image generated and saved as {EDITED_IMAGE_FILE}");
             }
             StableDiffusionEvent::GenerationStarted {
-                seed: _,
+                seed: s,
                 started_at: _,
-            } => println!("editing image..."),
+            } => println!("editing image with seed {s} ..."),
             StableDiffusionEvent::Error(e) => panic!("aborting due to error: {e}"),
             StableDiffusionEvent::Killed => panic!("aborting, since sd-cli was stopped"),
             StableDiffusionEvent::Progress {
