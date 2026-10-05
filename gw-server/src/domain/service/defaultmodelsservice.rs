@@ -172,7 +172,8 @@ impl ModelsServiceInPort for DefaultModelsService {
     }
 
     fn get_default_languagemodel_alias(&self) -> String {
-        "qwen3.8-27b-thinking-gsq-rco-iq3-cq8-max".into()
+        //"qwen3.8-27b-thinking-gsq-rco-iq3-cq8-max".into()
+        "qwen3.8-27b-thinking-swift15-gsq-rco-iq3".into()
     }
 
     async fn ensure_requested_embeddingmodel_is_served(
