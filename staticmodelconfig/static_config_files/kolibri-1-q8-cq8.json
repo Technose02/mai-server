@@ -1,5 +1,5 @@
 {
-  "alias": "kolibri-1-q8",
+  "alias": "kolibri-1-q8-cq8",
   "model-path": "/model_data/huggingface/Hob-forge/Kolibri-1-GGUF/Q8_0/Kolibri-1-Q8_0-00001-of-00002.gguf",
   "max-ctx-size": 262144,
   "vocab-type": 2,
