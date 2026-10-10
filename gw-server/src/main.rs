@@ -33,7 +33,8 @@ const RANDOM_APIKEY_LEN: u8 = 25;
 const LLAMACPP_LLM_PORT: u16 = 11440;
 const LLAMACPP_LLM_TIMEOUT_SECS: u16 = 60000;
 const LLAMACPP_EMBEDDINGS_PORT: u16 = 11441;
-const LLAMACPP_EXECDIR: &str = "/data0/inference/llama.cpp";
+//const LLAMACPP_EXECDIR: &str = "/data0/inference/llama.cpp";
+const LLAMACPP_EXECDIR: &str = "/data0/inference/llama-cpp-kolibri-1/llama.cpp";
 const STABLEDIFFUSIONCPP_EXEDIR: &str = "/data0/inference/stable-diffusion.cpp";
 
 #[derive(Default)]
