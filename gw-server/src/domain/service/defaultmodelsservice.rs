@@ -172,8 +172,12 @@ impl ModelsServiceInPort for DefaultModelsService {
     }
 
     fn get_default_languagemodel_alias(&self) -> String {
-        //"qwen3.8-27b-thinking-gsq-rco-iq3-cq8-max".into()
-        "qwen3.8-27b-thinking-swift15-gsq-rco-iq3".into()
+        let default_chat_llm = std::env::var(crate::DEFAULT_CHAT_LLM_ENV)
+            .ok()
+            .unwrap_or(crate::DEFAULT_CHAT_LLM.into());
+        info!("default llm for chat is '{default_chat_llm}'");
+
+        default_chat_llm
     }
 
     async fn ensure_requested_embeddingmodel_is_served(

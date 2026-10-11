@@ -33,8 +33,7 @@ const RANDOM_APIKEY_LEN: u8 = 25;
 const LLAMACPP_LLM_PORT: u16 = 11440;
 const LLAMACPP_LLM_TIMEOUT_SECS: u16 = 60000;
 const LLAMACPP_EMBEDDINGS_PORT: u16 = 11441;
-//const LLAMACPP_EXECDIR: &str = "/data0/inference/llama.cpp";
-const LLAMACPP_EXECDIR: &str = "/data0/inference/llama-cpp-kolibri-1/llama.cpp";
+const LLAMACPP_EXECDIR_EMBEDDINGS: &str = "/data0/inference/llama.cpp";
 const STABLEDIFFUSIONCPP_EXEDIR: &str = "/data0/inference/stable-diffusion.cpp";
 
 #[derive(Default)]
@@ -183,14 +182,23 @@ async fn create_app(
         LLAMACPP_LLM_PORT,
         Some(LLAMACPP_LLM_TIMEOUT_SECS),
         accelerator_backend.llamacpp_command(),
-        LLAMACPP_EXECDIR,
+        std::env::var(gw_server::LLAMACPP_EXECDIR_LLM_ENV)
+            .ok()
+            .unwrap_or_else(|| {
+                info!(
+                    "{} not set in env, defaulting to '{}'",
+                    gw_server::LLAMACPP_EXECDIR_LLM_ENV,
+                    gw_server::LLAMACPP_EXECDIR_LLM
+                );
+                gw_server::LLAMACPP_EXECDIR_LLM.to_string()
+            }),
     )
     .await;
     let llamacpp_embeddings_backend_controller = LlamaCppControllerAdapter::create_adapter(
         LLAMACPP_EMBEDDINGS_PORT,
         None,
         accelerator_backend.llamacpp_command(),
-        LLAMACPP_EXECDIR,
+        LLAMACPP_EXECDIR_EMBEDDINGS,
     )
     .await;
 
