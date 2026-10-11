@@ -1,10 +1,12 @@
-use inference_backends::stablediffusioncpp::{StableDiffusionCppConfig, StableDiffusionJob,
+use inference_backends::stablediffusioncpp::{
+    StableDiffusionCppConfig, StableDiffusionJob,
     helpers::{LogSetting, simple_generation},
 };
 use rand::random;
 use tracing::level_filters::LevelFilter;
 
-const VALID_PATH_TO_EXECUTABLE: &str = "/data0/inference/stable-diffusion.cpp/build-rocm/bin/sd-cli";
+const VALID_PATH_TO_EXECUTABLE: &str =
+    "/data0/inference/stable-diffusion.cpp/build-rocm/bin/sd-cli";
 //const VALID_PATH_TO_EXECUTABLE: &str = "/data0/inference/stable-diffusion.cpp/build-vulkan/bin/sd-cli";
 
 #[tokio::main]

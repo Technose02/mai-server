@@ -46,7 +46,7 @@ async fn main() {
     let dto = gw_server::application::model::StableDiffusionPromptDto {
         prompt: String::from(PROMPT),
         width: 1024,
-        height: 1024,        
+        height: 1024,
         ..Default::default()
     };
 
