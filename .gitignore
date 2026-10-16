@@ -8,6 +8,7 @@
 *.png
 
 .env
+.kolibri.env
 
 log.txt
 ex*.log
