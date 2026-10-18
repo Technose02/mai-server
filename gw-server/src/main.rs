@@ -23,18 +23,75 @@ use rustls::pki_types::{IpAddr, Ipv4Addr};
 use std::{
     borrow::Cow, collections::HashMap, net::SocketAddr, path::PathBuf, sync::Arc, time::Duration,
 };
-use tracing::info;
+use tracing::{info, warn};
 
 //const SERVER_DOMAIN: &str = "mai-server.ipv64.net";
 const SERVER_DOMAIN: &str = "w0zteduifhh6rjyc.myfritz.net";
 
 const MAISERVER_LOG_KEY: &str = "MAISERVER_LOG";
 const RANDOM_APIKEY_LEN: u8 = 25;
-const LLAMACPP_LLM_PORT: u16 = 11440;
+pub const LLAMACPP_LLM_PORT: u16 = 11440;
+pub const LLAMACPP_LLM_PORT_ENV: &str = "LLAMACPP_LLM_PORT";
+pub const LLAMACPP_EMBEDDINGS_PORT: u16 = 11441;
+pub const LLAMACPP_EMBEDDINGS_PORT_ENV: &str = "LLAMACPP_EMBEDDINGS_PORT";
 const LLAMACPP_LLM_TIMEOUT_SECS: u16 = 60000;
-const LLAMACPP_EMBEDDINGS_PORT: u16 = 11441;
-const LLAMACPP_EXECDIR_EMBEDDINGS: &str = "/data0/inference/llama.cpp";
 const STABLEDIFFUSIONCPP_EXEDIR: &str = "/data0/inference/stable-diffusion.cpp";
+
+/// where the gateway expects (and starts) its two llama-server backends.
+/// every value is overridable via CLI-flag or environment-variable so a test
+/// instance can be pointed at spare ports / fixture directories without ever
+/// touching the live pair on the default ports.
+#[derive(Clone)]
+pub struct LlamaCppBackendConfig {
+    pub llm_port: u16,
+    pub embeddings_port: u16,
+    pub llm_execdir: String,
+    pub embeddings_execdir: String,
+}
+
+impl Default for LlamaCppBackendConfig {
+    fn default() -> Self {
+        let env_or = |key: &str, fallback: &str| {
+            std::env::var(key).unwrap_or_else(|_| {
+                info!("{key} not set in env, defaulting to '{fallback}'");
+                fallback.to_string()
+            })
+        };
+        let env_port = |key: &str, fallback: u16| match std::env::var(key) {
+            Ok(value) => value.parse::<u16>().unwrap_or_else(|_| {
+                panic!("invalid value for {key} in env: '{value}' (expected a port number)")
+            }),
+            Err(_) => {
+                info!("{key} not set in env, defaulting to '{fallback}'");
+                fallback
+            }
+        };
+        Self {
+            llm_port: env_port(LLAMACPP_LLM_PORT_ENV, LLAMACPP_LLM_PORT),
+            embeddings_port: env_port(LLAMACPP_EMBEDDINGS_PORT_ENV, LLAMACPP_EMBEDDINGS_PORT),
+            llm_execdir: env_or(
+                gw_server::LLAMACPP_EXECDIR_LLM_ENV,
+                gw_server::LLAMACPP_EXECDIR_LLM,
+            ),
+            embeddings_execdir: env_or(
+                gw_server::LLAMACPP_EXECDIR_EMBEDDINGS_ENV,
+                gw_server::LLAMACPP_EXECDIR_EMBEDDINGS,
+            ),
+        }
+    }
+}
+
+/// runtime switches that only matter for testing / development instances
+#[derive(Clone, Default)]
+pub struct RunOptions {
+    /// skip starting the default embedding-model at boot (a test instance must
+    /// not load models on machines without spare RAM)
+    pub skip_default_embedding_startup: bool,
+    /// skip the "ensure a language model is served" step when the chat-ui
+    /// document is requested (prevents a fixture-test from spawning real
+    /// llama-server processes with real model configs)
+    pub skip_chatui_model_ensure: bool,
+}
 
 #[derive(Default)]
 enum AcceleratorBackend {
@@ -101,6 +158,7 @@ struct MyAppState {
     embeddingmodelmanager_service: Arc<dyn ModelManagerServiceInPort>,
     models_service: Arc<dyn ModelsServiceInPort>,
     stable_diffusion_service: Arc<dyn StableDiffusionServiceInPort>,
+    run_options: RunOptions,
 }
 
 impl ApplicationConfig for MyAppState {
@@ -127,6 +185,10 @@ impl ApplicationConfig for MyAppState {
     fn stable_diffusion_service(&self) -> Arc<dyn StableDiffusionServiceInPort> {
         self.stable_diffusion_service.clone()
     }
+
+    fn skip_chatui_model_ensure(&self) -> bool {
+        self.run_options.skip_chatui_model_ensure
+    }
 }
 
 struct MySecurityConfig {
@@ -146,6 +208,8 @@ async fn create_app(
     localhost: bool,
     log_request_info: bool,
     accelerator_backend: AcceleratorBackend,
+    backend_config: LlamaCppBackendConfig,
+    run_options: RunOptions,
 ) -> Router {
     let security_config = match provided_apikey {
         None if localhost => Arc::new(MySecurityConfig { apikey: None }),
@@ -172,33 +236,26 @@ async fn create_app(
     };
 
     // init adapters
-    let llamacpp_llm_client =
-        LocalLlamaCppClientAdapter::create_adapter(LLAMACPP_LLM_PORT, security_config.clone());
+    let llamacpp_llm_client = LocalLlamaCppClientAdapter::create_adapter(
+        backend_config.llm_port,
+        security_config.clone(),
+    );
     let llamacpp_embeddings_client = LocalLlamaCppClientAdapter::create_adapter(
-        LLAMACPP_EMBEDDINGS_PORT,
+        backend_config.embeddings_port,
         security_config.clone(),
     );
     let llamacpp_llm_backend_controller = LlamaCppControllerAdapter::create_adapter(
-        LLAMACPP_LLM_PORT,
+        backend_config.llm_port,
         Some(LLAMACPP_LLM_TIMEOUT_SECS),
         accelerator_backend.llamacpp_command(),
-        std::env::var(gw_server::LLAMACPP_EXECDIR_LLM_ENV)
-            .ok()
-            .unwrap_or_else(|| {
-                info!(
-                    "{} not set in env, defaulting to '{}'",
-                    gw_server::LLAMACPP_EXECDIR_LLM_ENV,
-                    gw_server::LLAMACPP_EXECDIR_LLM
-                );
-                gw_server::LLAMACPP_EXECDIR_LLM.to_string()
-            }),
+        backend_config.llm_execdir.clone(),
     )
     .await;
     let llamacpp_embeddings_backend_controller = LlamaCppControllerAdapter::create_adapter(
-        LLAMACPP_EMBEDDINGS_PORT,
+        backend_config.embeddings_port,
         None,
         accelerator_backend.llamacpp_command(),
-        LLAMACPP_EXECDIR_EMBEDDINGS,
+        backend_config.embeddings_execdir.clone(),
     )
     .await;
 
@@ -227,15 +284,20 @@ async fn create_app(
         accelerator_backend.environment_args(),
     );
 
-    {
+    if run_options.skip_default_embedding_startup {
+        info!("skipping default embedding-model startup (--no-default-embedding-startup)");
+    } else {
         // start default embeddings-model
         let default_model = models_service.get_default_embeddingmodel_alias();
-        models_service
+        // a failure here must not kill the gateway: on machines without spare
+        // ram (or without the model file) this is a degraded, not a dead server
+        if models_service
             .ensure_requested_embeddingmodel_is_served(&default_model, Duration::from_millis(60000))
             .await
-            .unwrap_or_else(|_| {
-                panic!("error starting default embedding-model ('{default_model}')")
-            });
+            .is_err()
+        {
+            warn!("error starting default embedding-model ('{default_model}') - continuing without it; embeddings requests will retry on demand");
+        }
     }
 
     let languagemodelmanager_service =
@@ -258,6 +320,7 @@ async fn create_app(
         embeddingmodelmanager_service,
         models_service,
         stable_diffusion_service,
+        run_options: run_options.clone(),
     });
 
     let router = Router::new()
@@ -346,6 +409,8 @@ async fn main() {
         provided_api_key,
         provided_log_request_info,
         llamacpp_backend,
+        backend_config,
+        run_options,
     ) = {
         let mut port = None;
         let mut api_key = None;
@@ -353,6 +418,9 @@ async fn main() {
         let mut no_https = false;
         let mut override_host = None;
         let mut llamacpp_backend = AcceleratorBackend::default();
+        // env (or built-in defaults) provide the baseline; CLI flags below win
+        let mut backend_config = LlamaCppBackendConfig::default();
+        let mut run_options = RunOptions::default();
 
         while let Some(a) = args.next() {
             if port.is_none() && (a == "--port" || a == "-p") {
@@ -367,6 +435,35 @@ async fn main() {
                 }
             } else if a == "--port" || a == "-p" {
                 panic!("you must not provide \"-p\" (\"--port\") more than once")
+            }
+
+            if a == "--llamacpp-llm-port" {
+                let value = args.next().expect("no value for \"--llamacpp-llm-port\" provided");
+                backend_config.llm_port = value
+                    .parse::<u16>()
+                    .unwrap_or_else(|_| panic!("invalid value for \"--llamacpp-llm-port\": {value}"));
+            }
+
+            if a == "--llamacpp-embeddings-port" {
+                let value =
+                    args.next().expect("no value for \"--llamacpp-embeddings-port\" provided");
+                backend_config.embeddings_port = value.parse::<u16>().unwrap_or_else(|_| {
+                    panic!("invalid value for \"--llamacpp-embeddings-port\": {value}")
+                });
+            }
+
+            if a == "--llamacpp-execdir" {
+                let value = args.next().expect("no value for \"--llamacpp-execdir\" provided");
+                backend_config.llm_execdir = value.clone();
+                backend_config.embeddings_execdir = value;
+            }
+
+            if a == "--no-default-embedding-startup" {
+                run_options.skip_default_embedding_startup = true;
+            }
+
+            if a == "--no-chatui-model-ensure" {
+                run_options.skip_chatui_model_ensure = true;
             }
 
             if api_key.is_none() && a == "--api-key" || a == "-k" {
@@ -423,6 +520,8 @@ async fn main() {
             api_key,
             log_request_info,
             llamacpp_backend,
+            backend_config,
+            run_options,
         )
     };
 
@@ -431,6 +530,8 @@ async fn main() {
         host == IpAddr::V4(Ipv4Addr::from([127, 0, 0, 1])),
         provided_log_request_info,
         llamacpp_backend,
+        backend_config,
+        run_options,
     )
     .await;
     let addr = SocketAddr::from((host, port));

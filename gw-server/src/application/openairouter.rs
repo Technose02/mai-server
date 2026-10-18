@@ -167,13 +167,15 @@ async fn chat_ui_document(
     state: ChatUiState,
     request: Request,
 ) -> Result<Response<Body>, StatusCode> {
-    let default_model_alias = state.config.models_service().get_default_languagemodel_alias();
-    state
-        .config
-        .models_service()
-        .ensure_any_languagemodel_is_served(&default_model_alias, Duration::from_mins(3))
-        .await
-        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+    if !state.config.skip_chatui_model_ensure() {
+        let default_model_alias = state.config.models_service().get_default_languagemodel_alias();
+        state
+            .config
+            .models_service()
+            .ensure_any_languagemodel_is_served(&default_model_alias, Duration::from_mins(3))
+            .await
+            .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+    }
     state
         .config
         .openai_chat_completions_service()

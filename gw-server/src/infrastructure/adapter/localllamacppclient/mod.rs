@@ -131,15 +131,7 @@ impl LocalLlamaCppClientAdapter {
 fn transparent_response(response: hyper::Response<hyper::body::Incoming>) -> Response {
     let (mut parts, body) = response.into_parts();
 
-    let is_sse = parts
-        .headers
-        .get(CONTENT_TYPE)
-        .and_then(|value| value.to_str().ok())
-        .is_some_and(|value| value.starts_with("text/event-stream"));
-    // never interleave bytes into an encoded stream
-    let is_encoded = parts.headers.contains_key(CONTENT_ENCODING);
-
-    if is_sse && !is_encoded {
+    if is_keepalive_candidate(&parts.headers) {
         // the body grows by the keepalive comments -> upstream length is void
         parts.headers.remove(CONTENT_LENGTH);
         Response::from_parts(parts, Body::from_stream(keepalive_stream(Body::new(body))))
@@ -148,9 +140,29 @@ fn transparent_response(response: hyper::Response<hyper::body::Incoming>) -> Res
     }
 }
 
+/// keepalive may only be interleaved into a plain (not content-encoded)
+/// `text/event-stream` body - anything else is forwarded untouched.
+fn is_keepalive_candidate(headers: &axum::http::HeaderMap) -> bool {
+    let is_sse = headers
+        .get(CONTENT_TYPE)
+        .and_then(|value| value.to_str().ok())
+        .is_some_and(|value| value.starts_with("text/event-stream"));
+    // never interleave bytes into an encoded stream
+    let is_encoded = headers.contains_key(CONTENT_ENCODING);
+
+    is_sse && !is_encoded
+}
+
 fn keepalive_stream(body: Body) -> impl futures::Stream<Item = Result<Bytes, std::io::Error>> {
+    keepalive_stream_with(body, SSE_KEEPALIVE_INTERVAL)
+}
+
+fn keepalive_stream_with(
+    body: Body,
+    idle_interval: Duration,
+) -> impl futures::Stream<Item = Result<Bytes, std::io::Error>> {
     let mut stream = body.into_data_stream();
-    let mut interval = tokio::time::interval(SSE_KEEPALIVE_INTERVAL);
+    let mut interval = tokio::time::interval(idle_interval);
     interval.set_missed_tick_behavior(tokio::time::MissedTickBehavior::Delay);
 
     async_stream::stream! {
@@ -222,7 +234,10 @@ fn ui_target_path_and_query(uri: &Uri) -> String {
 
     match path_and_query.strip_prefix("/chat") {
         Some("") => "/".to_string(),
-        Some(rest) if rest.starts_with('/') || rest.starts_with('?') => rest.to_string(),
+        // "/chat?query" -> the backend still needs an absolute path in front of
+        // the query, otherwise the forwarded request-target would be empty
+        Some(rest) if rest.starts_with('?') => format!("/{rest}"),
+        Some(rest) if rest.starts_with('/') => rest.to_string(),
         _ => path_and_query.to_string(),
     }
 }
@@ -262,5 +277,143 @@ impl OpenAiClientOutPort for LocalLlamaCppClientAdapter {
     ) -> Result<Response, StatusCode> {
         self.post_json(&format!("/{LLAMACPP_API_BASE_PATH}/embeddings"), &payload)
             .await
+    }
+}
+#[cfg(test)]
+mod path_mapping_tests {
+    use super::*;
+
+    fn uri(s: &str) -> Uri {
+        Uri::try_from(s).expect("test uri must be valid")
+    }
+
+    #[test]
+    fn gateway_api_path_is_stripped_to_backend_v1() {
+        // /api/v1 mount -> backend /v1 (W8a: no double v1 prefix)
+        assert_eq!(
+            gateway_api_to_backend_path(&uri("/api/v1/tokenize")).unwrap(),
+            "/v1/tokenize"
+        );
+        assert_eq!(
+            gateway_api_to_backend_path(&uri("/api/v1/chat/completions")).unwrap(),
+            "/v1/chat/completions"
+        );
+        // query must survive
+        assert_eq!(
+            gateway_api_to_backend_path(&uri("/api/v1/props?autoload=false")).unwrap(),
+            "/v1/props?autoload=false"
+        );
+        // /api/{n}/v1 mount -> backend /v1 (W8b: parallel param variant)
+        assert_eq!(
+            gateway_api_to_backend_path(&uri("/api/1/v1/models")).unwrap(),
+            "/v1/models"
+        );
+        assert_eq!(
+            gateway_api_to_backend_path(&uri("/api/4/v1/tokenize?q=1")).unwrap(),
+            "/v1/tokenize?q=1"
+        );
+    }
+
+    #[test]
+    fn non_api_paths_are_not_mapped() {
+        assert!(gateway_api_to_backend_path(&uri("/chat/props")).is_err());
+        assert!(gateway_api_to_backend_path(&uri("/v1/models")).is_err());
+        // a non-numeric segment between /api/ and /v1 is not the parallel mount
+        assert!(gateway_api_to_backend_path(&uri("/api/xx/v1/models")).is_err());
+    }
+
+    #[test]
+    fn ui_mount_prefix_is_stripped_but_root_absolute_paths_pass_through() {
+        // /chat document -> backend root
+        assert_eq!(ui_target_path_and_query(&uri("/chat/")), "/");
+        assert_eq!(ui_target_path_and_query(&uri("/chat")), "/");
+        assert_eq!(ui_target_path_and_query(&uri("/chat?x=1")), "/?x=1");
+        // sub-resources under the mount -> stripped
+        assert_eq!(
+            ui_target_path_and_query(&uri("/chat/_app/immutable/bundle.x.js")),
+            "/_app/immutable/bundle.x.js"
+        );
+        assert_eq!(ui_target_path_and_query(&uri("/chat/props?a=1")), "/props?a=1");
+        // root-absolute ui endpoints (no /chat prefix) pass through unchanged
+        assert_eq!(ui_target_path_and_query(&uri("/tools")), "/tools");
+        assert_eq!(ui_target_path_and_query(&uri("/models/load")), "/models/load");
+        assert_eq!(ui_target_path_and_query(&uri("/cors-proxy")), "/cors-proxy");
+    }
+}
+
+#[cfg(test)]
+mod keepalive_tests {
+    use super::*;
+    use axum::body::Body;
+    use futures::StreamExt;
+
+    fn headers(content_type: &str, encoded: bool) -> axum::http::HeaderMap {
+        let mut builder = axum::http::HeaderMap::new();
+        builder.insert(CONTENT_TYPE, content_type.parse().unwrap());
+        if encoded {
+            builder.insert(CONTENT_ENCODING, "gzip".parse().unwrap());
+        }
+        builder
+    }
+
+    #[test]
+    fn only_plain_sse_bodies_are_keepalive_candidates() {
+        assert!(is_keepalive_candidate(&headers("text/event-stream", false)));
+        assert!(is_keepalive_candidate(&headers(
+            "text/event-stream; charset=utf-8",
+            false
+        )));
+        // never interleave into encoded streams or non-SSE bodies
+        assert!(!is_keepalive_candidate(&headers("text/event-stream", true)));
+        assert!(!is_keepalive_candidate(&headers("application/json", false)));
+        assert!(!is_keepalive_candidate(&headers("text/html", false)));
+    }
+
+    #[tokio::test]
+    async fn keepalive_bytes_are_emitted_on_an_idle_sse_body() {
+        // a body that never yields data but stays open (like a thinking model)
+        let idle = Body::from_stream(futures::stream::pending::<Result<Bytes, std::io::Error>>());
+        let mut stream = std::pin::pin!(keepalive_stream_with(idle, Duration::from_millis(20)));
+
+        // first item should be a keepalive comment (after one interval), not data
+        let first = tokio::time::timeout(Duration::from_secs(2), stream.next())
+            .await
+            .expect("expected a keepalive within 2s")
+            .expect("stream must yield an item")
+            .expect("keepalive must be Ok");
+        assert_eq!(first.as_ref(), SSE_KEEPALIVE_COMMENT);
+
+        // and it keeps ticking while idle
+        let second = tokio::time::timeout(Duration::from_secs(2), stream.next())
+            .await
+            .expect("expected a second keepalive")
+            .unwrap()
+            .unwrap();
+        assert_eq!(second.as_ref(), SSE_KEEPALIVE_COMMENT);
+    }
+
+    #[tokio::test]
+    async fn real_data_is_forwarded_and_resets_the_idle_timer() {
+        // one immediate chunk, then idle -> we should see the chunk first, then a keepalive
+        let body = Body::from_stream(futures::stream::once(async {
+            Ok::<_, std::io::Error>(Bytes::from_static(b"data: hi\n\n"))
+        })
+        .chain(futures::stream::pending::<Result<Bytes, std::io::Error>>()));
+
+        let mut stream = std::pin::pin!(keepalive_stream_with(body, Duration::from_millis(30)));
+
+        let first = tokio::time::timeout(Duration::from_secs(2), stream.next())
+            .await
+            .unwrap()
+            .unwrap()
+            .unwrap();
+        assert_eq!(first.as_ref(), b"data: hi\n\n");
+
+        let second = tokio::time::timeout(Duration::from_secs(2), stream.next())
+            .await
+            .expect("expected a keepalive after idle")
+            .unwrap()
+            .unwrap();
+        assert_eq!(second.as_ref(), SSE_KEEPALIVE_COMMENT);
     }
 }

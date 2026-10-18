@@ -15,6 +15,7 @@ Code references are to the state analyzed on **2026-10-16** (llama.cpp checkout 
 | [ui-proxy/06-probe-api-prefix-results.md](ui-proxy/06-probe-api-prefix-results.md) | ★ Live probe (router-mode, zero RAM): `--api-prefix`+`--api-key` → nothing public on pinned build (#22474 confirmed) |
 | [ui-proxy/07-probe-round2-results.md](ui-proxy/07-probe-round2-results.md) | Probe round 2: #22474 verdict (closed *not planned*), prefixed walk WITH key (all green), W8 fallback bugs confirmed live, operational rules |
 | [ui-proxy/09-next-session-prompt.md](ui-proxy/09-next-session-prompt.md) | ★ Copy-paste prompt to start the next session with full context |
+| [ui-proxy/10-validation-log.md](ui-proxy/10-validation-log.md) | ★ Validation (2026-10-18): CLI/env-configurable ports, 22 mock/real-socket tests, fixture smoke test green incl. byte-identity + keepalive through the real stack; what still needs a real model |
 | [ui-proxy/08-implementation-log.md](ui-proxy/08-implementation-log.md) | ★ Implementation on branch `chat-ui-passthrough`: transparent forwarder + keepalive + catch-all routing, string-surgery layer deleted. Compiles, unit test green, **end-to-end not yet validated** |
 
 ## Project map (quick recall)
@@ -43,14 +44,20 @@ Code references are to the state analyzed on **2026-10-16** (llama.cpp checkout 
 - [x] Probe `--api-prefix` (issue #22474: unfixed, closed not-planned) → design avoids it
 - [x] Confirm W8 fallback bugs live (double-prefix + axum double-`Path` 500)
 - [x] Implement transparent-forwarding rewrite on branch `chat-ui-passthrough` (see 08) — builds, unit test green
-- [ ] End-to-end validation — **needs CLI/env-configurable backend ports first** (hardcoded
-      11440/11441 collide with the live instance)
-- [ ] Behavioural checks listed in 08 §"NOT done / next session"
-- [ ] Decide PR/merge vs. keep on branch (owner evaluates whether the approach is worth it)
+- [x] Make the gateway testable: CLI/env backend ports + exec dirs, boot panic → warning,
+      `--no-default-embedding-startup`, `--no-chatui-model-ensure` (see 10)
+- [x] Mock integration tests (`gw-server/tests/chat_ui_integration.rs`, 15) + adapter unit tests (6) — all green
+- [x] Fixture smoke test on spare ports (router-mode llama-server :11991 + gateway :11435, zero RAM):
+      byte-identical document/assets, auth parity, W8a/W8b fixed live, keepalive on real idle SSE (see 10)
+- [ ] Real-model checks on the dev instance: `stream:false` JSON, long-TTFT keepalive through the
+      work www-proxy, `/model` + `/stop` typed in the UI, browser render + stale-SW hard refresh (10 §4)
+- [ ] Decide PR/merge vs. keep on branch — recommendation in 10: merge after those real-model checks
 
-## Session-end state (2026-10-16)
+## Session-end state (2026-10-18)
 
-- Branch `chat-ui-passthrough`: working tree = the whole rewrite (see 08).
-- Production/dev instances untouched all session; probing was read-only except two isolated
-  router-mode fixture servers on spare ports (both stopped and verified).
+- Branch `chat-ui-passthrough`: rewrite + testability changes + tests committed (see 10).
+- Production/dev instances untouched all session; fixture probing used router-mode servers on
+  spare ports (11991/11435), both stopped and verified; :11440/:11441 confirmed alive afterwards.
 - **Never POST completions to :11434/:11440/:11441** — that is the live session's KV-cache.
+
+## Session-end state (2026-10-16, superseded)
