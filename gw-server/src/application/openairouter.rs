@@ -1,6 +1,6 @@
 use crate::{
     application::{
-        middleware::check_auth,
+        middleware::{check_auth, check_bearer},
         model::{
             try_map_request_body_to_create_chat_completion_request,
             try_map_request_body_to_create_embedding_request,
@@ -17,59 +17,53 @@ use axum::{
     Json,
     body::Body,
     extract::{Path, Query, Request, State},
-    http::{Response, StatusCode},
-    response::IntoResponse,
-    routing::{Router, any, get, head, post},
+    http::{Method, Response, StatusCode},
+    response::{IntoResponse, Redirect},
+    routing::{Router, any, get, post},
 };
 use futures_util::stream;
 use staticmodelconfig::ModelList;
 use std::{collections::HashMap, sync::Arc, time::Duration};
 use tracing::{error, info, trace, warn};
 
+/// state shared by the chat-ui routes
+#[derive(Clone)]
+struct ChatUiState {
+    config: Arc<dyn ApplicationConfig>,
+    security_config: Arc<dyn SecurityConfig>,
+}
+
 pub fn create_router(
     config: Arc<dyn ApplicationConfig>,
     security_config: Arc<dyn SecurityConfig>,
 ) -> Router {
-    let open_routes = Router::new()
+    let chat_ui_state = ChatUiState {
+        config: config.clone(),
+        security_config: security_config.clone(),
+    };
+
+    // --- openai-compatible api -------------------------------------------------
+    //   paths and openness of these routes must not change: the api is the
+    //   primary product of this server
+    let api_open = Router::new()
         .route(
             "/api/{n_parallel}/v1/models",
             get(get_models_with_parallel_param),
         )
         .route("/api/v1/models", get(get_models))
-        .route("/chat", get(chat_handler))
-        .route("/manifest.webmanifest", get(chat_handler_assets))
-        .route("/chat/bundle.css", get(chat_handler_assets))
-        .route("/chat/bundle.js", get(chat_handler_assets))
-        .route("/chat/_app/{*path}", get(chat_handler_assets))
-        .route("/chat/favicon.ico", get(chat_handler_assets))
-        .route("/chat/favicon.svg", get(chat_handler_assets))
-        .route("/chat/apple/{*path}", get(chat_handler_assets))
-        .route("/chat/build.json", get(chat_handler_assets))
-        .route("/chat/pwa-64x64.png", get(chat_handler_assets))
-        .route("/chat/maskable-icon-512x512.png", get(chat_handler_assets))
-        .route("/chat/pwa-512x512.png", get(chat_handler_assets))
-        .route("/chat/pwa-192x192.png", get(chat_handler_assets))
-        .route("/sw.js", get(chat_handler_assets))
-        .route("/chat/cors-proxy", head(chat_handler_assets));
+        .with_state(config.clone());
 
-    let secured = Router::new()
-        // CHAT
-        .route("/chat/props", get(chat_handler_assets))
-        .route("/chat/tools", get(chat_handler_assets))
-        // API
-        //   CHAT-COMPLETIONS
+    let api_secured = Router::new()
         .route(
             "/api/{n_parallel}/v1/chat/completions",
             post(post_completions_with_parallel_param),
         )
         .route("/api/v1/chat/completions", post(post_completions))
-        //   EMBEDDINGS
         .route(
             "/api/{n_parallel}/v1/embeddings",
             post(post_embeddings_with_parallel_param),
         )
         .route("/api/v1/embeddings", post(post_embeddings))
-        // FALLBACK
         .route(
             "/api/{n_parallel}/v1/{*path}",
             any(api_fallback_with_parallel_param),
@@ -79,12 +73,122 @@ pub fn create_router(
         .layer(axum::middleware::from_fn_with_state(
             security_config.clone(),
             check_auth,
-        ));
+        ))
+        .with_state(config.clone());
+
+    // --- chat-ui ---------------------------------------------------------------
+    //   the upstream ui is re-presented under /chat. There is intentionally no
+    //   route- or content-whitelist any more: reads are forwarded transparently
+    //   (the backend's own auth middleware decides what is public), writes are
+    //   secured, and endpoints the ui requests root-absolute are aliased below.
+
+    let chat_ui = Router::new()
+        .route("/chat", get(redirect_chat))
+        .route("/chat/", get(chat_ui_document_handler))
+        .route("/chat/{*path}", any(chat_ui_dispatch))
+        .with_state(chat_ui_state);
+
+    // root-absolute read-endpoints used by the upstream ui
+    let chat_ui_open_aliases = Router::new()
+        .route("/v1/models", get(get_models))
+        .route("/health", get(forward_ui))
+        .route("/v1/health", get(forward_ui))
+        .with_state(config.clone());
+
+    let chat_ui_secured_aliases = Router::new()
+        .route("/models", any(forward_ui))
+        .route("/models/{*path}", any(forward_ui))
+        .route("/tools", any(forward_ui))
+        .route("/cors-proxy", any(forward_ui))
+        .layer(axum::middleware::from_fn_with_state(
+            security_config,
+            check_auth,
+        ))
+        .with_state(config);
 
     Router::new()
-        .merge(open_routes)
-        .merge(secured)
-        .with_state(config) // injects state in open_routes and secured_routes
+        .merge(api_open)
+        .merge(api_secured)
+        .merge(chat_ui)
+        .merge(chat_ui_open_aliases)
+        .merge(chat_ui_secured_aliases)
+}
+
+/// `/chat` must be redirected to `/chat/`: the ui is a single-page app whose
+/// relative urls are resolved against the document url, so the trailing slash is
+/// what keeps every request inside the prefix.
+async fn redirect_chat() -> Redirect {
+    Redirect::permanent("/chat/")
+}
+
+async fn chat_ui_dispatch(
+    State(state): State<ChatUiState>,
+    Path(path): Path<String>,
+    request: Request,
+) -> Result<Response<Body>, StatusCode> {
+    let is_read = matches!(*request.method(), Method::GET | Method::HEAD);
+
+    // reads stay public (upstream serves the ui and its assets without a key);
+    // everything else needs the apikey, exactly like the rest of the gateway
+    if !is_read {
+        check_bearer(&state.security_config, request.headers())?;
+    }
+
+    match (is_read, path.as_str()) {
+        // the document: make sure *some* language model is being served
+        (true, "") => chat_ui_document(state, request).await,
+        // requests issued by the ui itself are routed through the same pipeline
+        // as the public api, so model-switching and the /model & /stop commands
+        // keep working
+        (false, "v1/chat/completions") => {
+            post_completions(State(state.config.clone()), request).await
+        }
+        (false, "v1/embeddings") => post_embeddings(State(state.config.clone()), request).await,
+        // anything else: forwarded transparently - unknown upstream endpoints
+        // work by construction
+        _ => {
+            state
+                .config
+                .openai_chat_completions_service()
+                .forward_ui_request(request)
+                .await
+        }
+    }
+}
+
+async fn chat_ui_document_handler(
+    State(state): State<ChatUiState>,
+    request: Request,
+) -> Result<Response<Body>, StatusCode> {
+    chat_ui_document(state, request).await
+}
+
+async fn chat_ui_document(
+    state: ChatUiState,
+    request: Request,
+) -> Result<Response<Body>, StatusCode> {
+    let default_model_alias = state.config.models_service().get_default_languagemodel_alias();
+    state
+        .config
+        .models_service()
+        .ensure_any_languagemodel_is_served(&default_model_alias, Duration::from_mins(3))
+        .await
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+    state
+        .config
+        .openai_chat_completions_service()
+        .forward_ui_request(request)
+        .await
+}
+
+async fn forward_ui(
+    State(application_config): State<Arc<dyn ApplicationConfig>>,
+    request: Request,
+) -> Result<Response<Body>, StatusCode> {
+    application_config
+        .openai_chat_completions_service()
+        .forward_ui_request(request)
+        .await
 }
 
 // MODELS
@@ -286,8 +390,7 @@ async fn post_embeddings_impl(
 // FALLBACK
 async fn api_fallback_with_parallel_param(
     State(application_config): State<Arc<dyn ApplicationConfig>>,
-    Path(n_parallel): Path<u8>,
-    Path(api_path): Path<String>,
+    Path((n_parallel, api_path)): Path<(u8, String)>,
     request: Request,
 ) -> Result<Response<Body>, StatusCode> {
     api_fallback_impl(application_config, Some(n_parallel), api_path, request).await
@@ -318,33 +421,6 @@ async fn api_fallback_impl(
     application_config
         .openai_chat_completions_service()
         .forward_api_request(request)
-        .await
-}
-
-async fn chat_handler(
-    State(application_config): State<Arc<dyn ApplicationConfig>>,
-) -> Result<Response<Body>, StatusCode> {
-    let default_model_alias = application_config
-        .models_service()
-        .get_default_languagemodel_alias();
-    application_config
-        .models_service()
-        .ensure_any_languagemodel_is_served(&default_model_alias, Duration::from_mins(3))
-        .await
-        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
-    application_config
-        .openai_chat_completions_service()
-        .get_chat()
-        .await
-}
-
-async fn chat_handler_assets(
-    State(application_config): State<Arc<dyn ApplicationConfig>>,
-    request: Request,
-) -> Result<Response<Body>, StatusCode> {
-    application_config
-        .openai_chat_completions_service()
-        .forward_ui_request(request)
         .await
 }
 
@@ -415,5 +491,65 @@ fn check_user_prompt_for_stop_llamacpp(
         true
     } else {
         false
+    }
+}
+
+#[cfg(test)]
+mod route_pattern_tests {
+    use axum::{
+        Router,
+        body::Body,
+        http::{Request, StatusCode},
+        routing::any,
+    };
+    use tower::ServiceExt;
+
+    /// The chat-ui routing relies on specific pattern combinations. Axum panics
+    /// at registration time on conflicting patterns, and the `/chat/` document
+    /// must be matched by the catch-all wildcard - both are asserted here so a
+    /// future refactor cannot silently break the ui routes.
+    #[tokio::test]
+    async fn chat_ui_patterns_are_valid_and_match_document() {
+        let dummy = || async { StatusCode::OK };
+
+        let router = Router::new()
+            .route("/chat", any(dummy))
+            .route("/chat/", any(dummy))
+            .route("/chat/{*path}", any(dummy))
+            .route("/v1/models", any(dummy))
+            .route("/models", any(dummy))
+            .route("/models/{*path}", any(dummy))
+            .route("/tools", any(dummy))
+            .route("/cors-proxy", any(dummy));
+
+        let response = router
+            .clone()
+            .oneshot(
+                Request::builder()
+                    .uri("/chat/")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_eq!(response.status(), StatusCode::OK);
+
+        for uri in [
+            "/chat",
+            "/chat/_app/immutable/bundle.x.js",
+            "/chat/props?autoload=false",
+            "/chat/v1/models",
+            "/v1/models",
+            "/models/load",
+            "/tools",
+            "/cors-proxy",
+        ] {
+            let response = router
+                .clone()
+                .oneshot(Request::builder().uri(uri).body(Body::empty()).unwrap())
+                .await
+                .unwrap();
+            assert_eq!(response.status(), StatusCode::OK, "unexpected status for {uri}");
+        }
     }
 }

@@ -13,6 +13,7 @@ axum = { version = "0.8.8", features = ["http2", "macros", "multipart", "ws"] }
 rand = { workspace = true }
 tokio = { workspace = true }
 serde = { workspace = true }
+hyper = { version = "1", features = ["client", "http1"] }
 hyper-util = { version = "0.1.19", features = ["client", "client-legacy", "tokio"] }
 async-trait = "0.1.89"
 serde_json = "1.0.149"
@@ -32,6 +33,7 @@ tracing-appender = "0.2.5"
 
 
 [dev-dependencies]
+tower = { version = "0.5", features = ["util"] }
 dotenv = "0.15.0"
 eventsource-stream = "0.2.3"
 image = "0.25.10"

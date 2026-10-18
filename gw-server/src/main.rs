@@ -345,13 +345,11 @@ async fn main() {
         tls,
         provided_api_key,
         provided_log_request_info,
-        _provided_llama_cpp_chatui,
         llamacpp_backend,
     ) = {
         let mut port = None;
         let mut api_key = None;
         let mut log_request_info = false;
-        let mut llama_cpp_chatui = false;
         let mut no_https = false;
         let mut override_host = None;
         let mut llamacpp_backend = AcceleratorBackend::default();
@@ -400,10 +398,6 @@ async fn main() {
                 log_request_info = true;
             }
 
-            if a == "--chatui" {
-                llama_cpp_chatui = true;
-            }
-
             if a == "--no-https" {
                 no_https = true;
             }
@@ -428,7 +422,6 @@ async fn main() {
             !no_https,
             api_key,
             log_request_info,
-            llama_cpp_chatui,
             llamacpp_backend,
         )
     };
