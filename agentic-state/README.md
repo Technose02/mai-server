@@ -14,6 +14,7 @@ Code references are to the state analyzed on **2026-10-16** (llama.cpp checkout 
 | [ui-proxy/05-refactor-proposals.md](ui-proxy/05-refactor-proposals.md) | Refactoring options, recommendation, migration sketch |
 | [ui-proxy/06-probe-api-prefix-results.md](ui-proxy/06-probe-api-prefix-results.md) | ★ Live probe (router-mode, zero RAM): `--api-prefix`+`--api-key` → nothing public on pinned build (#22474 confirmed) |
 | [ui-proxy/07-probe-round2-results.md](ui-proxy/07-probe-round2-results.md) | Probe round 2: #22474 verdict (closed *not planned*), prefixed walk WITH key (all green), W8 fallback bugs confirmed live, operational rules |
+| [ui-proxy/09-next-session-prompt.md](ui-proxy/09-next-session-prompt.md) | ★ Copy-paste prompt to start the next session with full context |
 | [ui-proxy/08-implementation-log.md](ui-proxy/08-implementation-log.md) | ★ Implementation on branch `chat-ui-passthrough`: transparent forwarder + keepalive + catch-all routing, string-surgery layer deleted. Compiles, unit test green, **end-to-end not yet validated** |
 
 ## Project map (quick recall)
