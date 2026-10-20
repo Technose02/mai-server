@@ -10,8 +10,11 @@ const VALID_PATH_TO_EXECUTABLE: &str =
     "/data0/inference/stable-diffusion.cpp/build-rocm/bin/sd-cli";
 //const VALID_PATH_TO_EXECUTABLE: &str = "/data0/inference/stable-diffusion.cpp/build-vulkan/bin/sd-cli";
 
-const EDITED_IMAGE_FILE: &str = "/home/technose02/Pictures/uli_poster/20260913/uli_ref_a_nobg.png";
-const REFERENCE_FILE: &str = "/home/technose02/Pictures/uli_poster/20260913/uli_ref_a.png";
+const EDITED_IMAGE_FILE: &str = "uli_ref_a_nobg.png";
+const REFERENCE_FILE: &str = "uli_ref_a.png";
+
+const INPUT_PATH: &str = "inference-backends/examples/in/";
+const OUTPUT_PATH: &str = "inference-backends/examples/out/";
 
 #[tokio::main]
 async fn main() {
@@ -22,7 +25,8 @@ async fn main() {
     let mut sdcfg =
         StableDiffusionCppConfig::init_with_temp_dir(VALID_PATH_TO_EXECUTABLE, "/tmp").unwrap();
 
-    let raw_ref_image = read_file(REFERENCE_FILE).expect("failed to read reference-image");
+    let raw_ref_image = read_file(format!("{INPUT_PATH}/{REFERENCE_FILE}"))
+        .expect("failed to read reference-image");
     let reference_image = ImageReader::new(Cursor::new(&raw_ref_image))
         .with_guessed_format()
         .expect("wrong reference-image format")
@@ -45,9 +49,9 @@ async fn main() {
                 boxed_data: image_data,
                 duration: _,
             } => {
-                std::fs::write(EDITED_IMAGE_FILE, *image_data)
+                std::fs::write(format!("{OUTPUT_PATH}/{EDITED_IMAGE_FILE}"), *image_data)
                     .expect("failed to write edited image to file");
-                println!("image generated and saved as {EDITED_IMAGE_FILE}");
+                println!("image generated and saved as {OUTPUT_PATH}/{EDITED_IMAGE_FILE}");
             }
             StableDiffusionEvent::GenerationStarted {
                 seed: s,

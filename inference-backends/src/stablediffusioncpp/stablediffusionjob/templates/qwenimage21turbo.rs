@@ -1,6 +1,6 @@
 use crate::stablediffusioncpp::{
     StableDiffusionJob,
-    stablediffusionjob::{FlashAttentionMode, TextEncoder, VisionEncoder,SamplingMethod},
+    stablediffusionjob::{FlashAttentionMode, SamplingMethod, TextEncoder, VisionEncoder},
 };
 
 impl StableDiffusionJob {
@@ -18,7 +18,7 @@ impl StableDiffusionJob {
             flash_attention_mode: FlashAttentionMode::Full,
             width: 1024,
             height: 1024,
-            prompt: "A Logo in white on black background saying 'qwen2.1.cpp' in capitals using a classic computer terminal font. Text is centered horizontally and vertically".into(),
+            prompt: "A Logo in white on black background saying 'Qwen Image 2.1 Turbo' in capitals using a classic computer terminal font. Text is centered horizontally and vertically".into(),
             ..Default::default()
         }
     }

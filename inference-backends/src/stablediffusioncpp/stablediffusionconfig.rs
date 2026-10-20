@@ -191,6 +191,10 @@ impl StableDiffusionCppConfig {
         cmd.arg("--diffusion-model").arg(job.diffusion_model());
         cmd.arg("--vae").arg(job.vae());
 
+        if let Some(path_to_tokenizer) = job.tokenizer() {
+            cmd.arg("--tokenizer").arg(path_to_tokenizer);
+        }
+
         // apply textencoder
         match job.text_encoder() {
             TextEncoder::Llm(path) => {
@@ -216,6 +220,11 @@ impl StableDiffusionCppConfig {
 
         cmd.arg("--cfg-scale")
             .arg(format!("{:.1}", job.cfg_scale()));
+
+        if let Some(flow_shift) = job.flow_shift() {
+            cmd.arg("--flow-shift").arg(flow_shift.to_string());
+        }
+
         cmd.arg("--guidance").arg(format!("{:.1}", job.guidance()));
         cmd.arg("--steps").arg(job.steps().to_string());
         cmd.arg("--seed").arg(seed.to_string());

@@ -23,7 +23,7 @@ impl StableDiffusionJob {
             steps: 25,
             width: 1024,
             height: 1024,
-            prompt: "A Logo in white on black background saying 'qwen2.1.cpp' in capitals using a classic computer terminal font. Text is centered horizontally and vertically".into(),
+            prompt: "A Logo in white on black background saying 'Qwen Image 2.1' in capitals using a classic computer terminal font. Text is centered horizontally and vertically".into(),
             ..Default::default()
         }
     }

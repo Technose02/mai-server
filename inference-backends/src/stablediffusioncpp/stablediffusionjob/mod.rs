@@ -32,6 +32,7 @@ impl Default for Seed {
 #[derive(Debug, Default, Clone)]
 pub struct StableDiffusionJob {
     pub path_to_model: PathBuf,
+    pub path_to_tokenizer: Option<PathBuf>,
     pub text_encoder: TextEncoder,
     pub vision_encoder: VisionEncoder,
     pub path_to_vae: PathBuf,
@@ -39,6 +40,7 @@ pub struct StableDiffusionJob {
     pub width: usize,
     pub height: usize,
     pub cfg_scale: f32,
+    pub flow_shift: Option<f32>,
     pub guidance: f32,
     pub vae_tiling: bool,
     pub offload_to_cpu: bool,
@@ -69,6 +71,10 @@ pub struct StableDiffusionJob {
 impl StableDiffusionJob {
     pub fn diffusion_model(&self) -> &Path {
         &self.path_to_model
+    }
+
+    pub fn tokenizer(&self) -> Option<&Path> {
+        self.path_to_tokenizer.as_deref()
     }
 
     pub fn text_encoder(&self) -> &TextEncoder {
@@ -113,6 +119,10 @@ impl StableDiffusionJob {
     pub fn with_height(mut self, height: usize) -> Self {
         self.height = height;
         self
+    }
+
+    pub fn flow_shift(&self) -> Option<f32> {
+        self.flow_shift
     }
 
     pub fn cfg_scale(&self) -> f32 {

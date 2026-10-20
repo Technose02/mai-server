@@ -59,7 +59,10 @@ impl LocalLlamaCppClientAdapter {
     }
 
     fn backend_base_uri(&self) -> String {
-        format!("{LLAMACPP_HTTP_SCHEME}://{LLAMACPP_HOST}:{}", self.llamacpp_port)
+        format!(
+            "{LLAMACPP_HTTP_SCHEME}://{LLAMACPP_HOST}:{}",
+            self.llamacpp_port
+        )
     }
 
     /// retargets `request` onto the local llama-server.
@@ -206,12 +209,11 @@ fn gateway_api_to_backend_path(uri: &Uri) -> Result<String, StatusCode> {
     let rest = path
         .strip_prefix("/api/v1")
         .or_else(|| {
-            path.strip_prefix("/api/")
-                .and_then(|after_api| {
-                    let (n_parallel, after_n) = after_api.split_once('/')?;
-                    n_parallel.parse::<u8>().ok()?;
-                    after_n.strip_prefix("v1")
-                })
+            path.strip_prefix("/api/").and_then(|after_api| {
+                let (n_parallel, after_n) = after_api.split_once('/')?;
+                n_parallel.parse::<u8>().ok()?;
+                after_n.strip_prefix("v1")
+            })
         })
         .ok_or(StatusCode::NOT_FOUND)?;
 
@@ -333,10 +335,16 @@ mod path_mapping_tests {
             ui_target_path_and_query(&uri("/chat/_app/immutable/bundle.x.js")),
             "/_app/immutable/bundle.x.js"
         );
-        assert_eq!(ui_target_path_and_query(&uri("/chat/props?a=1")), "/props?a=1");
+        assert_eq!(
+            ui_target_path_and_query(&uri("/chat/props?a=1")),
+            "/props?a=1"
+        );
         // root-absolute ui endpoints (no /chat prefix) pass through unchanged
         assert_eq!(ui_target_path_and_query(&uri("/tools")), "/tools");
-        assert_eq!(ui_target_path_and_query(&uri("/models/load")), "/models/load");
+        assert_eq!(
+            ui_target_path_and_query(&uri("/models/load")),
+            "/models/load"
+        );
         assert_eq!(ui_target_path_and_query(&uri("/cors-proxy")), "/cors-proxy");
     }
 }
@@ -395,10 +403,12 @@ mod keepalive_tests {
     #[tokio::test]
     async fn real_data_is_forwarded_and_resets_the_idle_timer() {
         // one immediate chunk, then idle -> we should see the chunk first, then a keepalive
-        let body = Body::from_stream(futures::stream::once(async {
-            Ok::<_, std::io::Error>(Bytes::from_static(b"data: hi\n\n"))
-        })
-        .chain(futures::stream::pending::<Result<Bytes, std::io::Error>>()));
+        let body = Body::from_stream(
+            futures::stream::once(async {
+                Ok::<_, std::io::Error>(Bytes::from_static(b"data: hi\n\n"))
+            })
+            .chain(futures::stream::pending::<Result<Bytes, std::io::Error>>()),
+        );
 
         let mut stream = std::pin::pin!(keepalive_stream_with(body, Duration::from_millis(30)));
 

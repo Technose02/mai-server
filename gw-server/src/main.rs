@@ -296,7 +296,9 @@ async fn create_app(
             .await
             .is_err()
         {
-            warn!("error starting default embedding-model ('{default_model}') - continuing without it; embeddings requests will retry on demand");
+            warn!(
+                "error starting default embedding-model ('{default_model}') - continuing without it; embeddings requests will retry on demand"
+            );
         }
     }
 
@@ -438,22 +440,27 @@ async fn main() {
             }
 
             if a == "--llamacpp-llm-port" {
-                let value = args.next().expect("no value for \"--llamacpp-llm-port\" provided");
-                backend_config.llm_port = value
-                    .parse::<u16>()
-                    .unwrap_or_else(|_| panic!("invalid value for \"--llamacpp-llm-port\": {value}"));
+                let value = args
+                    .next()
+                    .expect("no value for \"--llamacpp-llm-port\" provided");
+                backend_config.llm_port = value.parse::<u16>().unwrap_or_else(|_| {
+                    panic!("invalid value for \"--llamacpp-llm-port\": {value}")
+                });
             }
 
             if a == "--llamacpp-embeddings-port" {
-                let value =
-                    args.next().expect("no value for \"--llamacpp-embeddings-port\" provided");
+                let value = args
+                    .next()
+                    .expect("no value for \"--llamacpp-embeddings-port\" provided");
                 backend_config.embeddings_port = value.parse::<u16>().unwrap_or_else(|_| {
                     panic!("invalid value for \"--llamacpp-embeddings-port\": {value}")
                 });
             }
 
             if a == "--llamacpp-execdir" {
-                let value = args.next().expect("no value for \"--llamacpp-execdir\" provided");
+                let value = args
+                    .next()
+                    .expect("no value for \"--llamacpp-execdir\" provided");
                 backend_config.llm_execdir = value.clone();
                 backend_config.embeddings_execdir = value;
             }

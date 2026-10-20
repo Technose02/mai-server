@@ -23,9 +23,9 @@ use gw_server::model::{ApplicationConfig, SecurityConfig};
 use http_body_util::BodyExt;
 use inference_backends::{LlamaCppProcessState, LlamaCppRunConfig};
 use serde_json::json;
+use staticmodelconfig::ModelList;
 use std::borrow::Cow;
 use std::sync::{Arc, Mutex};
-use staticmodelconfig::ModelList;
 use std::time::Duration;
 use tower::ServiceExt;
 
@@ -460,7 +460,10 @@ async fn ui_reads_are_public_and_forwarded_without_key_injection() {
     assert_eq!(response.status(), StatusCode::OK);
     assert_eq!(body_to_string(&mut response).await, "mocked-backend");
     let captures = app.captures();
-    assert_eq!(captures[0].path_and_query, "/chat/_app/immutable/chunks/bundle.js");
+    assert_eq!(
+        captures[0].path_and_query,
+        "/chat/_app/immutable/chunks/bundle.js"
+    );
     // no key injection on ui reads — the client bearer (here: none) is forwarded as-is
     assert_eq!(captures[0].authorization, None);
 }
@@ -706,9 +709,7 @@ mod upstream {
     /// never-ending SSE body (first chunk, then silence)
     pub enum Answer {
         Fixed(u16, Vec<(String, String)>, Vec<u8>),
-        IdleSse {
-            first_chunk: &'static [u8],
-        },
+        IdleSse { first_chunk: &'static [u8] },
     }
 
     impl MockUpstream {
@@ -720,8 +721,7 @@ mod upstream {
         {
             let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
             let addr = listener.local_addr().unwrap();
-            let requests: Arc<Mutex<Vec<SeenRequest>>> =
-                Arc::new(Mutex::new(Vec::new()));
+            let requests: Arc<Mutex<Vec<SeenRequest>>> = Arc::new(Mutex::new(Vec::new()));
             let answer_for = Arc::new(answer_for);
 
             let listener_requests = requests.clone();
@@ -731,17 +731,16 @@ mod upstream {
                         continue;
                     };
                     let requests = listener_requests.clone();
-                    let answer_for = answer_for.clone();                    tokio::spawn(async move {
+                    let answer_for = answer_for.clone();
+                    tokio::spawn(async move {
                         let (mut reader, mut writer) = stream.into_split();
                         // read request head (headers); bodies of these tests are tiny
                         let mut buf = vec![0u8; 8192];
                         let mut head = String::new();
                         loop {
-                            let Ok(Ok(n)) = tokio::time::timeout(
-                                Duration::from_secs(5),
-                                reader.read(&mut buf),
-                            )
-                            .await
+                            let Ok(Ok(n)) =
+                                tokio::time::timeout(Duration::from_secs(5), reader.read(&mut buf))
+                                    .await
                             else {
                                 return;
                             };
@@ -754,20 +753,30 @@ mod upstream {
                             }
                         }
                         let mut lines = head.lines();
-                        let Some(request_line) = lines.next() else { return };
+                        let Some(request_line) = lines.next() else {
+                            return;
+                        };
                         let mut parts = request_line.split_whitespace();
                         let method = parts.next().unwrap_or("?").to_string();
                         let path = parts.next().unwrap_or("/").to_string();
                         let auth = head
                             .lines()
                             .find(|l| l.to_ascii_lowercase().starts_with("authorization:"))
-                            .map(|l| l.split_once(':').map(|x| x.1).unwrap_or("").trim().to_string());
+                            .map(|l| {
+                                l.split_once(':')
+                                    .map(|x| x.1)
+                                    .unwrap_or("")
+                                    .trim()
+                                    .to_string()
+                            });
                         requests.lock().unwrap().push((method, path.clone(), auth));
 
                         match answer_for(&path) {
                             Answer::Fixed(status, headers, body) => {
-                                let mut head_out =
-                                    format!("HTTP/1.1 {status} OK\r\ncontent-length: {}\r\n", body.len());
+                                let mut head_out = format!(
+                                    "HTTP/1.1 {status} OK\r\ncontent-length: {}\r\n",
+                                    body.len()
+                                );
                                 for (k, v) in headers {
                                     head_out.push_str(&format!("{k}: {v}\r\n"));
                                 }

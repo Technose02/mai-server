@@ -9,7 +9,10 @@ const VALID_PATH_TO_EXECUTABLE: &str =
 
 const GENERATED_IMAGE_FILE: &str = "booguimageedit_turbo_01_generated.png";
 const EDITED_IMAGE_FILE: &str = "booguimageedit_turbo_01_edited.png";
-const ULI_REFERENCE_FILE: &str = "/home/technose02/Pictures/uli_poster/20260913/uli_ref_a.png";
+const ULI_REFERENCE_FILE: &str = "uli_ref_a.png";
+
+const INPUT_PATH: &str = "inference-backends/examples/in/";
+const OUTPUT_PATH: &str = "inference-backends/examples/out/";
 
 #[tokio::main]
 async fn main() {
@@ -20,10 +23,11 @@ async fn main() {
     let mut sdcfg =
         StableDiffusionCppConfig::init_with_temp_dir(VALID_PATH_TO_EXECUTABLE, "/tmp").unwrap();
 
-    let uli_reference_image =
-        std::fs::read(ULI_REFERENCE_FILE).expect("failed to read uli-reference-image");
+    let uli_reference_image = std::fs::read(format!("{INPUT_PATH}/{ULI_REFERENCE_FILE}"))
+        .expect("failed to read uli-reference-image");
 
-    let mut generated_image_data = std::fs::read(GENERATED_IMAGE_FILE).unwrap_or_default();
+    let mut generated_image_data =
+        std::fs::read(format!("{INPUT_PATH}/{GENERATED_IMAGE_FILE}")).unwrap_or_default();
     if generated_image_data.is_empty() {
         // 1) generate image of an owl
         let generation_job = StableDiffusionJob::boogu_image_turbo_job()
@@ -46,9 +50,12 @@ high quality photo of a boreal owl sitting on a table inside a stylish coffee sh
                     duration: _,
                 } => {
                     generated_image_data = *image_data;
-                    std::fs::write(GENERATED_IMAGE_FILE, &generated_image_data)
-                        .expect("failed to write generated image to file");
-                    println!("image generated and saved as {GENERATED_IMAGE_FILE}");
+                    std::fs::write(
+                        format!("{INPUT_PATH}/{GENERATED_IMAGE_FILE}"),
+                        &generated_image_data,
+                    )
+                    .expect("failed to write generated image to file");
+                    println!("image generated and saved as {INPUT_PATH}/{GENERATED_IMAGE_FILE}");
                 }
                 StableDiffusionEvent::GenerationStarted {
                     seed: _,
@@ -90,9 +97,9 @@ there are no talons, claws, fingers, hands or paws are shown in the image.
                 boxed_data: image_data,
                 duration: _,
             } => {
-                std::fs::write(EDITED_IMAGE_FILE, *image_data)
+                std::fs::write(format!("{OUTPUT_PATH}/{EDITED_IMAGE_FILE}"), *image_data)
                     .expect("failed to write edited image to file");
-                println!("image generated and saved as {EDITED_IMAGE_FILE}");
+                println!("image generated and saved as {OUTPUT_PATH}/{EDITED_IMAGE_FILE}");
             }
             StableDiffusionEvent::GenerationStarted {
                 seed: _,

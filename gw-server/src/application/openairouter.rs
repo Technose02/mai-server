@@ -168,7 +168,10 @@ async fn chat_ui_document(
     request: Request,
 ) -> Result<Response<Body>, StatusCode> {
     if !state.config.skip_chatui_model_ensure() {
-        let default_model_alias = state.config.models_service().get_default_languagemodel_alias();
+        let default_model_alias = state
+            .config
+            .models_service()
+            .get_default_languagemodel_alias();
         state
             .config
             .models_service()
@@ -551,7 +554,11 @@ mod route_pattern_tests {
                 .oneshot(Request::builder().uri(uri).body(Body::empty()).unwrap())
                 .await
                 .unwrap();
-            assert_eq!(response.status(), StatusCode::OK, "unexpected status for {uri}");
+            assert_eq!(
+                response.status(),
+                StatusCode::OK,
+                "unexpected status for {uri}"
+            );
         }
     }
 }

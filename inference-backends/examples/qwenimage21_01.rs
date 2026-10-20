@@ -8,6 +8,7 @@ use tracing::level_filters::LevelFilter;
 const VALID_PATH_TO_EXECUTABLE: &str =
     "/data0/inference/stable-diffusion.cpp/build-rocm/bin/sd-cli";
 //const VALID_PATH_TO_EXECUTABLE: &str = "/data0/inference/stable-diffusion.cpp/build-vulkan/bin/sd-cli";
+const OUTPUT_PATH: &str = "inference-backends/examples/out/";
 
 #[tokio::main]
 async fn main() {
@@ -33,7 +34,7 @@ an animation sheet of a swordsman hero from an 8bit action game on a transparent
     let mut sdcfg =
         StableDiffusionCppConfig::init_with_temp_dir(VALID_PATH_TO_EXECUTABLE, "/tmp").unwrap();
     for (n, outfile) in (0..max_iter)
-        .map(|n| format!("qwenimage21_1_{:02}", n))
+        .map(|n| format!("{OUTPUT_PATH}/qwenimage21_1_{:02}", n))
         .enumerate()
     {
         println!("running job {}/{max_iter}", n + 1);
