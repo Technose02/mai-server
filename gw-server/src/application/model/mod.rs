@@ -1,8 +1,5 @@
 use async_openai::types::{chat::CreateChatCompletionRequest, embeddings::CreateEmbeddingRequest};
-use axum::{
-    extract::Request,
-    http::{StatusCode, header},
-};
+use axum::{extract::Request, http::StatusCode};
 use base64::prelude::{BASE64_STANDARD, Engine};
 use http_body_util::BodyExt;
 use inference_backends::{
@@ -11,7 +8,7 @@ use inference_backends::{
 };
 use serde::{Deserialize, Serialize};
 use std::{collections::HashMap, path::PathBuf, sync::Arc};
-use tracing::{error, trace};
+use tracing::error;
 
 const DEFAULT_PARALLEL: u8 = 1;
 
@@ -257,21 +254,6 @@ pub async fn try_map_request_body_to_create_chat_completion_request(
     request: Request,
     model_alias: impl AsRef<str>,
 ) -> Result<CreateChatCompletionRequest, StatusCode> {
-    let sent_from_ui = {
-        if let Some(referer) = request.headers().get(header::REFERER) {
-            if let Ok(referer) = referer.to_str()
-                && referer.ends_with("/chat")
-            {
-                trace!("request is assumed to be sent from the chat-ui");
-                true
-            } else {
-                false
-            }
-        } else {
-            false
-        }
-    };
-
     let request_body = request
         .into_body()
         .into_data_stream()
@@ -292,19 +274,10 @@ pub async fn try_map_request_body_to_create_chat_completion_request(
         request_body = request_body.replace("\"messages\":[", &repl);
     }
 
-    serde_json::from_str::<CreateChatCompletionRequest>(&request_body)
-        .map_err(|e| {
-            error!("error deserializing payload (expected as CreateChatCompletionRequest): {e}");
-            StatusCode::UNPROCESSABLE_ENTITY
-        })
-        .map(|mut create_chat_completions_request| {
-            if sent_from_ui {
-                create_chat_completions_request.model = model_alias.as_ref().to_string();
-                create_chat_completions_request
-            } else {
-                create_chat_completions_request
-            }
-        })
+    serde_json::from_str::<CreateChatCompletionRequest>(&request_body).map_err(|e| {
+        error!("error deserializing payload (expected as CreateChatCompletionRequest): {e}");
+        StatusCode::UNPROCESSABLE_ENTITY
+    })
 }
 
 pub async fn try_map_request_body_to_create_embedding_request(

@@ -28,8 +28,6 @@ pub trait OpenAiRequestForwardPServiceInPort: Send + Sync + 'static {
     async fn forward_api_request(&self, request: Request) -> Result<Response, StatusCode>;
 
     async fn forward_ui_request(&self, request: Request) -> Result<Response, StatusCode>;
-
-    async fn get_chat(&self) -> Result<Response, StatusCode>;
 }
 
 #[async_trait]
@@ -100,7 +98,6 @@ pub trait OpenAiClientOutPort: Send + Sync + 'static {
     -> Result<Response, StatusCode>;
     async fn forward_api_request(&self, request: Request) -> Result<Response, StatusCode>;
     async fn forward_ui_request(&self, request: Request) -> Result<Response, StatusCode>;
-    async fn request_chat(&self) -> Result<Response, StatusCode>;
 }
 
 #[async_trait]

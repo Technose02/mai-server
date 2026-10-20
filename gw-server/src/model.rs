@@ -15,4 +15,11 @@ pub trait ApplicationConfig: Send + Sync + 'static {
     fn embeddingmodelmanager_service(&self) -> Arc<dyn ModelManagerServiceInPort>;
     fn models_service(&self) -> Arc<dyn ModelsServiceInPort>;
     fn stable_diffusion_service(&self) -> Arc<dyn StableDiffusionServiceInPort>;
+
+    /// when true the chat-ui document route does NOT try to get a language
+    /// model served before forwarding (used by test/fixture instances that
+    /// must never spawn real llama-server processes)
+    fn skip_chatui_model_ensure(&self) -> bool {
+        false
+    }
 }
