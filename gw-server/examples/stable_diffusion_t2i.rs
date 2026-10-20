@@ -13,8 +13,10 @@ const BASE_URL: &str = "https://w0zteduifhh6rjyc.myfritz.net:8080";
 //const T2IMODEL: &str = "fluxdev";
 //const T2IMODEL: &str = "fluxschnell";
 //const T2IMODEL: &str = "krea2turbo";
-const T2IMODEL: &str = "qwenimage21turbo";
+//const T2IMODEL: &str = "qwenimage21turbo";
 //const T2IMODEL: &str = "mageflowturbo";
+//const T2IMODEL: &str = "mossbaseturbo8";
+const T2IMODEL: &str = "mosssftturbo8";
 //const T2IMODEL: &str = "zimageturbo";
 
 const PROMPT: &str = r#"
