@@ -1,5 +1,7 @@
-use async_openai::types::{chat::CreateChatCompletionRequest, embeddings::CreateEmbeddingRequest};
-use axum::{extract::Request, http::StatusCode};
+use axum::{
+    extract::Request,
+    http::{HeaderMap, StatusCode},
+};
 use base64::prelude::{BASE64_STANDARD, Engine};
 use http_body_util::BodyExt;
 use inference_backends::{
@@ -250,57 +252,97 @@ impl From<LlamaCppRunConfig> for LlamaCppRunConfigDto {
     }
 }
 
-pub async fn try_map_request_body_to_create_chat_completion_request(
+/// headers and utf8 body of an incoming request.
+///
+/// The body is handed to the backend as json text: no typed round-trip, so
+/// llama.cpp-only fields (`samplers`, `dry_*`, `backend_sampling`, `custom`, ...)
+/// survive untouched instead of being silently dropped.
+pub async fn read_request_head_and_body(
     request: Request,
-    model_alias: impl AsRef<str>,
-) -> Result<CreateChatCompletionRequest, StatusCode> {
-    let request_body = request
-        .into_body()
+) -> Result<(HeaderMap, String), StatusCode> {
+    let (parts, body) = request.into_parts();
+    let request_body = body
         .into_data_stream()
         .collect()
         .await
         .map_err(|e| {
             error!("error reading request-body as bytes: {e}");
-            StatusCode::INTERNAL_SERVER_ERROR
+            StatusCode::BAD_REQUEST
         })?
         .to_bytes();
-    let mut request_body = String::from_utf8_lossy(request_body.trim_ascii()).to_string();
 
-    request_body = request_body.replace(",\"max_tokens\":-1", "");
-    request_body = request_body.replace("\"max_tokens\":-1,", "");
+    Ok((
+        parts.headers,
+        String::from_utf8_lossy(&request_body).into_owned(),
+    ))
+}
 
-    if !request_body.contains("\"model\":") {
-        let repl = format!("\"model\":\"{}\",\"messages\":[", model_alias.as_ref());
-        request_body = request_body.replace("\"messages\":[", &repl);
-    }
-
-    serde_json::from_str::<CreateChatCompletionRequest>(&request_body).map_err(|e| {
-        error!("error deserializing payload (expected as CreateChatCompletionRequest): {e}");
+/// parses a json payload, mapping malformed input to 422 (the status the typed
+/// path returned before, so clients keep seeing the same contract).
+fn parse_json_payload(request_body: &str) -> Result<serde_json::Value, StatusCode> {
+    serde_json::from_str::<serde_json::Value>(request_body.trim_ascii()).map_err(|e| {
+        error!("error deserializing payload (expected json object): {e}");
         StatusCode::UNPROCESSABLE_ENTITY
     })
 }
 
-pub async fn try_map_request_body_to_create_embedding_request(
-    request: Request,
-) -> Result<CreateEmbeddingRequest, StatusCode> {
-    let request_body = request
-        .into_body()
-        .into_data_stream()
-        .collect()
-        .await
-        .map_err(|e| {
-            error!("error reading request-body as bytes: {e}");
-            StatusCode::INTERNAL_SERVER_ERROR
-        })?
-        .to_bytes();
+/// normalizes a chat-completions payload without re-typing it.
+///
+/// Only two things are touched:
+/// - the openai sentinel `max_tokens: -1` (means "no limit" for some clients,
+///   but is not a valid openai value) is dropped
+/// - a missing/empty `model` is filled with the currently served alias, because
+///   llama.cpp needs one to pick the model
+///
+pub fn normalize_chat_completions_payload(
+    request_body: &str,
+    default_model_alias: &str,
+) -> Result<serde_json::Value, StatusCode> {
+    let mut payload = parse_json_payload(request_body)?;
 
-    serde_json::from_str::<CreateEmbeddingRequest>(
-        String::from_utf8_lossy(request_body.trim_ascii()).as_ref(),
-    )
-    .map_err(|e| {
-        error!("error deserializing payload (expected as CreateChatCompletionRequest): {e}");
-        StatusCode::UNPROCESSABLE_ENTITY
-    })
+    if payload.get("max_tokens").and_then(|v| v.as_i64()) == Some(-1)
+        && let Some(object) = payload.as_object_mut()
+    {
+        object.remove("max_tokens");
+    }
+
+    let has_model = payload
+        .get("model")
+        .and_then(|v| v.as_str())
+        .is_some_and(|model| !model.trim().is_empty());
+    if !has_model
+        && let Some(object) = payload.as_object_mut()
+    {
+        object.insert(
+            "model".to_string(),
+            serde_json::Value::String(default_model_alias.to_string()),
+        );
+    }
+
+    Ok(payload)
+}
+
+/// normalizes an embeddings payload (model injection only).
+pub fn normalize_embeddings_payload(
+    request_body: &str,
+    default_model_alias: &str,
+) -> Result<serde_json::Value, StatusCode> {
+    let mut payload = parse_json_payload(request_body)?;
+
+    let has_model = payload
+        .get("model")
+        .and_then(|v| v.as_str())
+        .is_some_and(|model| !model.trim().is_empty());
+    if !has_model
+        && let Some(object) = payload.as_object_mut()
+    {
+        object.insert(
+            "model".to_string(),
+            serde_json::Value::String(default_model_alias.to_string()),
+        );
+    }
+
+    Ok(payload)
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, Default)]
@@ -438,4 +480,83 @@ pub enum StableDiffusionSse {
         lora_models: Box<HashMap<PathBuf, f32>>,
     },
     Killed,
+}
+
+#[cfg(test)]
+mod payload_normalisation_tests {
+    use super::*;
+    use serde_json::json;
+
+    #[test]
+    fn missing_model_is_filled_with_the_served_alias() {
+        let payload = normalize_chat_completions_payload(
+            r#"{"messages":[{"role":"user","content":"hi"}]}"#,
+            "served-alias",
+        )
+        .unwrap();
+        assert_eq!(payload["model"], json!("served-alias"));
+        // the rest of the body is untouched
+        assert_eq!(payload["messages"][0]["content"], json!("hi"));
+    }
+
+    #[test]
+    fn an_explicit_model_wins() {
+        let payload = normalize_chat_completions_payload(
+            r#"{"model":"explicit","messages":[]}"#,
+            "served-alias",
+        )
+        .unwrap();
+        assert_eq!(payload["model"], json!("explicit"));
+    }
+
+    #[test]
+    fn the_max_tokens_sentinel_is_dropped_but_real_values_survive() {
+        let sentinel = normalize_chat_completions_payload(
+            r#"{"model":"m","max_tokens":-1,"messages":[]}"#,
+            "served-alias",
+        )
+        .unwrap();
+        assert!(sentinel.get("max_tokens").is_none());
+
+        let real = normalize_chat_completions_payload(
+            r#"{"model":"m","max_tokens":512,"messages":[]}"#,
+            "served-alias",
+        )
+        .unwrap();
+        assert_eq!(real["max_tokens"], json!(512));
+    }
+
+    #[test]
+    fn unknown_and_upstream_only_fields_survive_verbatim() {
+        let payload = normalize_chat_completions_payload(
+            r#"{"model":"m","messages":[],"samplers":["top_k"],"dry_multiplier":0.8,
+                "backend_sampling":true,"custom":{"n_cmpl":2},"nested":{"deep":[1,2,3]}}"#,
+            "served-alias",
+        )
+        .unwrap();
+        assert_eq!(payload["samplers"], json!(["top_k"]));
+        assert_eq!(payload["dry_multiplier"], json!(0.8));
+        assert_eq!(payload["backend_sampling"], json!(true));
+        assert_eq!(payload["custom"]["n_cmpl"], json!(2));
+        assert_eq!(payload["nested"]["deep"], json!([1, 2, 3]));
+    }
+
+    #[test]
+    fn malformed_json_is_rejected_with_422() {
+        assert_eq!(
+            normalize_chat_completions_payload("not json", "served-alias").unwrap_err(),
+            StatusCode::UNPROCESSABLE_ENTITY
+        );
+        assert_eq!(
+            normalize_embeddings_payload("{[", "served-alias").unwrap_err(),
+            StatusCode::UNPROCESSABLE_ENTITY
+        );
+    }
+
+    #[test]
+    fn embeddings_payload_gets_a_model_too() {
+        let payload = normalize_embeddings_payload(r#"{"input":"hello"}"#, "bge-m3").unwrap();
+        assert_eq!(payload["model"], json!("bge-m3"));
+        assert_eq!(payload["input"], json!("hello"));
+    }
 }

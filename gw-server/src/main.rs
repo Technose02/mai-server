@@ -91,6 +91,10 @@ pub struct RunOptions {
     /// document is requested (prevents a fixture-test from spawning real
     /// llama-server processes with real model configs)
     pub skip_chatui_model_ensure: bool,
+    /// keep the upstream pwa service worker instead of neutralising it.
+    /// off by default: when the ui is served under /chat, the worker's precache
+    /// pins a stale document + bundle across llama.cpp rebuilds.
+    pub chat_pwa: bool,
 }
 
 #[derive(Default)]
@@ -188,6 +192,10 @@ impl ApplicationConfig for MyAppState {
 
     fn skip_chatui_model_ensure(&self) -> bool {
         self.run_options.skip_chatui_model_ensure
+    }
+
+    fn serve_chatui_pwa_service_worker(&self) -> bool {
+        self.run_options.chat_pwa
     }
 }
 
@@ -471,6 +479,10 @@ async fn main() {
 
             if a == "--no-chatui-model-ensure" {
                 run_options.skip_chatui_model_ensure = true;
+            }
+
+            if a == "--chat-pwa" {
+                run_options.chat_pwa = true;
             }
 
             if api_key.is_none() && a == "--api-key" || a == "-k" {

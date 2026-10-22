@@ -6,11 +6,9 @@
 //! production ports (8443/11434/11440/11441) are never touched.
 #![allow(dead_code)]
 
-use async_openai::types::{chat::CreateChatCompletionRequest, embeddings::CreateEmbeddingRequest};
-use async_trait::async_trait;
 use axum::body::Body;
 use axum::extract::Request;
-use axum::http::StatusCode;
+use axum::http::{HeaderMap, StatusCode};
 use axum::response::Response;
 use futures::StreamExt;
 use gw_server::application;
@@ -40,6 +38,7 @@ struct Captured {
     method: String,
     path_and_query: String,
     authorization: Option<String>,
+    conversation_id: Option<String>,
     body: String,
 }
 
@@ -86,6 +85,7 @@ async fn capture(request: Request, prefix: &str) -> Captured {
         .get(axum::http::header::AUTHORIZATION)
         .and_then(|v| v.to_str().ok())
         .map(str::to_string);
+    let headers = request.headers().clone();
     let body = request
         .into_body()
         .collect()
@@ -96,34 +96,51 @@ async fn capture(request: Request, prefix: &str) -> Captured {
         method: format!("{prefix}{method}"),
         path_and_query,
         authorization,
+        conversation_id: headers
+            .get("x-conversation-id")
+            .and_then(|v| v.to_str().ok())
+            .map(str::to_string),
         body,
     }
 }
 
-#[async_trait]
+#[async_trait::async_trait]
 impl OpenAiClientOutPort for MockClient {
-    async fn post_chat_completions(
+    async fn post_chat_completions_json(
         &self,
-        payload: CreateChatCompletionRequest,
+        client_headers: HeaderMap,
+        payload: String,
     ) -> Result<Response, StatusCode> {
         self.record(Captured {
             method: "PIPELINE".into(),
             path_and_query: "/v1/chat/completions".into(),
-            authorization: None,
-            body: serde_json::to_string(&payload).unwrap(),
+            conversation_id: client_headers
+                .get("x-conversation-id")
+                .and_then(|v| v.to_str().ok())
+                .map(str::to_string),
+            authorization: client_headers
+                .get(axum::http::header::AUTHORIZATION)
+                .and_then(|v| v.to_str().ok())
+                .map(str::to_string),
+            body: payload,
         });
         Ok(Self::canned())
     }
 
-    async fn post_embedding(
+    async fn post_embedding_json(
         &self,
-        payload: CreateEmbeddingRequest,
+        client_headers: HeaderMap,
+        payload: String,
     ) -> Result<Response, StatusCode> {
         self.record(Captured {
             method: "PIPELINE".into(),
             path_and_query: "/v1/embeddings".into(),
+            conversation_id: client_headers
+                .get("x-conversation-id")
+                .and_then(|v| v.to_str().ok())
+                .map(str::to_string),
             authorization: None,
-            body: serde_json::to_string(&payload).unwrap(),
+            body: payload,
         });
         Ok(Self::canned())
     }
@@ -149,7 +166,7 @@ struct MockModelsService {
     ensure_embedding_calls: Arc<Mutex<Vec<String>>>,
 }
 
-#[async_trait]
+#[async_trait::async_trait]
 impl ModelsServiceInPort for MockModelsService {
     async fn ensure_any_languagemodel_is_served(
         &self,
@@ -205,7 +222,7 @@ impl ModelsServiceInPort for MockModelsService {
 #[derive(Default)]
 struct MockModelManagerService;
 
-#[async_trait]
+#[async_trait::async_trait]
 impl ModelManagerServiceInPort for MockModelManagerService {
     async fn get_llamacpp_state(&self) -> LlamaCppProcessState {
         managed_process::ProcessState::Stopped
@@ -219,7 +236,7 @@ impl ModelManagerServiceInPort for MockModelManagerService {
 #[derive(Default)]
 struct MockStableDiffusionService;
 
-#[async_trait]
+#[async_trait::async_trait]
 impl StableDiffusionServiceInPort for MockStableDiffusionService {
     async fn process_prompt(
         &self,
@@ -1004,4 +1021,289 @@ async fn keepalive_bytes_appear_on_an_idle_sse_body_end_to_end() {
         .unwrap()
         .unwrap();
     assert_eq!(&third[..], b": keepalive\n\n");
+}
+
+// ---------------------------------------------------------------------------
+// resumable streams + payload transparency (regression tests for the reported
+// "generation stops mid-stream and needs a reload" problem)
+// ---------------------------------------------------------------------------
+
+#[tokio::test]
+async fn x_conversation_id_reaches_the_backend_through_the_pipeline() {
+    let app = TestApp::new(Some(TEST_KEY), true);
+    let body = json!({
+        "model": "mock-alias",
+        "messages": [{"role": "user", "content": "hi"}],
+        "stream": true
+    });
+    let response = app
+        .request(
+            Request::builder()
+                .method("POST")
+                .uri("/chat/v1/chat/completions")
+                .header("authorization", format!("Bearer {TEST_KEY}"))
+                .header("content-type", "application/json")
+                // opt-in for the backend's resumable stream session
+                .header("x-conversation-id", "conv-42::mock-alias")
+                .body(Body::from(body.to_string()))
+                .unwrap(),
+        )
+        .await;
+    assert_eq!(response.status(), StatusCode::OK);
+
+    let captures = app.captures();
+    assert_eq!(captures.len(), 1);
+    // without this header the backend never creates a replay session, so a
+    // dropped connection loses the generation permanently
+    assert_eq!(
+        captures[0].conversation_id.as_deref(),
+        Some("conv-42::mock-alias")
+    );
+}
+
+#[tokio::test]
+async fn the_api_keeps_the_same_header_passthrough() {
+    let app = TestApp::new(Some(TEST_KEY), true);
+    let body = json!({"model": "mock-alias", "messages": [{"role": "user", "content": "hi"}]});
+    let response = app
+        .request(
+            Request::builder()
+                .method("POST")
+                .uri("/api/v1/chat/completions")
+                .header("authorization", format!("Bearer {TEST_KEY}"))
+                .header("content-type", "application/json")
+                .header("x-conversation-id", "conv-api")
+                .body(Body::from(body.to_string()))
+                .unwrap(),
+        )
+        .await;
+    assert_eq!(response.status(), StatusCode::OK);
+    assert_eq!(
+        app.captures()[0].conversation_id.as_deref(),
+        Some("conv-api")
+    );
+}
+
+#[tokio::test]
+async fn llama_cpp_only_payload_fields_survive_the_pipeline() {
+    let app = TestApp::new(Some(TEST_KEY), true);
+    // fields the ui sends that async-openai's typed struct does not know about
+    let body = json!({
+        "model": "mock-alias",
+        "messages": [{"role": "user", "content": "hi"}],
+        "max_tokens": -1,
+        "stream": true,
+        "dry_multiplier": 0.8,
+        "dry_base": 1.75,
+        "dry_allowed_length": 2,
+        "dry_penalty_last_n": -1,
+        "samplers": ["top_k", "dry", "typ_p"],
+        "typ_p": 0.9,
+        "backend_sampling": true,
+        "timings_per_token": true,
+        "chat_template_kwargs": {"enable_thinking": true},
+        "custom": {"n_cmpl": 1}
+    });
+    let response = app
+        .request(
+            Request::builder()
+                .method("POST")
+                .uri("/chat/v1/chat/completions")
+                .header("authorization", format!("Bearer {TEST_KEY}"))
+                .header("content-type", "application/json")
+                .body(Body::from(body.to_string()))
+                .unwrap(),
+        )
+        .await;
+    assert_eq!(response.status(), StatusCode::OK);
+
+    let forwarded: serde_json::Value =
+        serde_json::from_str(&app.captures()[0].body).expect("forwarded payload must be json");
+    for field in [
+        "dry_multiplier",
+        "dry_base",
+        "dry_allowed_length",
+        "dry_penalty_last_n",
+        "samplers",
+        "typ_p",
+        "backend_sampling",
+        "timings_per_token",
+        "chat_template_kwargs",
+        "custom",
+    ] {
+        assert!(
+            forwarded.get(field).is_some(),
+            "field '{field}' was dropped on the way to the backend: {forwarded}"
+        );
+    }
+    // the openai sentinel is still normalized away
+    assert!(forwarded.get("max_tokens").is_none());
+    // the unknown nested object is intact
+    assert_eq!(
+        forwarded["chat_template_kwargs"]["enable_thinking"],
+        serde_json::json!(true)
+    );
+}
+
+#[tokio::test]
+async fn the_ui_service_worker_is_neutralised_instead_of_forwarded() {
+    let app = TestApp::new(Some(TEST_KEY), true);
+
+    for uri in ["/chat/sw.js", "/sw.js"] {
+        let mut response = app.get(uri).await;
+        assert_eq!(response.status(), StatusCode::OK, "{uri}");
+        assert_eq!(
+            response
+                .headers()
+                .get(axum::http::header::CONTENT_TYPE)
+                .and_then(|v| v.to_str().ok()),
+            Some("application/javascript; charset=utf-8"),
+            "{uri}"
+        );
+        let body = body_to_string(&mut response).await;
+        // it must unregister itself and drop every cache the ui precached
+        assert!(body.contains("unregister"), "{uri}: {body}");
+        assert!(body.contains("caches.delete"), "{uri}: {body}");
+        assert!(body.contains("skipWaiting"), "{uri}: {body}");
+    }
+
+    // never forwarded to the backend
+    assert!(app.captures().is_empty());
+}
+
+#[tokio::test]
+async fn root_absolute_ui_probes_are_routed() {
+    let app = TestApp::new(Some(TEST_KEY), true);
+
+    // version/connectivity probes work without a key
+    for uri in ["/build.json", "/_app/version.json"] {
+        let response = app.get(uri).await;
+        assert_eq!(response.status(), StatusCode::OK, "{uri}");
+    }
+
+    // /props is the ui's api-key/connectivity probe: 401 without key (shows the
+    // key splash), forwarded with key
+    let response = app.get("/props").await;
+    assert_eq!(response.status(), StatusCode::UNAUTHORIZED);
+    let mut response = app
+        .request(
+            Request::builder()
+                .uri("/props")
+                .header("authorization", format!("Bearer {TEST_KEY}"))
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await;
+    assert_eq!(response.status(), StatusCode::OK);
+    assert_eq!(body_to_string(&mut response).await, "mocked-backend");
+
+    let captures = app.captures();
+    let paths: Vec<&str> = captures.iter().map(|c| c.path_and_query.as_str()).collect();
+    assert_eq!(paths, vec!["/build.json", "/_app/version.json", "/props"]);
+}
+
+#[tokio::test]
+async fn unreachable_backend_maps_to_503_not_500() {
+    // nothing listens on this port (bound then released to get a free one)
+    let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+    let port = listener.local_addr().unwrap().port();
+    drop(listener);
+
+    let security: Arc<dyn SecurityConfig> = Arc::new(MockSecurityConfig { apikey: None });
+    let client = LocalLlamaCppClientAdapter::create_adapter(port, security);
+    let result = client
+        .forward_ui_request(
+            Request::builder()
+                .uri("/props")
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await;
+
+    // 503 makes the ui's server-store retry loop kick in instead of showing a
+    // fatal "Server error - check server logs" screen
+    match result {
+        Err(status) => assert_eq!(status, StatusCode::SERVICE_UNAVAILABLE),
+        Ok(response) => panic!("expected a failure, got {}", response.status()),
+    }
+}
+
+#[tokio::test]
+async fn resumable_streams_are_not_byte_perturbed() {
+    use upstream::Answer;
+    // a mock backend that answers an SSE body WITH a content-length header.
+    // The keepalive wrapper has to drop content-length (it grows the body);
+    // for a resumable stream it must not wrap at all, because the client resumes
+    // at a *wire byte offset* that has to match the backend's replay buffer.
+    let upstream = upstream::MockUpstream::start(|_path| Answer::Fixed(
+        200,
+        vec![("content-type".into(), "text/event-stream".into())],
+        b"data: chunk\n\n".to_vec(),
+    ))
+    .await;
+
+    let security: Arc<dyn SecurityConfig> = Arc::new(MockSecurityConfig { apikey: None });
+    let client = LocalLlamaCppClientAdapter::create_adapter(upstream.addr.port(), security);
+
+    // plain stream (no conversation id): keepalive wrapping, no content-length
+    let mut plain = client
+        .forward_ui_request(
+            Request::builder()
+                .uri("/props")
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert!(plain.headers().get("content-length").is_none());
+    let bytes = plain.body_mut().collect().await.unwrap().to_bytes();
+    assert_eq!(&bytes[..], b"data: chunk\n\n");
+
+    // resumable stream: untouched, content-length preserved so the byte offsets
+    // the ui records still match the backend's replay buffer
+    let mut resumable = client
+        .forward_ui_request(
+            Request::builder()
+                .uri("/props")
+                .header("x-conversation-id", "conv-1")
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(
+        resumable
+            .headers()
+            .get("content-length")
+            .and_then(|v| v.to_str().ok()),
+        Some("13"),
+        "resumable streams must be forwarded byte-for-byte"
+    );
+    let bytes = resumable.body_mut().collect().await.unwrap().to_bytes();
+    assert_eq!(&bytes[..], b"data: chunk\n\n");
+}
+
+#[tokio::test]
+async fn pipeline_accepts_hop_by_hop_client_headers() {
+    let app = TestApp::new(Some(TEST_KEY), true);
+    let body = json!({"model": "mock-alias", "messages": [{"role": "user", "content": "hi"}]});
+    let response = app
+        .request(
+            Request::builder()
+                .method("POST")
+                .uri("/chat/v1/chat/completions")
+                .header("authorization", format!("Bearer {TEST_KEY}"))
+                .header("content-type", "application/json")
+                .header("te", "trailers")
+                .header("x-custom-client-header", "keep-me")
+                .body(Body::from(body.to_string()))
+                .unwrap(),
+        )
+        .await;
+    assert_eq!(response.status(), StatusCode::OK);
+
+    // the pipeline strips hop-by-hop headers but keeps everything else
+    let captures = app.captures();
+    assert_eq!(captures.len(), 1);
+    assert_eq!(captures[0].method, "PIPELINE");
 }

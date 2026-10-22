@@ -1,7 +1,10 @@
 use crate::application::model::StableDiffusionPromptDto;
-use async_openai::types::{chat::CreateChatCompletionRequest, embeddings::CreateEmbeddingRequest};
 use async_trait::async_trait;
-use axum::{extract::Request, http::StatusCode, response::Response};
+use axum::{
+    extract::Request,
+    http::{HeaderMap, StatusCode},
+    response::Response,
+};
 use inference_backends::{
     LlamaCppConfigArgs, LlamaCppProcessState, LlamaCppRunConfig,
     stablediffusioncpp::{StableDiffusionEvent, StableDiffusionJob},
@@ -15,14 +18,21 @@ use tokio::sync::mpsc::Receiver;
 
 #[async_trait]
 pub trait OpenAiRequestForwardPServiceInPort: Send + Sync + 'static {
-    async fn process_chat_completions_request(
+    /// forwards an already-normalized chat-completions payload (raw json) to the
+    /// backend. The payload is passed through as-is so upstream-only fields
+    /// (`samplers`, `dry_*`, `backend_sampling`, `custom`, ...) survive; the
+    /// original request headers are carried over so features keyed on them
+    /// (`X-Conversation-Id` resumable streams) keep working.
+    async fn process_chat_completions_json(
         &self,
-        request: CreateChatCompletionRequest,
+        client_headers: HeaderMap,
+        payload: String,
     ) -> Result<Response, StatusCode>;
 
-    async fn process_embedding_request(
+    async fn process_embedding_json(
         &self,
-        request: CreateEmbeddingRequest,
+        client_headers: HeaderMap,
+        payload: String,
     ) -> Result<Response, StatusCode>;
 
     async fn forward_api_request(&self, request: Request) -> Result<Response, StatusCode>;
@@ -90,13 +100,20 @@ pub trait StableDiffusionServiceInPort: Send + Sync + 'static {
 
 #[async_trait]
 pub trait OpenAiClientOutPort: Send + Sync + 'static {
-    async fn post_chat_completions(
+    async fn post_chat_completions_json(
         &self,
-        payload: CreateChatCompletionRequest,
+        client_headers: HeaderMap,
+        payload: String,
     ) -> Result<Response, StatusCode>;
-    async fn post_embedding(&self, payload: CreateEmbeddingRequest)
-    -> Result<Response, StatusCode>;
+
+    async fn post_embedding_json(
+        &self,
+        client_headers: HeaderMap,
+        payload: String,
+    ) -> Result<Response, StatusCode>;
+
     async fn forward_api_request(&self, request: Request) -> Result<Response, StatusCode>;
+
     async fn forward_ui_request(&self, request: Request) -> Result<Response, StatusCode>;
 }
 
