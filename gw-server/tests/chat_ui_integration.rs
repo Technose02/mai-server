@@ -1161,10 +1161,15 @@ async fn the_ui_service_worker_is_neutralised_instead_of_forwarded() {
             "{uri}"
         );
         let body = body_to_string(&mut response).await;
-        // it must unregister itself and drop every cache the ui precached
-        assert!(body.contains("unregister"), "{uri}: {body}");
+        // it must drop every cache the ui precached and take over immediately
         assert!(body.contains("caches.delete"), "{uri}: {body}");
         assert!(body.contains("skipWaiting"), "{uri}: {body}");
+        // no precaching, no fetch handler: nothing can be served stale
+        assert!(!body.contains("precacheAndRoute"), "{uri}: {body}");
+        assert!(!body.contains("addEventListener('fetch'"), "{uri}: {body}");
+        // it must NOT unregister: the ui polls registration.update() and would
+        // log a DOMException (InvalidStateError) every 60 s
+        assert!(!body.contains("unregister"), "{uri}: {body}");
     }
 
     // never forwarded to the backend

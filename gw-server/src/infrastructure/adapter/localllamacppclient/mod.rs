@@ -65,7 +65,14 @@ impl LocalLlamaCppClientAdapter {
         port: u16,
         security_config: Arc<dyn SecurityConfig>,
     ) -> Arc<dyn OpenAiClientOutPort> {
-        let client = LegacyClient::builder(TokioExecutor::new()).build(HttpConnector::new());
+        // llama-server (cpp-httplib) closes idle keep-alive connections after 5 s
+        // (`Keep-Alive: timeout=5`), hyper's pool would keep them for 90 s. expire
+        // ours earlier so a request never races an upstream close - a lost race
+        // surfaces as a bogus 503 on whatever request happens to reuse the socket
+        // (including a generation start).
+        let client = LegacyClient::builder(TokioExecutor::new())
+            .pool_idle_timeout(Duration::from_secs(3))
+            .build(HttpConnector::new());
 
         Arc::new(Self {
             client,

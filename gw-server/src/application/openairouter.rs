@@ -202,11 +202,17 @@ async fn chat_ui_document(
 /// llama.cpp rebuild the page would keep running the previous build (which then
 /// talks to a newer backend) until the browser cache is cleared by hand.
 ///
-/// The gateway therefore answers the sw.js url itself with a self-unregistering
-/// worker: it clears every cache, unregisters this registration and (once, when
-/// there was something to clean) reloads the controlled windows. After that the
-/// ui runs without a service worker and every rebuild is picked up by a normal
-/// reload.
+/// The gateway therefore answers the sw.js url itself with an inert worker: it has
+/// no fetch handler and no precache, so it cannot serve anything stale, but it
+/// stays registered. It deletes every cache left behind by the old worker and
+/// reloads the controlled windows once (only when it actually cleaned something,
+/// so there is no reload loop).
+///
+/// Staying registered is deliberate: `unregister()` would make the ui's own 60 s
+/// update poll (`registration.update()`) reject with `InvalidStateError` and log a
+/// DOMException to the console for as long as the page is open. Not claiming
+/// clients is deliberate too - an uncontrolled page keeps the ui's
+/// localStorage-based build-version check working.
 ///
 async fn chat_ui_service_worker(
     State(state): State<ChatUiState>,
@@ -256,11 +262,18 @@ fn kill_switch_service_worker_response() -> Response<Body> {
         .unwrap_or_else(|_| StatusCode::INTERNAL_SERVER_ERROR.into_response())
 }
 
-/// removes the stale llama.cpp ui service worker and everything it cached.
+/// neutralises the stale llama.cpp ui service worker and everything it cached.
 /// see `chat_ui_service_worker`.
+///
+/// deliberately NOT `self.registration.unregister()`: the ui polls
+/// `registration.update()` every 60 s and an unregistered registration makes that
+/// reject with a DOMException (`InvalidStateError`), which the ui logs as a red
+/// console error. An inert-but-registered worker is just as harmless and quiet.
 const CHAT_UI_SERVICE_WORKER_KILL_SWITCH: &str = r#"
 // served by mai-server: the llama.cpp ui's precaching service worker pins a
-// stale document + bundle across backend rebuilds, so it is neutralised here.
+// stale document + bundle across backend rebuilds. this worker replaces it and
+// deliberately does nothing: no precache, no fetch handler, so nothing can be
+// served from a previous build.
 self.addEventListener('install', () => {
   self.skipWaiting();
 });
@@ -275,12 +288,9 @@ self.addEventListener('activate', (event) => {
     } catch (e) {
       // no cache api (or denied) - nothing to clean
     }
-    try {
-      await self.registration.unregister();
-    } catch (e) {
-      // already gone
-    }
     if (hadCaches) {
+      // the pages still running the previously cached bundle have to come back
+      // for the freshly served one. guarded by hadCaches so this cannot loop.
       try {
         const clients = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
         for (const client of clients) {
