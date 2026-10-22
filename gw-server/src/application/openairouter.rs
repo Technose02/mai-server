@@ -2,22 +2,18 @@ use crate::{
     application::{
         middleware::{check_auth, check_bearer},
         model::{
-            try_map_request_body_to_create_chat_completion_request,
-            try_map_request_body_to_create_embedding_request,
+            normalize_chat_completions_payload, normalize_embeddings_payload,
+            read_request_head_and_body,
         },
     },
     model::ApplicationConfig,
     model::SecurityConfig,
 };
-use async_openai::types::chat::{
-    ChatCompletionRequestMessage, ChatCompletionRequestUserMessage,
-    ChatCompletionRequestUserMessageContent, CreateChatCompletionRequest,
-};
 use axum::{
     Json,
     body::Body,
     extract::{Path, Query, Request, State},
-    http::{Method, Response, StatusCode},
+    http::{Method, Response, StatusCode, header::CONTENT_TYPE},
     response::{IntoResponse, Redirect},
     routing::{Router, any, get, post},
 };
@@ -85,6 +81,9 @@ pub fn create_router(
     let chat_ui = Router::new()
         .route("/chat", get(redirect_chat))
         .route("/chat/", get(chat_ui_document_handler))
+        // the upstream ui registers its service worker relatively, so it lands
+        // on /chat/sw.js. see chat_ui_service_worker for why we do not forward it
+        .route("/chat/sw.js", get(chat_ui_service_worker))
         .route("/chat/{*path}", any(chat_ui_dispatch))
         .with_state(chat_ui_state);
 
@@ -93,6 +92,12 @@ pub fn create_router(
         .route("/v1/models", get(get_models))
         .route("/health", get(forward_ui))
         .route("/v1/health", get(forward_ui))
+        // the ui prefixes these with its (empty) sveltekit base, so they are
+        // requested at the origin root, not under /chat
+        .route("/build.json", get(forward_ui))
+        .route("/_app/version.json", get(forward_ui))
+        // legacy root-scoped service worker registrations (pre /chat era)
+        .route("/sw.js", get(root_service_worker))
         .with_state(config.clone());
 
     let chat_ui_secured_aliases = Router::new()
@@ -100,6 +105,9 @@ pub fn create_router(
         .route("/models/{*path}", any(forward_ui))
         .route("/tools", any(forward_ui))
         .route("/cors-proxy", any(forward_ui))
+        // the ui probes /props for api-key validation and connectivity; without
+        // this alias those probes 404 and the error screen never recovers
+        .route("/props", any(forward_ui))
         .layer(axum::middleware::from_fn_with_state(
             security_config,
             check_auth,
@@ -177,7 +185,8 @@ async fn chat_ui_document(
             .models_service()
             .ensure_any_languagemodel_is_served(&default_model_alias, Duration::from_mins(3))
             .await
-            .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+            // 503 (not 500) so the ui treats it as "still starting" and retries
+            .map_err(|_| StatusCode::SERVICE_UNAVAILABLE)?;
     }
     state
         .config
@@ -185,6 +194,115 @@ async fn chat_ui_document(
         .forward_ui_request(request)
         .await
 }
+
+/// The llama.cpp ui installs its own workbox service worker with
+/// `register("./sw.js", {scope: "./"})`, i.e. at `/chat/sw.js` with scope
+/// `/chat/` when re-presented by the gateway. That worker precaches the *document*
+/// (`./`) plus the hashed bundle, and keeps serving them from cache. After a
+/// llama.cpp rebuild the page would keep running the previous build (which then
+/// talks to a newer backend) until the browser cache is cleared by hand.
+///
+/// The gateway therefore answers the sw.js url itself with an inert worker: it has
+/// no fetch handler and no precache, so it cannot serve anything stale, but it
+/// stays registered. It deletes every cache left behind by the old worker and
+/// reloads the controlled windows once (only when it actually cleaned something,
+/// so there is no reload loop).
+///
+/// Staying registered is deliberate: `unregister()` would make the ui's own 60 s
+/// update poll (`registration.update()`) reject with `InvalidStateError` and log a
+/// DOMException to the console for as long as the page is open. Not claiming
+/// clients is deliberate too - an uncontrolled page keeps the ui's
+/// localStorage-based build-version check working.
+///
+async fn chat_ui_service_worker(
+    State(state): State<ChatUiState>,
+    request: Request,
+) -> Response<Body> {
+    if state.config.serve_chatui_pwa_service_worker() {
+        // opt-in: forward the real worker and keep upstream pwa behaviour
+        return match state
+            .config
+            .openai_chat_completions_service()
+            .forward_ui_request(request)
+            .await
+        {
+            Ok(response) => response,
+            Err(status) => status.into_response(),
+        };
+    }
+
+    kill_switch_service_worker_response()
+}
+
+/// same as `chat_ui_service_worker`, for legacy root-scoped registrations
+async fn root_service_worker(
+    State(application_config): State<Arc<dyn ApplicationConfig>>,
+    request: Request,
+) -> Response<Body> {
+    if application_config.serve_chatui_pwa_service_worker() {
+        return match application_config
+            .openai_chat_completions_service()
+            .forward_ui_request(request)
+            .await
+        {
+            Ok(response) => response,
+            Err(status) => status.into_response(),
+        };
+    }
+
+    kill_switch_service_worker_response()
+}
+
+fn kill_switch_service_worker_response() -> Response<Body> {
+    Response::builder()
+        .status(StatusCode::OK)
+        .header(CONTENT_TYPE, "application/javascript; charset=utf-8")
+        .header("cache-control", "no-cache, no-store, must-revalidate")
+        .body(Body::from(CHAT_UI_SERVICE_WORKER_KILL_SWITCH))
+        .unwrap_or_else(|_| StatusCode::INTERNAL_SERVER_ERROR.into_response())
+}
+
+/// neutralises the stale llama.cpp ui service worker and everything it cached.
+/// see `chat_ui_service_worker`.
+///
+/// deliberately NOT `self.registration.unregister()`: the ui polls
+/// `registration.update()` every 60 s and an unregistered registration makes that
+/// reject with a DOMException (`InvalidStateError`), which the ui logs as a red
+/// console error. An inert-but-registered worker is just as harmless and quiet.
+const CHAT_UI_SERVICE_WORKER_KILL_SWITCH: &str = r#"
+// served by mai-server: the llama.cpp ui's precaching service worker pins a
+// stale document + bundle across backend rebuilds. this worker replaces it and
+// deliberately does nothing: no precache, no fetch handler, so nothing can be
+// served from a previous build.
+self.addEventListener('install', () => {
+  self.skipWaiting();
+});
+
+self.addEventListener('activate', (event) => {
+  event.waitUntil((async () => {
+    let hadCaches = false;
+    try {
+      const keys = await caches.keys();
+      hadCaches = keys.length > 0;
+      await Promise.all(keys.map((key) => caches.delete(key)));
+    } catch (e) {
+      // no cache api (or denied) - nothing to clean
+    }
+    if (hadCaches) {
+      // the pages still running the previously cached bundle have to come back
+      // for the freshly served one. guarded by hadCaches so this cannot loop.
+      try {
+        const clients = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
+        for (const client of clients) {
+          client.navigate(client.url).catch(() => {});
+        }
+      } catch (e) {
+        // client list unavailable - the user can simply reload
+      }
+    }
+  })());
+});
+"#;
 
 async fn forward_ui(
     State(application_config): State<Arc<dyn ApplicationConfig>>,
@@ -255,23 +373,27 @@ async fn post_chat_completions_impl(
     optional_parallel_backend_requests_to_set: Option<u8>,
     request: Request,
 ) -> Result<Response<Body>, StatusCode> {
-    let mut chat_completions_request = try_map_request_body_to_create_chat_completion_request(
-        request,
-        application_config
-            .models_service()
-            .get_running_languagemodel_alias()
-            .await
-            .unwrap_or(
-                application_config
-                    .models_service()
-                    .get_default_languagemodel_alias(),
-            ),
-    )
-    .await?;
+    // the raw json body is forwarded (only minimally normalized), so llama.cpp
+    // specific fields the ui sends survive; the request headers are carried over
+    // too - `X-Conversation-Id` opts into upstream resumable streams and must not
+    // be lost, and the uri `/model` & `/stop` commands keep working.
+    let (client_headers, request_body) = read_request_head_and_body(request).await?;
 
-    trace!("request: {:#?}", chat_completions_request);
+    let default_model_alias = application_config
+        .models_service()
+        .get_running_languagemodel_alias()
+        .await
+        .unwrap_or_else(|| {
+            application_config
+                .models_service()
+                .get_default_languagemodel_alias()
+        });
 
-    if check_user_prompt_for_stop_llamacpp(&mut chat_completions_request) {
+    let mut payload = normalize_chat_completions_payload(&request_body, &default_model_alias)?;
+
+    trace!("request: {}", payload);
+
+    if check_user_prompt_for_stop_llamacpp(&mut payload) {
         use async_openai::types::chat::{
             ChatChoiceStream, ChatCompletionStreamResponseDelta,
             CreateChatCompletionStreamResponse, FinishReason, Role,
@@ -315,10 +437,17 @@ async fn post_chat_completions_impl(
         return Ok(Sse::new(stream).into_response());
     }
 
-    let requested_model = extract_model_override_from_last_user_text_in_chat_completions_request(
-        &mut chat_completions_request,
-    )
-    .unwrap_or(chat_completions_request.model.clone());
+    // the model to make sure is served: the `/model` command wins, otherwise the
+    // model the client asked for (normalization guarantees one is present)
+    let requested_model =
+        extract_model_override_from_last_user_text_in_chat_completions_request(&mut payload)
+            .unwrap_or_else(|| {
+                payload
+                    .get("model")
+                    .and_then(|value| value.as_str())
+                    .unwrap_or(default_model_alias.as_str())
+                    .to_string()
+            });
 
     application_config
         .stable_diffusion_service()
@@ -336,13 +465,19 @@ async fn post_chat_completions_impl(
         .ensure_requested_languagemodel_is_served(&requested_model, Duration::from_mins(3))
         .await
         .map_err(|_| {
-            error!("error serving requested model");
-            StatusCode::INTERNAL_SERVER_ERROR
+            error!("error serving requested model '{requested_model}'");
+            // 503 makes the ui retry instead of sticking on a fatal error screen
+            StatusCode::SERVICE_UNAVAILABLE
         })?;
+
+    let payload = serde_json::to_string(&payload).map_err(|e| {
+        error!("error serializing chat-completions payload: {e}");
+        StatusCode::INTERNAL_SERVER_ERROR
+    })?;
 
     application_config
         .openai_chat_completions_service()
-        .process_chat_completions_request(chat_completions_request)
+        .process_chat_completions_json(client_headers, payload)
         .await
 }
 
@@ -367,9 +502,18 @@ async fn post_embeddings_impl(
     optional_parallel_backend_requests_to_set: Option<u8>,
     request: Request,
 ) -> Result<Response<Body>, StatusCode> {
-    let embedding_request = try_map_request_body_to_create_embedding_request(request).await?;
+    let (client_headers, request_body) = read_request_head_and_body(request).await?;
 
-    let requested_model = embedding_request.model.clone();
+    let default_model_alias = application_config
+        .models_service()
+        .get_default_embeddingmodel_alias();
+    let payload = normalize_embeddings_payload(&request_body, &default_model_alias)?;
+
+    let requested_model = payload
+        .get("model")
+        .and_then(|v| v.as_str())
+        .unwrap_or(default_model_alias.as_str())
+        .to_string();
 
     if let Some(parallel_backend_requests_to_set) = optional_parallel_backend_requests_to_set {
         application_config
@@ -382,13 +526,18 @@ async fn post_embeddings_impl(
         .ensure_requested_embeddingmodel_is_served(&requested_model, Duration::from_mins(3))
         .await
         .map_err(|_| {
-            error!("error serving requested embedding model");
-            StatusCode::INTERNAL_SERVER_ERROR
+            error!("error serving requested embedding model '{requested_model}'");
+            StatusCode::SERVICE_UNAVAILABLE
         })?;
+
+    let payload = serde_json::to_string(&payload).map_err(|e| {
+        error!("error serializing embeddings payload: {e}");
+        StatusCode::INTERNAL_SERVER_ERROR
+    })?;
 
     application_config
         .openai_embeddings_service()
-        .process_embedding_request(embedding_request)
+        .process_embedding_json(client_headers, payload)
         .await
 }
 
@@ -430,31 +579,35 @@ async fn api_fallback_impl(
 }
 
 fn process_last_user_prompt_in_chat_completions(
-    chat_completions_request: &mut CreateChatCompletionRequest,
+    payload: &mut serde_json::Value,
     proc: impl Fn(&mut String) -> Option<String>,
 ) -> Option<String> {
-    chat_completions_request
-        .messages
-        .iter_mut()
-        .filter_map(|m| {
-            if let ChatCompletionRequestMessage::User(ChatCompletionRequestUserMessage {
-                name: _,
-                content: ChatCompletionRequestUserMessageContent::Text(text),
-            }) = m
-            {
-                Some(text)
-            } else {
-                None
-            }
-        })
-        .next_back()
-        .and_then(proc)
+    let messages = payload.get_mut("messages")?.as_array_mut()?;
+
+    // last plain-text user message; multimodal content arrays are left alone
+    let last_index = messages.iter().rposition(|message| {
+        message
+            .get("role")
+            .and_then(|role| role.as_str())
+            .is_some_and(|role| role == "user")
+            && message.get("content").and_then(|c| c.as_str()).is_some()
+    })?;
+
+    let mut text = messages[last_index]
+        .get("content")
+        .and_then(|c| c.as_str())?
+        .to_string();
+
+    let detected = proc(&mut text)?;
+    messages[last_index]["content"] = serde_json::Value::String(text);
+
+    Some(detected)
 }
 
 fn extract_model_override_from_last_user_text_in_chat_completions_request(
-    chat_completions_request: &mut CreateChatCompletionRequest,
+    payload: &mut serde_json::Value,
 ) -> Option<String> {
-    process_last_user_prompt_in_chat_completions(chat_completions_request, |text| {
+    process_last_user_prompt_in_chat_completions(payload, |text| {
         const MODEL_COMMAND_PREFIX: &str = "/model ";
         let detected = text.strip_prefix(MODEL_COMMAND_PREFIX).and_then(|rest| {
             rest.split_whitespace().next().map(|s| {
@@ -477,19 +630,15 @@ fn extract_model_override_from_last_user_text_in_chat_completions_request(
     })
 }
 
-fn check_user_prompt_for_stop_llamacpp(
-    chat_completions_request: &mut CreateChatCompletionRequest,
-) -> bool {
+fn check_user_prompt_for_stop_llamacpp(payload: &mut serde_json::Value) -> bool {
     const STOP_COMMAND: &str = "/stop";
-    if let Some(text) =
-        process_last_user_prompt_in_chat_completions(chat_completions_request, |text| {
-            if text.trim() == STOP_COMMAND {
-                Some(String::new())
-            } else {
-                text.strip_prefix(STOP_COMMAND).map(str::to_owned)
-            }
-        })
-    {
+    if let Some(text) = process_last_user_prompt_in_chat_completions(payload, |text| {
+        if text.trim() == STOP_COMMAND {
+            Some(String::new())
+        } else {
+            text.strip_prefix(STOP_COMMAND).map(str::to_owned)
+        }
+    }) {
         info!("detected {STOP_COMMAND} command in user-text - will set stop llama.cpp-processes");
         info!("removed extracted stop-command from user-prompt.");
         info!("cleaned user-prompt: '{text}'");

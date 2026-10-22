@@ -1,14 +1,13 @@
 use crate::{domain::ports::OpenAiClientOutPort, model::SecurityConfig};
-use async_openai::types::{chat::CreateChatCompletionRequest, embeddings::CreateEmbeddingRequest};
 use async_trait::async_trait;
 use axum::{
     body::{Body, Bytes},
     extract::Request,
     http::{
-        HeaderValue, StatusCode, Uri, Version,
+        HeaderMap, HeaderName, HeaderValue, StatusCode, Uri, Version,
         header::{
-            ACCEPT_ENCODING, AUTHORIZATION, CONTENT_ENCODING, CONTENT_LENGTH, CONTENT_TYPE,
-            HOST as HOST_HEADER,
+            ACCEPT_ENCODING, AUTHORIZATION, CONNECTION, CONTENT_ENCODING, CONTENT_LENGTH,
+            CONTENT_TYPE, HOST as HOST_HEADER, TE, TRAILER, TRANSFER_ENCODING, UPGRADE,
         },
     },
     response::Response,
@@ -19,15 +18,32 @@ use hyper_util::{
     rt::TokioExecutor,
 };
 use std::{sync::Arc, time::Duration};
-use tracing::{error, trace};
+use tracing::{error, trace, warn};
 
 const LLAMACPP_HTTP_SCHEME: &str = "http";
 const LLAMACPP_HOST: &str = "localhost";
 const LLAMACPP_API_BASE_PATH: &str = "v1";
 
+/// header carrying the upstream resumable-stream session id (llama.cpp
+/// `server_stream_conv_id_from_headers`). It has to survive the gateway
+/// untouched: with it the backend keeps the generation alive across client
+/// disconnects and the ui can reattach at a byte offset; without it a dropped
+/// socket loses the generation permanently.
+const CONVERSATION_ID_HEADER: &str = "x-conversation-id";
+
 /// idle time after which a keepalive comment is injected into an SSE response
 const SSE_KEEPALIVE_INTERVAL: Duration = Duration::from_secs(10);
 const SSE_KEEPALIVE_COMMENT: &[u8] = b": keepalive\n\n";
+
+/// headers that describe the client/upstream connection rather than the
+/// request; they must never be copied onto a different connection.
+const HOP_BY_HOP_HEADERS: [HeaderName; 5] = [
+    CONNECTION,
+    TRANSFER_ENCODING,
+    TE,
+    TRAILER,
+    UPGRADE,
+];
 
 type Client = LegacyClient<HttpConnector, axum::body::Body>;
 
@@ -49,7 +65,14 @@ impl LocalLlamaCppClientAdapter {
         port: u16,
         security_config: Arc<dyn SecurityConfig>,
     ) -> Arc<dyn OpenAiClientOutPort> {
-        let client = LegacyClient::builder(TokioExecutor::new()).build(HttpConnector::new());
+        // llama-server (cpp-httplib) closes idle keep-alive connections after 5 s
+        // (`Keep-Alive: timeout=5`), hyper's pool would keep them for 90 s. expire
+        // ours earlier so a request never races an upstream close - a lost race
+        // surfaces as a bogus 503 on whatever request happens to reuse the socket
+        // (including a generation start).
+        let client = LegacyClient::builder(TokioExecutor::new())
+            .pool_idle_timeout(Duration::from_secs(3))
+            .build(HttpConnector::new());
 
         Arc::new(Self {
             client,
@@ -92,38 +115,125 @@ impl LocalLlamaCppClientAdapter {
 
     /// sends an already retargeted request and returns the transparently
     /// forwarded response.
-    async fn send(&self, request: Request) -> Result<Response, StatusCode> {
-        self.client
-            .request(request)
-            .await
-            .map(transparent_response)
-            .map_err(|e| {
-                error!("error forwarding request to llama.cpp: {e}");
-                StatusCode::INTERNAL_SERVER_ERROR
-            })
+    ///
+    /// A transport failure becomes `503` (not `500`): the gateway is fine, the
+    /// backend is not reachable/not answering. The body is an openai-shaped
+    /// error so both api clients and the ui can render something sensible.
+    async fn send(&self, request: Request, keepalive: bool) -> Result<Response, StatusCode> {
+        let target = request
+            .uri()
+            .path_and_query()
+            .map(|v| v.as_str().to_string())
+            .unwrap_or_default();
+        let method = request.method().clone();
+        let started = std::time::Instant::now();
+
+        match self.client.request(request).await {
+            Ok(response) => {
+                trace!(
+                    "llama-server {method} {target} -> {} in {:?}",
+                    response.status(),
+                    started.elapsed()
+                );
+                Ok(transparent_response(response, keepalive))
+            }
+            Err(e) => {
+                warn!(
+                    "llama-server {method} {target} failed after {:?}: {e}",
+                    started.elapsed()
+                );
+                Err(StatusCode::SERVICE_UNAVAILABLE)
+            }
+        }
     }
 
-    async fn post_json<T: serde::Serialize>(
+    /// body + headers for a gateway-initiated json POST to the backend.
+    ///
+    /// `headers` are the headers of the original client request: everything
+    /// that describes the request itself (notably `X-Conversation-Id`) is
+    /// carried over so upstream features keep working; connection-level
+    /// headers, `host`, `content-length` and encoding negotiation are replaced
+    /// because the body is rewritten by the gateway.
+    fn build_json_post(
         &self,
         target_path: &str,
-        payload: &T,
-    ) -> Result<Response, StatusCode> {
-        let json_string = serde_json::to_string(payload).map_err(|e| {
-            error!("error converting payload to json-string: {e}");
-            StatusCode::INTERNAL_SERVER_ERROR
-        })?;
-
+        client_headers: &HeaderMap,
+        payload: String,
+    ) -> Result<Request, StatusCode> {
         let mut request = Request::post(format!("{}{target_path}", self.backend_base_uri()))
-            .header(ACCEPT_ENCODING, HeaderValue::from_static("identity"))
-            .body(Body::from(json_string))
+            .body(Body::from(payload))
             .map_err(|e| {
-                error!("error building llama.cpp-request: {e}");
+                warn!("error building llama.cpp-request for {target_path}: {e}");
                 StatusCode::INTERNAL_SERVER_ERROR
             })?;
 
+        let headers = request.headers_mut();
+        for (name, value) in forwarded_headers(client_headers) {
+            headers.insert(name, value);
+        }
+        // the payload is rewritten by the gateway, so length/type/encoding are ours
+        headers.remove(CONTENT_LENGTH);
+        // never let upstream compress an sse body we might have to interleave
+        headers.insert(ACCEPT_ENCODING, HeaderValue::from_static("identity"));
+        headers.insert(
+            CONTENT_TYPE,
+            HeaderValue::from_static("application/json"),
+        );
+
         self.retarget(&mut request, target_path, true);
-        self.send(request).await
+        Ok(request)
     }
+
+    async fn post_json(
+        &self,
+        target_path: &str,
+        client_headers: &HeaderMap,
+        payload: String,
+    ) -> Result<Response, StatusCode> {
+        let request = self.build_json_post(target_path, client_headers, payload)?;
+        // keepalive only for streams that cannot be resumed by the client anyway
+        let has_conversation_id = client_headers
+            .get(CONVERSATION_ID_HEADER)
+            .is_some_and(|value| !value.is_empty());
+        let keepalive = !has_conversation_id;
+        self.send(request, keepalive).await
+    }
+}
+
+/// headers of the client request that are safe and useful to forward verbatim.
+fn forwarded_headers(client_headers: &HeaderMap) -> impl Iterator<Item = (HeaderName, HeaderValue)> {
+    client_headers
+        .iter()
+        .filter(|(name, _)| {
+            !HOP_BY_HOP_HEADERS.contains(name)
+                && *name != HOST_HEADER
+                && *name != CONTENT_LENGTH
+                && *name != ACCEPT_ENCODING
+                && *name != CONTENT_TYPE
+        })
+        .map(|(name, value)| (name.clone(), value.clone()))
+}
+
+/// true when the request is part of an upstream resumable stream session.
+///
+/// Two shapes exist: the original `POST /v1/chat/completions` opts in with the
+/// `X-Conversation-Id` header, and a reattach is a `GET /v1/stream?conv_id=...&from=N`.
+/// Both must be forwarded byte-for-byte: the client resumes at a *wire byte
+/// offset* that has to line up with the backend's replay buffer, so no keepalive
+/// comments may be interleaved.
+fn is_resumable_request(request: &Request) -> bool {
+    let has_header = request
+        .headers()
+        .get(CONVERSATION_ID_HEADER)
+        .is_some_and(|value| !value.is_empty());
+
+    let has_conv_id_query = request.uri().query().is_some_and(|query| {
+        query
+            .split('&')
+            .any(|param| param == "conv_id" || param.starts_with("conv_id="))
+    });
+
+    has_header || has_conv_id_query
 }
 
 /// transparently forwards an upstream response.
@@ -131,10 +241,10 @@ impl LocalLlamaCppClientAdapter {
 /// Status, headers and body are passed through unchanged. For SSE responses (and
 /// only for those) an idle keepalive comment is interleaved, because upstream is
 /// free to stay silent for many minutes while a model is thinking.
-fn transparent_response(response: hyper::Response<hyper::body::Incoming>) -> Response {
+fn transparent_response(response: hyper::Response<hyper::body::Incoming>, keepalive: bool) -> Response {
     let (mut parts, body) = response.into_parts();
 
-    if is_keepalive_candidate(&parts.headers) {
+    if keepalive && is_keepalive_candidate(&parts.headers) {
         // the body grows by the keepalive comments -> upstream length is void
         parts.headers.remove(CONTENT_LENGTH);
         Response::from_parts(parts, Body::from_stream(keepalive_stream(Body::new(body))))
@@ -248,37 +358,46 @@ fn ui_target_path_and_query(uri: &Uri) -> String {
 impl OpenAiClientOutPort for LocalLlamaCppClientAdapter {
     async fn forward_api_request(&self, mut request: Request) -> Result<Response, StatusCode> {
         let target = gateway_api_to_backend_path(request.uri())?;
+        let keepalive = !is_resumable_request(&request);
         self.retarget(&mut request, &target, true);
-        self.send(request).await
+        self.send(request, keepalive).await
     }
 
     async fn forward_ui_request(&self, mut request: Request) -> Result<Response, StatusCode> {
         let target = ui_target_path_and_query(request.uri());
+        let keepalive = !is_resumable_request(&request);
         // no api-key injection: the backend's own auth middleware decides what is
         // public, and a client-supplied bearer (the ui-user's apikey) is forwarded
         // as-is because gateway- and backend-key are the same by construction
         self.retarget(&mut request, &target, false);
-        self.send(request).await
+        self.send(request, keepalive).await
     }
 
-    async fn post_chat_completions(
+    async fn post_chat_completions_json(
         &self,
-        payload: CreateChatCompletionRequest,
+        client_headers: HeaderMap,
+        payload: String,
     ) -> Result<Response, StatusCode> {
-        trace!("entered post_chat_completions");
+        trace!("entered post_chat_completions_json");
         self.post_json(
             &format!("/{LLAMACPP_API_BASE_PATH}/chat/completions"),
-            &payload,
+            &client_headers,
+            payload,
         )
         .await
     }
 
-    async fn post_embedding(
+    async fn post_embedding_json(
         &self,
-        payload: CreateEmbeddingRequest,
+        client_headers: HeaderMap,
+        payload: String,
     ) -> Result<Response, StatusCode> {
-        self.post_json(&format!("/{LLAMACPP_API_BASE_PATH}/embeddings"), &payload)
-            .await
+        self.post_json(
+            &format!("/{LLAMACPP_API_BASE_PATH}/embeddings"),
+            &client_headers,
+            payload,
+        )
+        .await
     }
 }
 #[cfg(test)]
@@ -425,5 +544,107 @@ mod keepalive_tests {
             .unwrap()
             .unwrap();
         assert_eq!(second.as_ref(), SSE_KEEPALIVE_COMMENT);
+    }
+}
+
+#[cfg(test)]
+mod header_forwarding_tests {
+    use super::*;
+
+    fn headers(pairs: &[(&'static str, &'static str)]) -> HeaderMap {
+        let mut map = HeaderMap::new();
+        for (name, value) in pairs {
+            map.insert(
+                HeaderName::from_static(name),
+                HeaderValue::from_str(value).unwrap(),
+            );
+        }
+        map
+    }
+
+    #[test]
+    fn hop_by_hop_and_rewritten_headers_are_dropped() {
+        let client = headers(&[
+            ("host", "gateway.example"),
+            ("connection", "keep-alive"),
+            ("transfer-encoding", "chunked"),
+            ("te", "trailers"),
+            ("trailer", "x-checksum"),
+            ("upgrade", "h2c"),
+            ("content-length", "123"),
+            ("content-type", "application/json"),
+            ("accept-encoding", "gzip, br"),
+            // these must survive
+            ("x-conversation-id", "conv-1::model"),
+            ("authorization", "Bearer user-key"),
+            ("accept", "text/event-stream"),
+            ("x-custom", "keep-me"),
+        ]);
+
+        let forwarded: Vec<String> = forwarded_headers(&client)
+            .map(|(name, _)| name.as_str().to_string())
+            .collect();
+
+        for dropped in [
+            "host",
+            "connection",
+            "transfer-encoding",
+            "te",
+            "trailer",
+            "upgrade",
+            "content-length",
+            "content-type",
+            "accept-encoding",
+        ] {
+            assert!(
+                !forwarded.contains(&dropped.to_string()),
+                "'{dropped}' must not be forwarded: {forwarded:?}"
+            );
+        }
+        for kept in ["x-conversation-id", "authorization", "accept", "x-custom"] {
+            assert!(
+                forwarded.contains(&kept.to_string()),
+                "'{kept}' must be forwarded: {forwarded:?}"
+            );
+        }
+    }
+
+    #[test]
+    fn resumable_requests_are_recognised_by_header_and_by_conv_id_query() {
+        let by_header = Request::post("/v1/chat/completions")
+            .header("x-conversation-id", "conv-1::model")
+            .body(Body::empty())
+            .unwrap();
+        assert!(is_resumable_request(&by_header));
+
+        let by_query = Request::get("/v1/stream?conv_id=conv-1%3A%3Amodel&from=42")
+            .body(Body::empty())
+            .unwrap();
+        assert!(is_resumable_request(&by_query));
+
+        let plain_post = Request::post("/v1/chat/completions")
+            .body(Body::empty())
+            .unwrap();
+        assert!(!is_resumable_request(&plain_post));
+
+        let empty_header = Request::post("/v1/chat/completions")
+            .header("x-conversation-id", "")
+            .body(Body::empty())
+            .unwrap();
+        assert!(!is_resumable_request(&empty_header));
+
+        // an unrelated query parameter must not disable keepalives
+        let other_query = Request::get("/props?autoload=false")
+            .body(Body::empty())
+            .unwrap();
+        assert!(!is_resumable_request(&other_query));
+    }
+
+    #[test]
+    fn empty_conversation_id_header_does_not_disable_keepalives() {
+        let headers = headers(&[("x-conversation-id", "")]);
+        assert!(!headers
+            .get("x-conversation-id")
+            .is_some_and(|value| !value.is_empty()));
     }
 }

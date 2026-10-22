@@ -22,4 +22,12 @@ pub trait ApplicationConfig: Send + Sync + 'static {
     fn skip_chatui_model_ensure(&self) -> bool {
         false
     }
+
+    /// when true `/chat/sw.js` is forwarded to the backend, i.e. the upstream
+    /// pwa service worker stays active. Defaults to false: the upstream worker
+    /// precaches the document + bundle and pins a stale ui across backend
+    /// rebuilds when the ui is served under the `/chat` prefix.
+    fn serve_chatui_pwa_service_worker(&self) -> bool {
+        false
+    }
 }

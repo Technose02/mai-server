@@ -1,9 +1,25 @@
-use axum::{extract::Request, http::StatusCode, middleware::Next, response::Response};
+use axum::{extract::Request, middleware::Next, response::Response};
+use std::time::Instant;
 use tracing::info;
 
-pub async fn request_logger(req: Request, next: Next) -> Result<Response, StatusCode> {
-    info!("{} {}", req.method(), req.uri().path());
-    let res = next.run(req).await;
-    info!("\t-> {}", res.status());
-    Ok(res)
+pub async fn request_logger(req: Request, next: Next) -> Response {
+    let method = req.method().clone();
+    let path = req
+        .uri()
+        .path_and_query()
+        .map(|value| value.as_str().to_string())
+        .unwrap_or_else(|| req.uri().path().to_string());
+    let started = Instant::now();
+
+    let response = next.run(req).await;
+
+    // status + duration per request: without it a "the ui says server error"
+    // report cannot be matched to what the gateway actually answered
+    info!(
+        "{method} {path} -> {} in {:?}",
+        response.status(),
+        started.elapsed()
+    );
+
+    response
 }
