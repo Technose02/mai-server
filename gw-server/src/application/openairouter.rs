@@ -404,6 +404,7 @@ async fn post_chat_completions_impl(
             .languagemodelmanager_service()
             .stop_llamacpp_process()
             .await;
+        application_config.embeddingmodelmanager_service().stop_llamacpp_process().await;
         let response_json = serde_json::to_string(&CreateChatCompletionStreamResponse {
             id: "none".into(),
             choices: vec![ChatChoiceStream {
